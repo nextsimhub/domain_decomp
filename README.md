@@ -14,7 +14,7 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 
 [^1]: M. Berger and S. Bokhari. "A partitioning strategy for nonuniform problems on multiprocessors." IEEE Trans. Computers, C-36 (1987) 570-580.
 
-## Example: partitioning the NEMO ORCA1 global domain
+### Example: partitioning the NEMO ORCA1 global domain
 
 ![NEMO ORCA1 decomposition to 16 processes](img/ORCA1_RCB_16.png)
 
