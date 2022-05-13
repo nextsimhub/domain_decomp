@@ -24,7 +24,7 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 * CMake >= 3.10
 * C++ compiler
 * MPI
-* netCDF-4 C, netCDF-4 C++, built with parallel I/O support
+* [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1), [netCDF-4 C++](https://github.com/Unidata/netcdf-cxx4/releases/tag/v4.3.1), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files is through PnetCDF
 * Zoltan, built with CMake from the **[Trilinos](https://github.com/trilinos/Trilinos)** package
 
 ### Installation
