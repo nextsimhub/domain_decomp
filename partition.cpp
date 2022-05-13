@@ -1,7 +1,7 @@
 #include <cstdio>
 
-#include <mpi.h>
 #include "grid.h"
+#include <mpi.h>
 
 using namespace std;
 

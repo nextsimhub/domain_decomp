@@ -144,20 +144,20 @@ void Grid::partition()
   int num_gid_entries;
   int num_lid_entries;
   int num_import;
-  ZOLTAN_ID_PTR import__global_ids;
-  ZOLTAN_ID_PTR import__local_ids;
+  ZOLTAN_ID_PTR import_global_ids;
+  ZOLTAN_ID_PTR import_local_ids;
   int* import_procs;
   int* import_to_part;
   int num_export;
-  ZOLTAN_ID_PTR export__global_ids;
-  ZOLTAN_ID_PTR export__local_ids;
+  ZOLTAN_ID_PTR export_global_ids;
+  ZOLTAN_ID_PTR export_local_ids;
   int* export_procs;
   int* export_to_part;
 
   int ret = _zoltan->LB_Partition(
-      changes, num_gid_entries, num_lid_entries, num_import, import__global_ids,
-      import__local_ids, import_procs, import_to_part, num_export,
-      export__global_ids, export__local_ids, export_procs, export_to_part);
+      changes, num_gid_entries, num_lid_entries, num_import, import_global_ids,
+      import_local_ids, import_procs, import_to_part, num_export,
+      export_global_ids, export_local_ids, export_procs, export_to_part);
 
   if (ret != ZOLTAN_OK) {
     cout << "Partitioning failed on process " << _rank << endl;
@@ -171,13 +171,13 @@ void Grid::partition()
     _zoltan_part_ids[i] = _rank;
   }
   for (int i = 0; i < num_export; i++) {
-    _zoltan_part_ids[export__local_ids[i]] = export_to_part[i];
+    _zoltan_part_ids[export_local_ids[i]] = export_to_part[i];
   }
 
   // Free the arrays allocated by Zoltan
-  Zoltan::LB_Free_Part(&import__global_ids, &import__local_ids, &import_procs,
+  Zoltan::LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs,
                        &import_to_part);
-  Zoltan::LB_Free_Part(&export__global_ids, &export__local_ids, &export_procs,
+  Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs,
                        &export_to_part);
 }
 
