@@ -21,11 +21,33 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 ## Getting Started
 
 ### Requirements
+* A Unix-like operating system (e.g., Linux or Mac OS X)
+* ANSI C++ compiler
+* MPI library for message passing, such as MPICH, OpenMPI, etc.
 * CMake >= 3.10
-* C++ compiler
-* MPI
-* [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1), [netCDF-4 C++](https://github.com/Unidata/netcdf-cxx4/releases/tag/v4.3.1), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files is through PnetCDF
-* Zoltan, built with CMake from the **[Trilinos](https://github.com/trilinos/Trilinos)** package
+* [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1), [netCDF-4 C++](https://github.com/Unidata/netcdf-cxx4/releases/tag/v4.3.1), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files through PnetCDF
+* Zoltan, built with CMake from the **[Trilinos](https://github.com/trilinos/Trilinos.git)** package
+
+#### Building Zoltan from source
+
+```
+git clone https://github.com/trilinos/Trilinos.git
+cd Trilinos
+mkdir build && cd build
+cmake \
+ -DTPL_ENABLE_MPI:BOOL=ON \
+ -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+ -DTrilinos_ENABLE_Zoltan:BOOL=ON \
+ -DTrilinos_ENABLE_Fortran:BOOL=OFF \
+ -DZoltan_ENABLE_EXAMPLES:BOOL=ON \
+ -DZoltan_ENABLE_TESTS:BOOL=ON \
+ -DBUILD_SHARED_LIBS=ON \
+ -DCMAKE_INSTALL_PREFIX:FILEPATH=<path> \
+ ..
+make
+make test
+make install
+```
 
 ### Installation
 It is recommended to build the code in a separate directory form the source directory. The basic steps for building with CMake are:
