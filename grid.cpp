@@ -16,6 +16,11 @@ static void find_factors(int n, int& factor_a, int& factor_b)
   }
 }
 
+Grid* Grid::create(MPI_Comm comm, int argc, char** argv, const string& filename)
+{
+  return new Grid(comm, argc, argv, filename);
+}
+
 Grid::Grid(MPI_Comm comm, int argc, char** argv, const string& filename)
     : _comm(comm)
 {
@@ -227,8 +232,6 @@ void Grid::save(const string& filename) const
   nc_put_vara_double(ncid, vid_lon, start, count, _lon.data());
   nc_close(ncid);
 }
-
-void Grid::destroy() { delete this; }
 
 int Grid::get_num_nonzero_objects() const { return _num_nonzero_objects; }
 const int* Grid::get_nonzero_object_ids() const { return _object_ids.data(); }

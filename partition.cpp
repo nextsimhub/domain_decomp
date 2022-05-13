@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
   MPI_Init(&argc, &argv);
 
   // Build distributed grid from netCDF file
-  Grid* grid = new Grid(comm, argc, argv, argv[1]);
+  Grid* grid = Grid::create(comm, argc, argv, argv[1]);
 
   // Perform domain decomposition
   grid->partition();
@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
   grid->save("rcb_" + to_string(num_procs) + ".nc");
 
   // Cleanup
-  grid->destroy();
+  delete grid;
 
   MPI_Finalize();
 

@@ -21,8 +21,12 @@ public:
   Grid(const Grid&) = delete;
   Grid& operator=(const Grid&) = delete;
 
+  // Destructor
+  ~Grid();
+
   // Construct a ditributed grid from a netCDF file describing the global domain
-  Grid(MPI_Comm comm, int argc, char** argv, const string& filename);
+  static Grid* create(MPI_Comm comm, int argc, char** argv,
+                      const string& filename);
 
   // Balance the domain decomposition using RCB
   void partition();
@@ -33,12 +37,9 @@ public:
   // Returns the number of non-land objects in the local domain
   int get_num_nonzero_objects() const;
 
-  // Destoy grid object
-  void destroy();
-
-protected:
-  // Prohibit creation of stack-based objects
-  ~Grid();
+private:
+  // Construct a ditributed grid from a netCDF file describing the global domain
+  Grid(MPI_Comm comm, int argc, char** argv, const string& filename);
 
 private:
   // Returns the IDs of the non-land objects in the local domain
