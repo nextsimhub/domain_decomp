@@ -4,7 +4,7 @@
 
 We address the problem of domain decomposition of numerical ocean and sea-ice models. Such models typically use a sea-land mask to omit unnecessary computations on land. A typical approach is to use a cartesian (or rectilinear or general block distribution) domain decomposition among processors, where the domain is divided in equally sized sub-domains, ignoring the sea-land mask. This, however, may lead to significant load imbalance which impedes scalability.
 
-We have identyfied the following requirements for the domain decomposition algorithm:
+We have identified the following requirements for the domain decomposition algorithm:
  - produce balanced sub-domains in terms of work and communication
  - produce rectangular sub-domains as this will help in handling communication during halo exchanges between neighbouring processes
  - be static (computed either offline or during the initialiasation phase)
