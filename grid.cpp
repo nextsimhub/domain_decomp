@@ -36,8 +36,8 @@ Grid::Grid(MPI_Comm comm, int argc, char** argv, const string& filename)
   int num_procs_x = _num_procs;
   find_factors(_num_procs, num_procs_y, num_procs_x);
 
-  _local_dim_x = std::ceil((float)_global_dim_x / (num_procs_x));
-  _local_dim_y = std::ceil((float)_global_dim_y / (num_procs_y));
+  _local_dim_x = ceil((float)_global_dim_x / (num_procs_x));
+  _local_dim_y = ceil((float)_global_dim_y / (num_procs_y));
   _global_top_y = (_rank / num_procs_x) * _local_dim_y;
   _global_top_x = (_rank % num_procs_x) * _local_dim_x;
   if ((_rank % num_procs_x) == num_procs_x - 1) {
@@ -50,9 +50,9 @@ Grid::Grid(MPI_Comm comm, int argc, char** argv, const string& filename)
 
   // Retrieve the coordinate data of interest for partitioining
   netCDF::NcVar mask_var = nc_file.getVar(mask_id); // (y, x)
-  std::vector<size_t> start(2);
-  std::vector<size_t> count(2);
-  std::vector<ptrdiff_t> stride(2);
+  vector<size_t> start(2);
+  vector<size_t> count(2);
+  vector<ptrdiff_t> stride(2);
   // Coordinate of first element
   start[0] = _global_top_y; // y
   start[1] = _global_top_x; // x
@@ -181,7 +181,7 @@ void Grid::partition()
                        &export_to_part);
 }
 
-void Grid::save(const std::string& filename)
+void Grid::save(const string& filename)
 {
   // Use C API for parallel I/O
   const int NDIMS = 2;
