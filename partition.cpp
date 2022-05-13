@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
   grid->save("rcb_" + to_string(num_procs) + ".nc");
 
   // Cleanup
-  delete grid;
+  grid->destroy();
 
   MPI_Finalize();
 

@@ -17,12 +17,9 @@ const string lat_id = "nav_lat";
 class Grid
 {
 public:
-  // Disallow compiler-generated functions
-  Grid() = delete;
+  // Disallow compiler-generated special functions
   Grid(const Grid&) = delete;
   Grid& operator=(const Grid&) = delete;
-
-  ~Grid();
 
   // Construct a ditributed grid from a netCDF file describing the global domain
   Grid(MPI_Comm comm, int argc, char** argv, const string& filename);
@@ -31,10 +28,17 @@ public:
   void partition();
 
   // Save the results of the domain decomposition in a netCDF file
-  void save(const string& filename);
+  void save(const string& filename) const;
 
   // Returns the number of non-land objects in the local domain
   int get_num_nonzero_objects() const;
+
+  // Destoy grid object
+  void destroy();
+
+protected:
+  // Prohibit creation of stack-based objects
+  ~Grid();
 
 private:
   // Returns the IDs of the non-land objects in the local domain

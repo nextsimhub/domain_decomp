@@ -181,7 +181,7 @@ void Grid::partition()
                        &export_to_part);
 }
 
-void Grid::save(const string& filename)
+void Grid::save(const string& filename) const
 {
   // Use C API for parallel I/O
   const int NDIMS = 2;
@@ -227,6 +227,8 @@ void Grid::save(const string& filename)
   nc_put_vara_double(ncid, vid_lon, start, count, _lon.data());
   nc_close(ncid);
 }
+
+void Grid::destroy() { delete this; }
 
 int Grid::get_num_nonzero_objects() const { return _num_nonzero_objects; }
 const int* Grid::get_nonzero_object_ids() const { return _object_ids.data(); }
