@@ -23,7 +23,7 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 ### Requirements
 * A Unix-like operating system (e.g., Linux or Mac OS X)
 * ANSI C++ compiler
-* MPI library for message passing, such as MPICH, OpenMPI, etc.
+* MPI library for message passing (e.g., MPICH or OpenMPI)
 * CMake >= 3.10
 * [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1), [netCDF-4 C++](https://github.com/Unidata/netcdf-cxx4/releases/tag/v4.3.1), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files through PnetCDF
 * Zoltan, built with CMake from the **[Trilinos](https://github.com/trilinos/Trilinos.git)** package
@@ -47,6 +47,11 @@ cmake \
 make
 make test
 make install
+```
+
+If you want to use an MPI library installed in a non-standard location you will need to additionally set:
+```
+ -DCMAKE_CXX_COMPILER=<mpicxx> -DCMAKE_C_COMPILER=<mpicc>
 ```
 
 ### Installation
