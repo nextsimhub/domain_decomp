@@ -1,6 +1,7 @@
 #include <cstdio>
 
-#include "grid.h"
+#include "Grid.hpp"
+#include "Partitioner.hpp"
 #include <mpi.h>
 
 using namespace std;
@@ -11,20 +12,25 @@ int main(int argc, char* argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);
 
-  // Build distributed grid from netCDF file
+  // Build grid from netCDF file
   Grid* grid = Grid::create(comm, argc, argv, argv[1]);
 
-  // Perform domain decomposition
-  grid->partition();
+  // Select partitioner
+  Partitioner* partitioner = Partitioner::create(comm, argc, argv);
+
+  // Partition grid
+  partitioner->partition(*grid);
 
   // Store partitioning results in netCDF file
   int num_procs;
   MPI_Comm_size(comm, &num_procs);
-  grid->save("rcb_" + to_string(num_procs) + ".nc");
+  partitioner->save("partition_" + to_string(num_procs) + ".nc");
 
   // Cleanup
   delete grid;
+  delete partitioner;
 
+  // Finalize MPI
   MPI_Finalize();
 
   return 0;
