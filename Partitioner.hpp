@@ -35,15 +35,15 @@ private:
   Partitioner(MPI_Comm comm, int argc, char** argv);
 
 private:
-  MPI_Comm _comm;            // MPI communicator
-  int _rank = -1;            // Process rank
-  int _num_procs = -1;       // Total number of processes in communicator
-  size_t _global_dim_x = 0;  // Global longitude dimension
-  size_t _global_dim_y = 0;  // Global latitude dimension
-  size_t _local_dim_x = 0;   // Local longitude dimension
-  size_t _local_dim_y = 0;   // Local latitude dimension
-  int _global_top_x = 0;     // Global top left longitude
-  int _global_top_y = 0;     // Global top left latitude
-  Zoltan* _zoltan = nullptr; // Zoltan object
-  std::vector<int> _dense_part_ids = {}; // Process ids of my original partition
+  MPI_Comm _comm;                 // MPI communicator
+  int _rank = -1;                 // Process rank
+  int _num_procs = -1;            // Total number of processes in communicator
+  size_t _global_dim_x = 0;       // Global longitude dimension
+  size_t _global_dim_y = 0;       // Global latitude dimension
+  size_t _local_dim_x = 0;        // Local longitude dimension
+  size_t _local_dim_y = 0;        // Local latitude dimension
+  int _global_top_x = 0;          // Global top left longitude
+  int _global_top_y = 0;          // Global top left latitude
+  Zoltan* _zoltan = nullptr;      // Zoltan object
+  std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
 };

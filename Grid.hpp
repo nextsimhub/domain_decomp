@@ -15,9 +15,10 @@
 class Grid
 {
   // Define grid metadata
-  const std::string x_axis_id = "x_s";
-  const std::string y_axis_id = "y_s";
-  const std::string mask_id = "tmask_s";
+  const std::string x_axis_id = "x";
+  const std::string y_axis_id = "y";
+  const std::string data_id = "data";
+  const std::string mask_id = "mask";
 
 public:
   // Disallow compiler-generated special functions
@@ -57,6 +58,6 @@ public:
   int _num_objects = 0;             // number of grid objects ignoring land mask
   int _num_nonzero_objects = 0;     // number of non-land grid objects
   std::vector<int> _land_mask = {}; // land mask values
-  std::vector<int> _index_map = {}; // map from sparse to dense index
-  std::vector<int> _object_ids = {}; // unique non-land object IDs
+  std::vector<int> _sparse_to_dense = {}; // map from sparse to dense index
+  std::vector<int> _object_id = {};       // unique non-land object IDs
 };

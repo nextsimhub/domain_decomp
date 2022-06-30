@@ -56,9 +56,9 @@ static void get_geometry_list(void* data, int num_gid_entries,
 
   // Use grid coordinates
   for (int i = 0; i < num_obj; i++) {
-    geom_vec[2 * i] = grid->get_nonzero_object_ids()[i] / grid->_global_dim_x;
+    geom_vec[2 * i] = grid->get_nonzero_object_ids()[i] / grid->_global_dim_y;
     geom_vec[2 * i + 1]
-        = grid->get_nonzero_object_ids()[i] % grid->_global_dim_x;
+        = grid->get_nonzero_object_ids()[i] % grid->_global_dim_y;
   }
 
   return;
@@ -67,6 +67,8 @@ static void get_geometry_list(void* data, int num_gid_entries,
 Partitioner::Partitioner(MPI_Comm comm, int argc, char** argv)
 {
   _comm = comm;
+  MPI_Comm_size(comm, &_num_procs);
+  MPI_Comm_rank(comm, &_rank);
 
   // Initialize Zoltan
   float version;
@@ -95,7 +97,7 @@ void Partitioner::partition(Grid& grid)
 {
   // Set Zoltan parameters for RCB partitioning
   // General parameters
-  // _zoltan->Set_Param("DEBUG_LEVEL", "7");
+  //_zoltan->Set_Param("DEBUG_LEVEL", "7");
   _zoltan->Set_Param("NUM_GID_ENTRIES", "1");
   _zoltan->Set_Param("NUM_LID_ENTRIES", "1");
   _zoltan->Set_Param("CHECK_GEOM", "1");
@@ -139,19 +141,22 @@ void Partitioner::partition(Grid& grid)
     exit(EXIT_FAILURE);
   }
 
-  std::vector<int> sparse_part_ids(grid.get_num_nonzero_objects(), _rank);
-  for (int i = 0; i < num_export; i++) {
-    sparse_part_ids[export_local_ids[i]] = export_to_part[i];
-  }
-
-  _dense_part_ids.resize(grid._num_objects, _rank);
-  int cnt = 0;
-  for (int i = 0; i < grid._num_objects; i++) {
-    if (grid._land_mask[i] == 1) {
-      _dense_part_ids[i] = sparse_part_ids[cnt++];
+  if (grid._num_objects != grid.get_num_nonzero_objects()) {
+    _proc_id.resize(grid._num_objects, -1);
+    for (int i = 0; i < grid._num_objects; i++) {
+      if (grid._land_mask[i] > 0) {
+        _proc_id[i] = _rank;
+      }
+    }
+    for (int i = 0; i < num_export; i++) {
+      _proc_id[grid._sparse_to_dense[export_local_ids[i]]] = export_procs[i];
+    }
+  } else {
+    _proc_id.resize(grid._num_objects, _rank);
+    for (int i = 0; i < num_export; i++) {
+      _proc_id[export_local_ids[i]] = export_procs[i];
     }
   }
-  sparse_part_ids.clear();
 
   // Free the arrays allocated by Zoltan
   Zoltan::LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs,
@@ -171,7 +176,7 @@ void Partitioner::save(const std::string& filename) const
 {
   // Use C API for parallel I/O
   const int NDIMS = 2;
-  int ncid, vid, vid_lat, vid_lon, dimids[NDIMS];
+  int ncid, vid, dimids[NDIMS];
   size_t start[NDIMS], count[NDIMS];
 
   nc_create_par(filename.c_str(), NC_MPIIO | NC_NETCDF4, _comm, MPI_INFO_NULL,
@@ -182,25 +187,20 @@ void Partitioner::save(const std::string& filename) const
   // The values to be written are associated with the netCDF variable by
   // assuming that the last dimension of the netCDF variable varies fastest in
   // the C interface
-  nc_def_dim(ncid, "y", _global_dim_y, &dimids[0]);
-  nc_def_dim(ncid, "x", _global_dim_x, &dimids[1]);
+  nc_def_dim(ncid, "x", _global_dim_x, &dimids[0]);
+  nc_def_dim(ncid, "y", _global_dim_y, &dimids[1]);
   // Create variables
   nc_def_var(ncid, "part_id", NC_INT, NDIMS, dimids, &vid);
-  nc_def_var(ncid, "lat", NC_DOUBLE, NDIMS, dimids, &vid_lat);
-  nc_def_var(ncid, "lon", NC_DOUBLE, NDIMS, dimids, &vid_lon);
-  // int init_val = -1;
-  // Create a fill value for land data
-  // nc_def_var_fill(ncid, vid, NC_FILL, &init_val);
   // Write metadata to file
   nc_enddef(ncid);
   // Set up slab for this process
-  start[0] = _global_top_y;
-  start[1] = _global_top_x;
-  count[0] = _local_dim_y;
-  count[1] = _local_dim_x;
+  start[0] = _global_top_x;
+  start[1] = _global_top_y;
+  count[0] = _local_dim_x;
+  count[1] = _local_dim_y;
 
   // Store data
   nc_var_par_access(ncid, vid, NC_COLLECTIVE);
-  nc_put_vara_int(ncid, vid, start, count, _dense_part_ids.data());
+  nc_put_vara_int(ncid, vid, start, count, _proc_id.data());
   nc_close(ncid);
 }
