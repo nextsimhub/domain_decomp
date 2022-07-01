@@ -6,10 +6,10 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include <mpi.h>
-#include <zoltan_cpp.h>
 
 //! A class that encapsulates the grid of the model
 class Grid

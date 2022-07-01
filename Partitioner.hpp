@@ -8,6 +8,8 @@
 
 #include "Grid.hpp"
 
+#include <zoltan_cpp.h>
+
 //! A class that encapsulates a grid partitioner
 class Partitioner
 {
