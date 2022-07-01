@@ -56,9 +56,10 @@ static void get_geometry_list(void* data, int num_gid_entries,
 
   // Use grid coordinates
   for (int i = 0; i < num_obj; i++) {
-    geom_vec[2 * i] = grid->get_nonzero_object_ids()[i] / grid->_global_dim_y;
+    geom_vec[2 * i]
+        = grid->get_nonzero_object_ids()[i] / grid->get_global_dim_y();
     geom_vec[2 * i + 1]
-        = grid->get_nonzero_object_ids()[i] % grid->_global_dim_y;
+        = grid->get_nonzero_object_ids()[i] % grid->get_global_dim_y();
   }
 
   return;
@@ -139,18 +140,20 @@ void ZoltanPartitioner::partition(Grid& grid)
     exit(EXIT_FAILURE);
   }
 
-  if (grid._num_objects != grid.get_num_nonzero_objects()) {
-    _proc_id.resize(grid._num_objects, -1);
-    for (int i = 0; i < grid._num_objects; i++) {
-      if (grid._land_mask[i] > 0) {
+  if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
+    const int* land_mask = grid.get_land_mask();
+    _proc_id.resize(grid.get_num_objects(), -1);
+    for (int i = 0; i < grid.get_num_objects(); i++) {
+      if (land_mask[i] > 0) {
         _proc_id[i] = _rank;
       }
     }
+    const int* sparse_to_dense = grid.get_sparse_to_dense();
     for (int i = 0; i < num_export; i++) {
-      _proc_id[grid._sparse_to_dense[export_local_ids[i]]] = export_procs[i];
+      _proc_id[sparse_to_dense[export_local_ids[i]]] = export_procs[i];
     }
   } else {
-    _proc_id.resize(grid._num_objects, _rank);
+    _proc_id.resize(grid.get_num_objects(), _rank);
     for (int i = 0; i < num_export; i++) {
       _proc_id[export_local_ids[i]] = export_procs[i];
     }
@@ -161,11 +164,4 @@ void ZoltanPartitioner::partition(Grid& grid)
                        &import_to_part);
   Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs,
                        &export_to_part);
-
-  this->_global_dim_y = grid._global_dim_y;
-  this->_global_dim_x = grid._global_dim_x;
-  this->_local_dim_y = grid._local_dim_y;
-  this->_local_dim_x = grid._local_dim_x;
-  this->_global_top_y = grid._global_top_y;
-  this->_global_top_x = grid._global_top_x;
 }

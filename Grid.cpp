@@ -113,5 +113,14 @@ Grid::Grid(MPI_Comm comm, int argc, char** argv, const std::string& filename)
   nc_file.close();
 }
 
+int Grid::get_num_objects() const { return _num_objects; }
 int Grid::get_num_nonzero_objects() const { return _num_nonzero_objects; }
+int Grid::get_global_dim_x() const { return _global_dim_x; }
+int Grid::get_global_dim_y() const { return _global_dim_y; }
+int Grid::get_local_dim_x() const { return _local_dim_x; }
+int Grid::get_local_dim_y() const { return _local_dim_y; }
+int Grid::get_global_top_x() const { return _global_top_x; }
+int Grid::get_global_top_y() const { return _global_top_y; }
+const int* Grid::get_land_mask() const { return _land_mask.data(); }
+const int* Grid::get_sparse_to_dense() const { return _sparse_to_dense.data(); }
 const int* Grid::get_nonzero_object_ids() const { return _object_id.data(); }

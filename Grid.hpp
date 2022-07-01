@@ -35,8 +35,37 @@ public:
   static Grid* create(MPI_Comm comm, int argc, char** argv,
                       const std::string& filename);
 
+  // Returns the total number of objects in the local domain
+  int get_num_objects() const;
+
   // Returns the number of non-land objects in the local domain
   int get_num_nonzero_objects() const;
+
+  // Returns the global x dimension size
+  int get_global_dim_x() const;
+
+  // Returns the global y dimension size
+  int get_global_dim_y() const;
+
+  // Returns the local x dimension size
+  int get_local_dim_x() const;
+
+  // Returns the local y dimension size
+  int get_local_dim_y() const;
+
+  // Returns the global x coordinate of the top left object in this process's
+  // partition
+  int get_global_top_x() const;
+
+  // Returns the global y coordinate of the top left object in this process's
+  // partition
+  int get_global_top_y() const;
+
+  // Returns the land mask
+  const int* get_land_mask() const;
+
+  // Returns the index mapping of sparse to dense representation
+  const int* get_sparse_to_dense() const;
 
   // Returns the IDs of the non-land objects in the local domain
   const int* get_nonzero_object_ids() const;
@@ -45,7 +74,7 @@ private:
   // Construct a ditributed grid from a netCDF file describing the global domain
   Grid(MPI_Comm comm, int argc, char** argv, const std::string& filename);
 
-public:
+private:
   MPI_Comm _comm;                   // MPI communicator
   int _rank = -1;                   // Process rank
   int _num_procs = -1;              // Total number of processes in communicator
