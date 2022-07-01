@@ -1,7 +1,14 @@
+/*!
+ * @file main.cpp
+ * @date 1 May 2022
+ * @author Athena Elafrou <ae488@cam.ac.uk>
+ */
+
 #include <cstdio>
 
 #include "Grid.hpp"
 #include "Partitioner.hpp"
+
 #include <mpi.h>
 
 using namespace std;
@@ -15,8 +22,9 @@ int main(int argc, char* argv[])
   // Build grid from netCDF file
   Grid* grid = Grid::create(comm, argc, argv, argv[1]);
 
-  // Select partitioner
-  Partitioner* partitioner = Partitioner::create(comm, argc, argv);
+  // Create a Zoltan partitioner
+  Partitioner* partitioner
+      = Partitioner::Factory::create(comm, argc, argv, PartitionerType::Zoltan);
 
   // Partition grid
   partitioner->partition(*grid);

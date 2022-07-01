@@ -1,175 +1,20 @@
 /*!
- * @file Partitioner.hpp
+ * @file Partitioner.cpp
  * @date 25 June 2022
  * @author Athena Elafrou <ae488@cam.ac.uk>
  */
 
 #include "Partitioner.hpp"
+#include "ZoltanPartitioner.hpp"
 
 #include <netcdf>
 #include <netcdf_par.h>
-
-static int get_num_objects(void* data, int* ierr)
-{
-  Grid* grid = (Grid*)data;
-  *ierr = ZOLTAN_OK;
-
-  return grid->get_num_nonzero_objects();
-}
-
-static void get_object_list(void* data, int num_gid_entries,
-                            int num_lid_entries, ZOLTAN_ID_PTR global_ids,
-                            ZOLTAN_ID_PTR local_ids, int wgt_dim,
-                            float* obj_wgts, int* ierr)
-{
-  Grid* grid = (Grid*)data;
-  *ierr = ZOLTAN_OK;
-
-  // In this example, return the IDs of our objects, but no weights
-  // Zoltan will assume equally weighted objects
-  for (int i = 0; i < grid->get_num_nonzero_objects(); i++) {
-    global_ids[i] = grid->get_nonzero_object_ids()[i];
-    local_ids[i] = i;
-  }
-  return;
-}
-
-static int get_num_geometry(void* data, int* ierr)
-{
-  *ierr = ZOLTAN_OK;
-  return 2;
-}
-
-static void get_geometry_list(void* data, int num_gid_entries,
-                              int num_lid_entries, int num_obj,
-                              ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-                              int num_dim, double* geom_vec, int* ierr)
-{
-  Grid* grid = (Grid*)data;
-
-  if ((num_gid_entries != 1) || (num_lid_entries != 1) || (num_dim != 2)) {
-    *ierr = ZOLTAN_FATAL;
-    return;
-  }
-
-  *ierr = ZOLTAN_OK;
-
-  // Use grid coordinates
-  for (int i = 0; i < num_obj; i++) {
-    geom_vec[2 * i] = grid->get_nonzero_object_ids()[i] / grid->_global_dim_y;
-    geom_vec[2 * i + 1]
-        = grid->get_nonzero_object_ids()[i] % grid->_global_dim_y;
-  }
-
-  return;
-}
 
 Partitioner::Partitioner(MPI_Comm comm, int argc, char** argv)
 {
   _comm = comm;
   MPI_Comm_size(comm, &_num_procs);
   MPI_Comm_rank(comm, &_rank);
-
-  // Initialize Zoltan
-  float version;
-  int ret = Zoltan_Initialize(argc, argv, &version);
-  if (ret != ZOLTAN_OK) {
-    std::cout << "Zoltan initialization failed on process " << _rank
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  // Create a Zoltan object
-  _zoltan = new Zoltan(comm);
-  if (ret != ZOLTAN_OK) {
-    std::cout << "Creating Zoltan object failed on process " << _rank
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
-}
-
-Partitioner* Partitioner::create(MPI_Comm comm, int argc, char** argv)
-{
-  return new Partitioner(comm, argc, argv);
-}
-
-void Partitioner::partition(Grid& grid)
-{
-  // Set Zoltan parameters for RCB partitioning
-  // General parameters
-  //_zoltan->Set_Param("DEBUG_LEVEL", "7");
-  _zoltan->Set_Param("NUM_GID_ENTRIES", "1");
-  _zoltan->Set_Param("NUM_LID_ENTRIES", "1");
-  _zoltan->Set_Param("CHECK_GEOM", "1");
-  _zoltan->Set_Param("KEEP_CUTS", "1");
-  // RCB parameters
-  std::string method = "RCB";
-  _zoltan->Set_Param("LB_METHOD", "RCB");
-  _zoltan->Set_Param("RCB_OUTPUT_LEVEL", "1");
-  _zoltan->Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
-  _zoltan->Set_Param("RCB_SET_DIRECTIONS", "3");
-  // Query functions
-  _zoltan->Set_Num_Obj_Fn(get_num_objects, &grid);
-  _zoltan->Set_Obj_List_Fn(get_object_list, &grid);
-  _zoltan->Set_Num_Geom_Fn(get_num_geometry, &grid);
-  _zoltan->Set_Geom_Multi_Fn(get_geometry_list, &grid);
-
-  // Partition
-  int changes;
-  int num_gid_entries;
-  int num_lid_entries;
-  int num_import;
-  ZOLTAN_ID_PTR import_global_ids;
-  ZOLTAN_ID_PTR import_local_ids;
-  int* import_procs;
-  int* import_to_part;
-  int num_export;
-  ZOLTAN_ID_PTR export_global_ids;
-  ZOLTAN_ID_PTR export_local_ids;
-  int* export_procs;
-  int* export_to_part;
-
-  int ret = _zoltan->LB_Partition(
-      changes, num_gid_entries, num_lid_entries, num_import, import_global_ids,
-      import_local_ids, import_procs, import_to_part, num_export,
-      export_global_ids, export_local_ids, export_procs, export_to_part);
-
-  if (ret != ZOLTAN_OK) {
-    std::cout << "Partitioning failed on process " << _rank << std::endl;
-    delete _zoltan;
-    MPI_Finalize();
-    exit(EXIT_FAILURE);
-  }
-
-  if (grid._num_objects != grid.get_num_nonzero_objects()) {
-    _proc_id.resize(grid._num_objects, -1);
-    for (int i = 0; i < grid._num_objects; i++) {
-      if (grid._land_mask[i] > 0) {
-        _proc_id[i] = _rank;
-      }
-    }
-    for (int i = 0; i < num_export; i++) {
-      _proc_id[grid._sparse_to_dense[export_local_ids[i]]] = export_procs[i];
-    }
-  } else {
-    _proc_id.resize(grid._num_objects, _rank);
-    for (int i = 0; i < num_export; i++) {
-      _proc_id[export_local_ids[i]] = export_procs[i];
-    }
-  }
-
-  // Free the arrays allocated by Zoltan
-  Zoltan::LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs,
-                       &import_to_part);
-  Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs,
-                       &export_to_part);
-
-  _global_dim_y = grid._global_dim_y;
-  _global_dim_x = grid._global_dim_x;
-  _local_dim_y = grid._local_dim_y;
-  _local_dim_x = grid._local_dim_x;
-  _global_top_y = grid._global_top_y;
-  _global_top_x = grid._global_top_x;
 }
 
 void Partitioner::save(const std::string& filename) const
@@ -203,4 +48,13 @@ void Partitioner::save(const std::string& filename) const
   nc_var_par_access(ncid, vid, NC_COLLECTIVE);
   nc_put_vara_int(ncid, vid, start, count, _proc_id.data());
   nc_close(ncid);
+}
+
+Partitioner* Partitioner::Factory::create(MPI_Comm comm, int argc, char** argv,
+                                          PartitionerType type)
+{
+  if (type == PartitionerType::Zoltan)
+    return ZoltanPartitioner::create(comm, argc, argv);
+  else
+    throw std::runtime_error("Invalid partitioner!");
 }
