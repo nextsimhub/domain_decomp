@@ -8,6 +8,7 @@
 
 #include <netcdf>
 #include <netcdf_par.h>
+#include <unordered_map>
 
 static int get_num_objects(void* data, int* ierr)
 {
@@ -94,6 +95,15 @@ ZoltanPartitioner* ZoltanPartitioner::create(MPI_Comm comm, int argc,
 
 void ZoltanPartitioner::partition(Grid& grid)
 {
+  _num_procs_x = grid.get_num_procs_x();
+  _num_procs_y = grid.get_num_procs_y();
+  _global_dim_x = grid.get_global_dim_x();
+  _global_dim_y = grid.get_global_dim_y();
+  _local_dim_x = grid.get_local_dim_x();
+  _local_dim_y = grid.get_local_dim_y();
+  _global_top_x = grid.get_global_top_x();
+  _global_top_y = grid.get_global_top_y();
+
   // Set Zoltan parameters for RCB partitioning
   // General parameters
   //_zoltan->Set_Param("DEBUG_LEVEL", "7");
@@ -148,6 +158,7 @@ void ZoltanPartitioner::partition(Grid& grid)
         _proc_id[i] = _rank;
       }
     }
+
     const int* sparse_to_dense = grid.get_sparse_to_dense();
     for (int i = 0; i < num_export; i++) {
       _proc_id[sparse_to_dense[export_local_ids[i]]] = export_procs[i];

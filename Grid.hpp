@@ -61,6 +61,12 @@ public:
   // partition
   int get_global_top_y() const;
 
+  // Returns the number of processes in the x dimension
+  int get_num_procs_x() const;
+
+  // Returns the number of processes in the y dimension
+  int get_num_procs_y() const;
+
   // Returns the land mask
   const int* get_land_mask() const;
 
@@ -78,6 +84,8 @@ private:
   MPI_Comm _comm;                   // MPI communicator
   int _rank = -1;                   // Process rank
   int _num_procs = -1;              // Total number of processes in communicator
+  int _num_procs_x = -1;            // Total number of processes in x axis
+  int _num_procs_y = -1;            // Total number of processes in y axis
   size_t _global_dim_x = 0;         // global longitude dimension
   size_t _global_dim_y = 0;         // global latitude dimension
   size_t _local_dim_x = 0;          // local longitude dimension

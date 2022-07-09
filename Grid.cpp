@@ -46,25 +46,21 @@ Grid::Grid(MPI_Comm comm, int argc, char** argv, const std::string& filename)
   MPI_Comm_size(comm, &_num_procs);
 
   // Start from a 2D decomposition
-  int num_procs_x = _num_procs;
-  int num_procs_y = 1;
-  find_factors(_num_procs, num_procs_x, num_procs_y);
+  _num_procs_x = _num_procs;
+  _num_procs_y = 1;
+  find_factors(_num_procs, _num_procs_x, _num_procs_y);
 
-  _local_dim_x = ceil((float)_global_dim_x / (num_procs_x));
-  _local_dim_y = ceil((float)_global_dim_y / (num_procs_y));
-  _global_top_x = (_rank / num_procs_y) * _local_dim_x;
-  _global_top_y = (_rank % num_procs_y) * _local_dim_y;
-  if ((_rank % num_procs_y) == num_procs_y - 1) {
-    _local_dim_y = _global_dim_y - (_rank % num_procs_y) * _local_dim_y;
+  _local_dim_x = ceil((float)_global_dim_x / (_num_procs_x));
+  _local_dim_y = ceil((float)_global_dim_y / (_num_procs_y));
+  _global_top_x = (_rank / _num_procs_y) * _local_dim_x;
+  _global_top_y = (_rank % _num_procs_y) * _local_dim_y;
+  if ((_rank % _num_procs_y) == _num_procs_y - 1) {
+    _local_dim_y = _global_dim_y - (_rank % _num_procs_y) * _local_dim_y;
   }
-  if ((_rank / num_procs_y) == num_procs_x - 1) {
-    _local_dim_x = _global_dim_x - (_rank / num_procs_y) * _local_dim_x;
+  if ((_rank / _num_procs_y) == _num_procs_x - 1) {
+    _local_dim_x = _global_dim_x - (_rank / _num_procs_y) * _local_dim_x;
   }
   _num_objects = _local_dim_x * _local_dim_y;
-
-  // if (_rank == 0)std::cout << _local_dim_x << " " << _local_dim_y <<
-  // std::endl; if (_rank == 0)std::cout << _global_top_x << " " <<
-  // _global_top_y << std::endl;
 
   std::vector<size_t> start(2);
   std::vector<size_t> count(2);
@@ -121,6 +117,8 @@ int Grid::get_local_dim_x() const { return _local_dim_x; }
 int Grid::get_local_dim_y() const { return _local_dim_y; }
 int Grid::get_global_top_x() const { return _global_top_x; }
 int Grid::get_global_top_y() const { return _global_top_y; }
+int Grid::get_num_procs_x() const { return _num_procs_x; }
+int Grid::get_num_procs_y() const { return _num_procs_y; }
 const int* Grid::get_land_mask() const { return _land_mask.data(); }
 const int* Grid::get_sparse_to_dense() const { return _sparse_to_dense.data(); }
 const int* Grid::get_nonzero_object_ids() const { return _object_id.data(); }

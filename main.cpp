@@ -32,7 +32,9 @@ int main(int argc, char* argv[])
   // Store partitioning results in netCDF file
   int num_procs;
   MPI_Comm_size(comm, &num_procs);
-  partitioner->save("partition_" + to_string(num_procs) + ".nc");
+  partitioner->save_mask("partition_mask_" + to_string(num_procs) + ".nc");
+  partitioner->save_metadata("partition_metadata_" + to_string(num_procs)
+                             + ".nc");
 
   // Cleanup
   delete grid;
