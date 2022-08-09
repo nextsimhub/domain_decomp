@@ -1,7 +1,7 @@
 /*!
  * @file ZoltanPartitioner.cpp
- * @date 25 June 2022
  * @author Athena Elafrou <ae488@cam.ac.uk>
+ * @date 25 June 2022
  */
 
 #include "ZoltanPartitioner.hpp"

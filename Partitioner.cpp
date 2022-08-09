@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.cpp
- * @date 25 June 2022
  * @author Athena Elafrou <ae488@cam.ac.uk>
+ * @date 25 June 2022
  */
 
 #include "Partitioner.hpp"
@@ -93,12 +93,12 @@ void Partitioner::save_metadata(const std::string& filename) const
   MPI_Allreduce(max_y.data(), global_max_y.data(), _num_procs, MPI_INT, MPI_MAX,
                 _comm);
 
-  // Expand bounding boxes to account for land points
+  // Expand bounding boxes to account for land points in x dimension
   std::vector<int> coords(_num_procs_x * 2);
   for (int j = 0; j < _num_procs_y; j++) {
     const int step
         = (_num_procs_x == _num_procs || _num_procs_y == _num_procs) ? 1 : 2;
-    // Sort points on x-axis for processes in column j
+    // Sort points on x dimension for processes in column j
     int cnt = 0;
     for (int p = j; p < _num_procs; p += step) {
       coords[2 * cnt] = global_min_x[p];
@@ -123,12 +123,13 @@ void Partitioner::save_metadata(const std::string& filename) const
     }
   }
 
+  // Expand bounding boxes to account for land points in y dimension
   coords.clear();
   coords.resize(_num_procs_y * 2);
   for (int j = 0; j < _num_procs_x; j++) {
     const int step
         = (_num_procs_x == _num_procs || _num_procs_y == _num_procs) ? 1 : 2;
-    // Sort points on x-axis for processes in column j
+    // Sort points on y dimension for processes in row j
     int cnt = 0;
     for (int p = step * j; p < (j + 1) * _num_procs_y; p++) {
       coords[2 * cnt] = global_min_y[p];
@@ -169,10 +170,10 @@ void Partitioner::save_metadata(const std::string& filename) const
   // Define variables
   int top_x_vid, top_y_vid;
   int cnt_x_vid, cnt_y_vid;
-  nc_def_var(ncid, "top_x", NC_INT, 1, &dimid, &top_x_vid);
-  nc_def_var(ncid, "top_y", NC_INT, 1, &dimid, &top_y_vid);
-  nc_def_var(ncid, "cnt_x", NC_INT, 1, &dimid, &cnt_x_vid);
-  nc_def_var(ncid, "cnt_y", NC_INT, 1, &dimid, &cnt_y_vid);
+  nc_def_var(ncid, "global_x", NC_INT, 1, &dimid, &top_x_vid);
+  nc_def_var(ncid, "global_y", NC_INT, 1, &dimid, &top_y_vid);
+  nc_def_var(ncid, "local_extent_x", NC_INT, 1, &dimid, &cnt_x_vid);
+  nc_def_var(ncid, "local_extent_y", NC_INT, 1, &dimid, &cnt_y_vid);
 
   // Write metadata to file
   nc_enddef(ncid);
@@ -196,7 +197,7 @@ void Partitioner::save_metadata(const std::string& filename) const
 Partitioner* Partitioner::Factory::create(MPI_Comm comm, int argc, char** argv,
                                           PartitionerType type)
 {
-  if (type == PartitionerType::Zoltan)
+  if (type == PartitionerType::Zoltan_RCB)
     return ZoltanPartitioner::create(comm, argc, argv);
   else
     throw std::runtime_error("Invalid partitioner!");

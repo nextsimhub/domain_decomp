@@ -1,17 +1,24 @@
 /*!
  * @file Partitioner.hpp
- * @date 25 June 2022
  * @author Athena Elafrou <ae488@cam.ac.uk>
+ * @date 25 June 2022
  */
 
 #pragma once
 
 #include "Grid.hpp"
 
-enum class PartitionerType { Zoltan };
+/*!
+ * Supported partitioners.
+ */
+enum class PartitionerType {
+  Zoltan_RCB /*!< Recursive Coordinate Bisection (RCB) geometric partitioning
+                algorithm from the Zoltan toolkit */
+};
 
-/**
- * @brief Abstract polymorphic class that encapsulates a grid partitioner
+/*!
+ * @class Partitioner
+ * @brief Abstract polymorphic class that encapsulates a 2D grid partitioner.
  */
 class Partitioner
 {
@@ -20,16 +27,44 @@ public:
   Partitioner(const Partitioner&) = delete;
   Partitioner& operator=(const Partitioner&) = delete;
 
-  // Destructor
+  /*!
+   * @brief Destructor.
+   */
   virtual ~Partitioner(){};
 
-  // Partition a grid
+  /*!
+   * @brief Partitions a 2D grid into rectangular boxes, one per process.
+   *
+   * Partitions a 2D grid into rectangular boxes, one per process, taking into
+   * account a land mask, if provided.
+   */
   virtual void partition(Grid& grid) = 0;
 
-  // Save the results of the domain decomposition in a netCDF file
+  /*!
+   * @brief Saves the partition IDs of the latest 2D domain decomposition in a
+   * NetCDF file.
+   *
+   * Saves the partition IDs of the latest 2D domain decomposition in a NetCDF
+   * file. The NetCDF file contains dimensions x and y and integer variable
+   * pid(x, y) which defines the partition ID of each point in the grid.
+   *
+   * @param filename Name of the NetCDF file.
+   */
   void save_mask(const std::string& filename) const;
 
-  // Save the results of the domain decomposition in a netCDF file
+  /*!
+   * @brief Saves the boxes of the latest domain decomposition in a NetCDF file.
+   *
+   * Saves the boxes of the latest 2D domain decomposition in a NetCDF file. The
+   * NetCDF file contains a dimension P equal to the number of partitions and
+   * integer variables global_x(P), global_y(P), local_extent_x(P) and
+   * local_extent_y(P). Variables global_x and global_y are defined as the
+   * coordinates of the upper left corner of the box for each partition, while
+   * the local_extent_x and local_extent_y variables define the local extent of
+   * the x and y dimensions respectively.
+   *
+   * @param filename Name of the NetCDF file.
+   */
   void save_metadata(const std::string& filename) const;
 
 protected:
@@ -39,21 +74,30 @@ protected:
   Partitioner(MPI_Comm comm, int argc, char** argv);
 
 protected:
-  MPI_Comm _comm;                 // MPI communicator
-  int _rank = -1;                 // Process rank
-  int _num_procs = -1;            // Total number of processes in communicator
-  int _num_procs_x = -1;          // Total number of processes in x axis
-  int _num_procs_y = -1;          // Total number of processes in y axis
-  int _global_dim_x = 0;          // Global longitude dimension
-  int _global_dim_y = 0;          // Global latitude dimension
-  int _local_dim_x = 0;           // Local longitude dimension (original)
-  int _local_dim_y = 0;           // Local latitude dimension (original)
-  int _global_top_x = -1;         // Global top left longitude (original)
-  int _global_top_y = -1;         // Global top left latitude (original)
+  MPI_Comm _comm;         // MPI communicator
+  int _rank = -1;         // Process rank
+  int _num_procs = -1;    // Total number of processes in communicator
+  int _num_procs_x = -1;  // Total number of processes in x dimension
+  int _num_procs_y = -1;  // Total number of processes in y dimension
+  int _global_dim_x = 0;  // Global extent in x dimension
+  int _global_dim_y = 0;  // Global extent in y dimension
+  int _local_dim_x = 0;   // Local extent in x dimension (original)
+  int _local_dim_y = 0;   // Local extent in y dimension (original)
+  int _global_top_x = -1; // Global x coordinate of top left corner (original)
+  int _global_top_y = -1; // Global y coordinate of top left corner (original)
   std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
 
 public:
   struct Factory {
+    /*!
+     * @brief Factory function for creating grid partitioners.
+     *
+     * @param comm MPI communicator.
+     * @param argc The number of arguments.
+     * @param argv The argument vector.
+     * @param type Type of partitioner.
+     * @return A Partitioner object.
+     */
     static Partitioner* create(MPI_Comm comm, int argc, char** argv,
                                PartitionerType type);
   };

@@ -1,7 +1,7 @@
 /*!
  * @file ZoltanPartitioner.hpp
- * @date 25 June 2022
  * @author Athena Elafrou <ae488@cam.ac.uk>
+ * @date 25 June 2022
  */
 
 #pragma once
@@ -11,7 +11,15 @@
 
 #include <zoltan_cpp.h>
 
-//! A class that encapsulates a grid partitioner
+/*!
+ * @class ZoltanPartitioner
+ * @brief A class that encapsulates a 2D grid partitioner using the Zoltan
+ * toolkit.
+ *
+ * A class that encapsulates a 2D grid partitioner using the Zoltan toolkit. We
+ * use the Recursive Coordinate Bisection (RCB) geometric partitioning
+ * algorithm.
+ */
 class ZoltanPartitioner final : public Partitioner
 {
 public:
@@ -19,19 +27,31 @@ public:
   ZoltanPartitioner(const ZoltanPartitioner&) = delete;
   ZoltanPartitioner& operator=(const ZoltanPartitioner&) = delete;
 
-  // Destructor
+  /*!
+   * @brief Destructor.
+   */
   ~ZoltanPartitioner() { delete _zoltan; }
 
-  // Construct a partitioner
-  // We are using the named constructor idiom so that objects can only be
-  // created in the heap to ensure it's dtor is executed before MPI_Finalize()
+  /*!
+   * @brief Create a Zoltan partitioner.
+   *
+   * @param comm MPI communicator.
+   * @param argc The number of arguments.
+   * @param argv The argument vector.
+   * @return A ZoltanPartitioner object.
+   */
   static ZoltanPartitioner* create(MPI_Comm comm, int argc, char** argv);
 
-  // Partition a grid
+  /*!
+   * @brief Partitions a 2D grid into rectangular boxes, one per process.
+   *
+   * Partitions a 2D grid into rectangular boxes, one per process, taking into
+   * account a land mask, if provided.
+   */
   void partition(Grid& grid) override;
 
 protected:
-  // Construct a Zoltan partitioner
+  // Constructor
   ZoltanPartitioner(MPI_Comm comm, int argc, char** argv);
 
 private:

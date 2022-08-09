@@ -10,7 +10,6 @@
 #include <cmath>
 
 #include <netcdf>
-#include <netcdf_par.h>
 
 static void find_factors(int n, int& factor_a, int& factor_b)
 {
@@ -37,9 +36,9 @@ Grid::Grid(MPI_Comm comm, int argc, char** argv, const std::string& filename)
 
   MPI_Comm_rank(comm, &_rank);
 
-  // Retrieve the dimension of each axis
-  _global_dim_x = data_group.getDim(x_axis_id).getSize();
-  _global_dim_y = data_group.getDim(y_axis_id).getSize();
+  // Retrieve the dimension of each dimension
+  _global_dim_x = data_group.getDim(x_dim_id).getSize();
+  _global_dim_y = data_group.getDim(y_dim_id).getSize();
 
   // Initiallly we partition assuming there is no land mask
   // Figure out my subset of objects

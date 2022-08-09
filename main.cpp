@@ -1,7 +1,7 @@
 /*!
  * @file main.cpp
- * @date 1 May 2022
  * @author Athena Elafrou <ae488@cam.ac.uk>
+ * @date 1 May 2022
  */
 
 #include <cstdio>
@@ -23,8 +23,8 @@ int main(int argc, char* argv[])
   Grid* grid = Grid::create(comm, argc, argv, argv[1]);
 
   // Create a Zoltan partitioner
-  Partitioner* partitioner
-      = Partitioner::Factory::create(comm, argc, argv, PartitionerType::Zoltan);
+  Partitioner* partitioner = Partitioner::Factory::create(
+      comm, argc, argv, PartitionerType::Zoltan_RCB);
 
   // Partition grid
   partitioner->partition(*grid);
