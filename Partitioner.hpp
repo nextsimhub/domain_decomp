@@ -36,7 +36,8 @@ public:
    * @brief Partitions a 2D grid into rectangular boxes, one per process.
    *
    * Partitions a 2D grid into rectangular boxes, one per process, taking into
-   * account a land mask, if provided.
+   * account a land mask, if provided. The Grid object is updated with the new
+   * partitioning information.
    */
   virtual void partition(Grid& grid) = 0;
 
@@ -74,17 +75,27 @@ protected:
   Partitioner(MPI_Comm comm, int argc, char** argv);
 
 protected:
-  MPI_Comm _comm;         // MPI communicator
-  int _rank = -1;         // Process rank
-  int _num_procs = -1;    // Total number of processes in communicator
-  int _num_procs_x = -1;  // Total number of processes in x dimension
-  int _num_procs_y = -1;  // Total number of processes in y dimension
-  int _global_dim_x = 0;  // Global extent in x dimension
-  int _global_dim_y = 0;  // Global extent in y dimension
-  int _local_dim_x = 0;   // Local extent in x dimension (original)
-  int _local_dim_y = 0;   // Local extent in y dimension (original)
-  int _global_top_x = -1; // Global x coordinate of top left corner (original)
-  int _global_top_y = -1; // Global y coordinate of top left corner (original)
+  MPI_Comm _comm;        // MPI communicator
+  int _rank = -1;        // Process rank
+  int _num_procs = -1;   // Total number of processes in communicator
+  int _num_procs_0 = -1; // Total number of processes in first dimension
+  int _num_procs_1 = -1; // Total number of processes in second dimension
+  int _global_ext_0 = 0; // Global extent in first extension
+  int _global_ext_1 = 0; // Global extent in second extension
+  int _local_ext_0 = 0;  // Local extent in first dimension (original)
+  int _local_ext_1 = 0;  // Local extent in second dimension (original)
+  int _global_0 = -1;    // Global coordinate in first dimension of upper left
+                         // corner (original)
+  int _global_1 = -1;    // Global coordinate in second dimension of upper left
+                         // corner (original)
+  int _local_ext_0_cur
+      = 0; /* Local extent in first dimension (after partitioning) */
+  int _local_ext_1_cur
+      = 0; /* Local extent in second dimension (after partitioning) */
+  int _global_0_cur = -1; /* Global coordinate in first dimension of upper left
+                             corner (after partitioning) */
+  int _global_1_cur = -1; /* Global coordinate in second dimension of upper left
+                             corner (after partitioning) */
   std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
 
 public:

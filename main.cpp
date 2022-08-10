@@ -5,13 +5,16 @@
  */
 
 #include <cstdio>
+#include <iostream>
 
 #include "Grid.hpp"
 #include "Partitioner.hpp"
 
+#include <boost/program_options.hpp>
 #include <mpi.h>
 
 using namespace std;
+namespace po = boost::program_options;
 
 int main(int argc, char* argv[])
 {
@@ -19,8 +22,37 @@ int main(int argc, char* argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Init(&argc, &argv);
 
+  // Configure command line options for dimension names and mask variable name
+  po::options_description desc("Options");
+  desc.add_options()
+    ("help,h", "Display this help message")
+    ("grid,g", po::value<string>()->required(),
+     "NetCDF grid file")
+    ("dim0", po::value<string>()->default_value("x"),
+     "First spatial dimension in netCDF grid file")
+    ("dim1", po::value<string>()->default_value("y"),
+     "Second spatial dimension in netCDF grid file")
+    ("mask,m", po::value<string>()->default_value("mask"),
+     "Mask variable name in netCDF grid file");
+
+  // Parse optional command line options
+  po::variables_map vm;
+  po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
+  if (vm.count("help")) {
+    cout << "Usage: " << argv[0] << " [options]\n" << desc;
+    return 0;
+  }
+  try {
+    po::notify(vm);
+  } catch (po::error& e) {
+    cerr << "ERROR: " << e.what() << endl;
+    return 1;
+  }
+
   // Build grid from netCDF file
-  Grid* grid = Grid::create(comm, argc, argv, argv[1]);
+  Grid* grid
+      = Grid::create(comm, vm["grid"].as<string>(), vm["dim0"].as<string>(),
+                     vm["dim1"].as<string>(), vm["mask"].as<string>());
 
   // Create a Zoltan partitioner
   Partitioner* partitioner = Partitioner::Factory::create(

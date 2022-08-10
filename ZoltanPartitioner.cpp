@@ -6,9 +6,11 @@
 
 #include "ZoltanPartitioner.hpp"
 
+#include <algorithm>
+#include <unordered_map>
+
 #include <netcdf>
 #include <netcdf_par.h>
-#include <unordered_map>
 
 static int get_num_objects(void* data, int* ierr)
 {
@@ -58,9 +60,9 @@ static void get_geometry_list(void* data, int num_gid_entries,
   // Use grid coordinates
   for (int i = 0; i < num_obj; i++) {
     geom_vec[2 * i]
-        = grid->get_nonzero_object_ids()[i] / grid->get_global_dim_y();
+        = grid->get_nonzero_object_ids()[i] / grid->get_global_ext_1();
     geom_vec[2 * i + 1]
-        = grid->get_nonzero_object_ids()[i] % grid->get_global_dim_y();
+        = grid->get_nonzero_object_ids()[i] % grid->get_global_ext_1();
   }
 
   return;
@@ -95,14 +97,15 @@ ZoltanPartitioner* ZoltanPartitioner::create(MPI_Comm comm, int argc,
 
 void ZoltanPartitioner::partition(Grid& grid)
 {
-  _num_procs_x = grid.get_num_procs_x();
-  _num_procs_y = grid.get_num_procs_y();
-  _global_dim_x = grid.get_global_dim_x();
-  _global_dim_y = grid.get_global_dim_y();
-  _local_dim_x = grid.get_local_dim_x();
-  _local_dim_y = grid.get_local_dim_y();
-  _global_top_x = grid.get_global_top_x();
-  _global_top_y = grid.get_global_top_y();
+  // Load initial grid state
+  _num_procs_0 = grid.get_num_procs_0();
+  _num_procs_1 = grid.get_num_procs_1();
+  _global_ext_0 = grid.get_global_ext_0();
+  _global_ext_1 = grid.get_global_ext_1();
+  _local_ext_0 = grid.get_local_ext_0();
+  _local_ext_1 = grid.get_local_ext_1();
+  _global_0 = grid.get_global_0();
+  _global_1 = grid.get_global_1();
 
   // Set Zoltan parameters for RCB partitioning
   // General parameters
@@ -175,4 +178,111 @@ void ZoltanPartitioner::partition(Grid& grid)
                        &import_to_part);
   Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs,
                        &export_to_part);
+
+  // Find new bounding boxes for each process
+  std::vector<int> min_x(_num_procs, _global_ext_0);
+  std::vector<int> min_y(_num_procs, _global_ext_1);
+  std::vector<int> max_x(_num_procs, -1);
+  std::vector<int> max_y(_num_procs, -1);
+  for (int i = 0; i < _proc_id.size(); i++) {
+    // Find global 2D coordinates of element
+    int x = i / _local_ext_1 + (_rank / _num_procs_1) * _local_ext_0;
+    int y = i % _local_ext_1 + (_rank % _num_procs_1) * _local_ext_1;
+    if (_proc_id[i] != -1) {
+      if (x > max_x[_proc_id[i]])
+        max_x[_proc_id[i]] = x;
+      if (y > max_y[_proc_id[i]])
+        max_y[_proc_id[i]] = y;
+      if (x < min_x[_proc_id[i]])
+        min_x[_proc_id[i]] = x;
+      if (y < min_y[_proc_id[i]])
+        min_y[_proc_id[i]] = y;
+    }
+  }
+
+  // Find global bounding boxes for each process and update grid
+  std::vector<int> global_min_x(_num_procs);
+  std::vector<int> global_min_y(_num_procs);
+  std::vector<int> global_max_x(_num_procs);
+  std::vector<int> global_max_y(_num_procs);
+  MPI_Allreduce(min_x.data(), global_min_x.data(), _num_procs, MPI_INT, MPI_MIN,
+                _comm);
+  MPI_Allreduce(min_y.data(), global_min_y.data(), _num_procs, MPI_INT, MPI_MIN,
+                _comm);
+  MPI_Allreduce(max_x.data(), global_max_x.data(), _num_procs, MPI_INT, MPI_MAX,
+                _comm);
+  MPI_Allreduce(max_y.data(), global_max_y.data(), _num_procs, MPI_INT, MPI_MAX,
+                _comm);
+
+  // Expand bounding boxes to account for land points in x dimension
+  std::vector<int> coords(_num_procs_0 * 2);
+  for (int j = 0; j < _num_procs_1; j++) {
+    const int step
+        = (_num_procs_0 == _num_procs || _num_procs_1 == _num_procs) ? 1 : 2;
+    // Sort points on x dimension for processes in column j
+    int cnt = 0;
+    for (int p = j; p < _num_procs; p += step) {
+      coords[2 * cnt] = global_min_x[p];
+      coords[2 * cnt + 1] = global_max_x[p];
+      cnt++;
+    }
+    std::sort(coords.begin(), coords.end());
+    for (int i = 1; i < coords.size() - 1; i += 2) {
+      if (coords[i + 1] - coords[i] != 1)
+        coords[i] += coords[i + 1] - coords[i] - 1;
+    }
+    // Correct first and last point if necessary
+    coords[0] = 0;
+    coords[2 * _num_procs_0 - 1] = _global_ext_0 - 1;
+
+    // Update bounding boxes
+    cnt = 0;
+    for (int p = j; p < _num_procs; p += step) {
+      global_min_x[p] = coords[2 * cnt];
+      global_max_x[p] = coords[2 * cnt + 1];
+      cnt++;
+    }
+  }
+
+  // Expand bounding boxes to account for land points in y dimension
+  coords.clear();
+  coords.resize(_num_procs_1 * 2);
+  for (int j = 0; j < _num_procs_0; j++) {
+    const int step
+        = (_num_procs_0 == _num_procs || _num_procs_1 == _num_procs) ? 1 : 2;
+    // Sort points on y dimension for processes in row j
+    int cnt = 0;
+    for (int p = step * j; p < (j + 1) * _num_procs_1; p++) {
+      coords[2 * cnt] = global_min_y[p];
+      coords[2 * cnt + 1] = global_max_y[p];
+      cnt++;
+    }
+    std::sort(coords.begin(), coords.end());
+    for (int i = 1; i < coords.size() - 1; i += 2) {
+      if (coords[i + 1] - coords[i] != 1)
+        coords[i] += coords[i + 1] - coords[i] - 1;
+    }
+    // Correct first and last point if necessary
+    coords[0] = 0;
+    coords[2 * _num_procs_1 - 1] = _global_ext_1 - 1;
+
+    cnt = 0;
+    for (int p = step * j; p < (j + 1) * _num_procs_1; p++) {
+      global_min_y[p] = coords[2 * cnt];
+      global_max_y[p] = coords[2 * cnt + 1];
+      cnt++;
+    }
+  }
+
+  // Update internal state
+  _global_0_cur = global_min_x[_rank];
+  _global_1_cur = global_min_y[_rank];
+  _local_ext_0_cur = global_max_x[_rank] - _global_0_cur + 1;
+  _local_ext_1_cur = global_max_y[_rank] - _global_1_cur + 1;
+
+  // Update grid with new boxes
+  grid.set_global_0(_global_0_cur);
+  grid.set_global_1(_global_1_cur);
+  grid.set_local_ext_0(_local_ext_0_cur);
+  grid.set_local_ext_1(_local_ext_1_cur);
 }
