@@ -115,11 +115,11 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
       // The convention is that sea data points will have a positive value
       // and land points a zero value
       if (_land_mask[i] > 0) {
-        int _local_0 = i / _local_ext_1;
-        int _local_1 = i % _local_ext_1;
-        int _global_0 = _local_0 + _global_0;
-        int _global_1 = _local_1 + _global_1;
-        _object_id.push_back(_global_0 * _global_ext_1 + _global_1);
+        int local_0 = i / _local_ext_1;
+        int local_1 = i % _local_ext_1;
+        int global_0 = local_0 + _global_0;
+        int global_1 = local_1 + _global_1;
+        _object_id.push_back(global_0 * _global_ext_1 + global_1);
         _sparse_to_dense.push_back(i);
         _num_nonzero_objects++;
       }
@@ -127,11 +127,11 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   } else {
     _num_nonzero_objects = _num_objects;
     for (int i = 0; i < _num_objects; i++) {
-      int _local_0 = i / _local_ext_1;
-      int _local_1 = i % _local_ext_1;
-      int _global_0 = _local_0 + _global_0;
-      int _global_1 = _local_1 + _global_1;
-      _object_id.push_back(_global_0 * _global_ext_1 + _global_1);
+      int local_0 = i / _local_ext_1;
+      int local_1 = i % _local_ext_1;
+      int global_0 = local_0 + _global_0;
+      int global_1 = local_1 + _global_1;
+      _object_id.push_back(global_0 * _global_ext_1 + global_1);
     }
   }
 
