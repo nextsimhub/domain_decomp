@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include <netcdf>
+#include <netcdf_par.h>
 
 static void find_factors(int n, int& factor_a, int& factor_b)
 {
@@ -29,21 +30,30 @@ Grid* Grid::create(MPI_Comm comm, const std::string& filename,
 }
 
 Grid::Grid(MPI_Comm comm, const std::string& filename,
-           const std::string& dim0_id, const std::string& dim1_id,
-           const std::string& mask_id)
+           const std::string& dim0_name, const std::string& dim1_name,
+           const std::string& mask_name)
     : _comm(comm)
 {
-  netCDF::NcFile nc_file(filename, netCDF::NcFile::read);
-  // The data group contains the information we need
-  netCDF::NcGroup data_group(nc_file.getGroup(data_id));
+  // Use C API for parallel I/O
+  int nc_id, nc_o_mode;
+  nc_o_mode = NC_NOWRITE;
+  NC_CHECK(
+      nc_open_par(filename.c_str(), nc_o_mode, _comm, MPI_INFO_NULL, &nc_id));
+
+  // Extract dimensions from data group
+  int data_nc_id;
+  NC_CHECK(nc_inq_ncid(nc_id, "data", &data_nc_id));
+  int dim0_nc_id, dim1_nc_id;
+  NC_CHECK(nc_inq_dimid(data_nc_id, dim0_name.c_str(), &dim0_nc_id));
+  NC_CHECK(nc_inq_dimid(data_nc_id, dim1_name.c_str(), &dim1_nc_id));
 
   MPI_Comm_rank(comm, &_rank);
 
   // Retrieve the extent of each dimension of interest. The dimensions of
   // interest are the spatial dimensions of the grid. These are named "x" and
   // "y" by default.
-  _global_ext_0 = data_group.getDim(dim0_id).getSize();
-  _global_ext_1 = data_group.getDim(dim1_id).getSize();
+  NC_CHECK(nc_inq_dimlen(data_nc_id, dim0_nc_id, &_global_ext_0));
+  NC_CHECK(nc_inq_dimlen(data_nc_id, dim1_nc_id, &_global_ext_1));
 
   // Initially we partition assuming there is no land mask
   // Figure out my subset of objects
@@ -67,30 +77,38 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   _num_objects = _local_ext_0 * _local_ext_1;
 
   // Retrieve the land mask, if available
-  netCDF::NcVar mask_var = data_group.getVar(mask_id);
-  if (!mask_var.isNull()) {
+  int mask_nc_id;
+  int nc_err;
+  nc_err = nc_inq_varid(data_nc_id, mask_name.c_str(), &mask_nc_id);
+
+  if (nc_err == NC_NOERR && nc_err != NC_ENOTVAR) {
+    // Data reads are independent by default, so we need to switch to collective
+    // for improved parallel I/O performance
+    NC_CHECK(nc_var_par_access(data_nc_id, mask_nc_id, NC_COLLECTIVE));
+
     // Verify the order of dimensions provided is correct by comparing to the
     // dimension order of the mask variable
-    std::vector<netCDF::NcDim> dims = mask_var.getDims();
-    if (dims[0].getName() != dim0_id || dims[1].getName() != dim1_id) {
+    const int NDIMS = 2;
+    int dim_id[NDIMS];
+    char dim_name[NDIMS][128];
+    NC_CHECK(nc_inq_vardimid(data_nc_id, mask_nc_id, &dim_id[0]));
+    NC_CHECK(nc_inq_dimname(data_nc_id, dim_id[0], &dim_name[0][0]));
+    NC_CHECK(nc_inq_dimname(data_nc_id, dim_id[1], &dim_name[1][0]));
+    if (dim_name[0] != dim0_name || dim_name[1] != dim1_name) {
       throw std::runtime_error("Dimension ordering provided does not match "
                                "ordering in netCDF grid file");
     }
 
     _land_mask.resize(_num_objects);
-    std::vector<size_t> start(2);
-    std::vector<size_t> count(2);
-    std::vector<ptrdiff_t> stride(2);
+    size_t start[NDIMS], count[NDIMS];
     // Coordinate of first element
     start[0] = _global_0;
     start[1] = _global_1;
     // Number of elements in every extension
     count[0] = _local_ext_0;
     count[1] = _local_ext_1;
-    // Stride in every extension
-    stride[0] = 1;
-    stride[1] = 1;
-    mask_var.getVar(start, count, stride, _land_mask.data());
+    NC_CHECK(nc_get_vara_int(data_nc_id, mask_nc_id, start, count,
+                             _land_mask.data()));
 
     // Apply land mask
     for (int i = 0; i < _num_objects; i++) {
@@ -117,7 +135,7 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
     }
   }
 
-  nc_file.close();
+  NC_CHECK(nc_close(nc_id));
 }
 
 int Grid::get_num_objects() const { return _num_objects; }

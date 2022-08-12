@@ -57,15 +57,18 @@ public:
    *
    * @param comm MPI communicator.
    * @param filename Grid file in netCDF format.
+   * @param dim0_name Name of first grid dimension in netCDF file (optional)
+   * @param dim1_name Name of second grid dimension in netCDF file (optional)
+   * @param mask_name Name of land mask variable in netCDF file (optional)
    * @return A distributed 2D grid object partitioned evenly in terms of grid
    * points.
    */
   // We are using the named constructor idiom so that objects can only be
   // created in the heap to ensure it's dtor is executed before MPI_Finalize()
   static Grid* create(MPI_Comm comm, const std::string& filename,
-                      const std::string dim0_id = "x",
-                      const std::string dim1_id = "y",
-                      const std::string mask_id = "mask");
+                      const std::string dim0_name = "x",
+                      const std::string dim1_name = "y",
+                      const std::string mask_name = "mask");
 
   /*!
    * @brief Returns the total number of objects in the local domain.
@@ -221,3 +224,10 @@ private:
   std::vector<int> _sparse_to_dense = {}; // Map from sparse to dense index
   std::vector<int> _object_id = {};       // Unique non-land object IDs
 };
+
+#define NC_CHECK(func)                                                         \
+  {                                                                            \
+    int e = (func);                                                            \
+    if (e != NC_NOERR)                                                         \
+      throw std::runtime_error("ERROR: " + std::string(nc_strerror(e)));       \
+  }

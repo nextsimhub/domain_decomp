@@ -22,75 +22,78 @@ Partitioner::Partitioner(MPI_Comm comm, int argc, char** argv)
 void Partitioner::save_mask(const std::string& filename) const
 {
   // Use C API for parallel I/O
-  const int NDIMS = 2;
-  int ncid, vid, dimids[NDIMS];
-  size_t start[NDIMS], count[NDIMS];
-
-  nc_create_par(filename.c_str(), NC_MPIIO | NC_NETCDF4, _comm, MPI_INFO_NULL,
-                &ncid);
-  nc_put_att_int(ncid, NC_GLOBAL, "num_processes", NC_SHORT, 1, &_num_procs);
+  int nc_id, nc_mode;
+  nc_mode = NC_MPIIO | NC_NETCDF4;
+  NC_CHECK(
+      nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
+  NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "num_processes", NC_SHORT, 1,
+                          &_num_procs));
 
   // Create 2 dimensions
   // The values to be written are associated with the netCDF variable by
   // assuming that the last dimension of the netCDF variable varies fastest in
   // the C interface
-  nc_def_dim(ncid, "x", _global_ext_0, &dimids[0]);
-  nc_def_dim(ncid, "y", _global_ext_1, &dimids[1]);
+  const int NDIMS = 2;
+  int dimid[NDIMS];
+  NC_CHECK(nc_def_dim(nc_id, "x", _global_ext_0, &dimid[0]));
+  NC_CHECK(nc_def_dim(nc_id, "y", _global_ext_1, &dimid[1]));
 
   // Create variables
-  nc_def_var(ncid, "pid", NC_SHORT, NDIMS, dimids, &vid);
+  int mask_nc_id;
+  NC_CHECK(nc_def_var(nc_id, "pid", NC_SHORT, NDIMS, dimid, &mask_nc_id));
 
   // Write metadata to file
-  nc_enddef(ncid);
+  NC_CHECK(nc_enddef(nc_id));
 
   // Set up slab for this process
+  size_t start[NDIMS], count[NDIMS];
   start[0] = _global_0;
   start[1] = _global_1;
   count[0] = _local_ext_0;
   count[1] = _local_ext_1;
-
   // Store data
-  nc_var_par_access(ncid, vid, NC_COLLECTIVE);
-  nc_put_vara_int(ncid, vid, start, count, _proc_id.data());
-  nc_close(ncid);
+  NC_CHECK(nc_var_par_access(nc_id, mask_nc_id, NC_COLLECTIVE));
+  NC_CHECK(nc_put_vara_int(nc_id, mask_nc_id, start, count, _proc_id.data()));
+  NC_CHECK(nc_close(nc_id));
 }
 
 void Partitioner::save_metadata(const std::string& filename) const
 {
   // Use C API for parallel I/O
-  int ncid;
-  nc_create_par(filename.c_str(), NC_MPIIO | NC_NETCDF4, _comm, MPI_INFO_NULL,
-                &ncid);
+  int nc_id, nc_mode;
+  nc_mode = NC_MPIIO | NC_NETCDF4;
+  NC_CHECK(
+      nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
 
   // Define dimensions
   int dimid;
-  nc_def_dim(ncid, "P", _num_procs, &dimid);
+  NC_CHECK(nc_def_dim(nc_id, "P", _num_procs, &dimid));
 
   // Define variables
   int top_x_vid, top_y_vid;
   int cnt_x_vid, cnt_y_vid;
-  nc_def_var(ncid, "global_x", NC_INT, 1, &dimid, &top_x_vid);
-  nc_def_var(ncid, "global_y", NC_INT, 1, &dimid, &top_y_vid);
-  nc_def_var(ncid, "local_extent_x", NC_INT, 1, &dimid, &cnt_x_vid);
-  nc_def_var(ncid, "local_extent_y", NC_INT, 1, &dimid, &cnt_y_vid);
+  NC_CHECK(nc_def_var(nc_id, "global_x", NC_INT, 1, &dimid, &top_x_vid));
+  NC_CHECK(nc_def_var(nc_id, "global_y", NC_INT, 1, &dimid, &top_y_vid));
+  NC_CHECK(nc_def_var(nc_id, "local_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
+  NC_CHECK(nc_def_var(nc_id, "local_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
 
   // Write metadata to file
-  nc_enddef(ncid);
+  NC_CHECK(nc_enddef(nc_id));
 
   // Set up slab for this process
   const size_t start = _rank;
 
   // Store data
-  nc_var_par_access(ncid, top_x_vid, NC_COLLECTIVE);
-  nc_put_var1_int(ncid, top_x_vid, &start, &_global_0_cur);
-  nc_var_par_access(ncid, top_y_vid, NC_COLLECTIVE);
-  nc_put_var1_int(ncid, top_y_vid, &start, &_global_1_cur);
-  nc_var_par_access(ncid, cnt_x_vid, NC_COLLECTIVE);
-  nc_put_var1_int(ncid, cnt_x_vid, &start, &_local_ext_0_cur);
-  nc_var_par_access(ncid, cnt_y_vid, NC_COLLECTIVE);
-  nc_put_var1_int(ncid, cnt_y_vid, &start, &_local_ext_1_cur);
+  NC_CHECK(nc_var_par_access(nc_id, top_x_vid, NC_COLLECTIVE));
+  NC_CHECK(nc_put_var1_int(nc_id, top_x_vid, &start, &_global_0_cur));
+  NC_CHECK(nc_var_par_access(nc_id, top_y_vid, NC_COLLECTIVE));
+  NC_CHECK(nc_put_var1_int(nc_id, top_y_vid, &start, &_global_1_cur));
+  NC_CHECK(nc_var_par_access(nc_id, cnt_x_vid, NC_COLLECTIVE));
+  NC_CHECK(nc_put_var1_int(nc_id, cnt_x_vid, &start, &_local_ext_0_cur));
+  NC_CHECK(nc_var_par_access(nc_id, cnt_y_vid, NC_COLLECTIVE));
+  NC_CHECK(nc_put_var1_int(nc_id, cnt_y_vid, &start, &_local_ext_1_cur));
 
-  nc_close(ncid);
+  NC_CHECK(nc_close(nc_id));
 }
 
 Partitioner* Partitioner::Factory::create(MPI_Comm comm, int argc, char** argv,
