@@ -99,3 +99,9 @@ It is recommended to build the code in a separate directory form the source dire
 2. In your build directory run `cmake <path-to-src>`
 3. It is recommended to set options by calling `ccmake` in your build directory. Alternatively you can use the `-DVARIABLE=value` syntax in the previous step.
 4. Run `make` to build.
+
+### How to run
+The project produces a single executable called `partition` that can be used to partition a 2D grid with an optional land mask represented as a netCDF file. By default, the name of the dimensions in the netCDF file are `x` and `y` with the `y` dimension increasing the fastest, and the name of the variable representing the land mask is `mask`. These can be overridden using command-line options. For example:
+```
+mpirun -n 2 ./partition grid.nc --dim0 y --dim1 x --mask land_mask
+```
