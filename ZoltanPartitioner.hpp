@@ -9,6 +9,8 @@
 #include "Grid.hpp"
 #include "Partitioner.hpp"
 
+#include <memory>
+
 #include <zoltan_cpp.h>
 
 /*!
@@ -30,7 +32,7 @@ public:
   /*!
    * @brief Destructor.
    */
-  ~ZoltanPartitioner() { delete _zoltan; }
+  ~ZoltanPartitioner() {}
 
   /*!
    * @brief Create a Zoltan partitioner.
@@ -55,5 +57,5 @@ protected:
   ZoltanPartitioner(MPI_Comm comm, int argc, char** argv);
 
 private:
-  Zoltan* _zoltan = nullptr; // Zoltan object
+  std::unique_ptr<Zoltan> _zoltan = nullptr; // Zoltan object
 };

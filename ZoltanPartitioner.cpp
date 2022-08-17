@@ -81,7 +81,7 @@ ZoltanPartitioner::ZoltanPartitioner(MPI_Comm comm, int argc, char** argv)
   }
 
   // Create a Zoltan object
-  _zoltan = new Zoltan(comm);
+  _zoltan = std::make_unique<Zoltan>(comm);
   if (ret != ZOLTAN_OK) {
     std::cout << "Creating Zoltan object failed on process " << _rank
               << std::endl;
@@ -148,7 +148,6 @@ void ZoltanPartitioner::partition(Grid& grid)
 
   if (ret != ZOLTAN_OK) {
     std::cout << "Partitioning failed on process " << _rank << std::endl;
-    delete _zoltan;
     MPI_Finalize();
     exit(EXIT_FAILURE);
   }
