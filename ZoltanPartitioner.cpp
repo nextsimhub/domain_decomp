@@ -7,6 +7,8 @@
 #include "ZoltanPartitioner.hpp"
 
 #include <algorithm>
+#include <cfloat>
+#include <cmath>
 #include <unordered_map>
 
 #include <netcdf>
@@ -107,6 +109,27 @@ void ZoltanPartitioner::partition(Grid& grid)
   _global_0 = grid.get_global_0();
   _global_1 = grid.get_global_1();
 
+  if (_num_procs == 1) {
+    _global_0_new = _global_0;
+    _global_1_new = _global_1;
+    _local_ext_0_new = _local_ext_0;
+    _local_ext_1_new = _local_ext_1;
+
+    if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
+      const int* land_mask = grid.get_land_mask();
+      _proc_id.resize(grid.get_num_objects(), -1);
+      for (int i = 0; i < grid.get_num_objects(); i++) {
+        if (land_mask[i] > 0) {
+          _proc_id[i] = _rank;
+        }
+      }
+    } else {
+      _proc_id.resize(grid.get_num_objects(), _rank);
+    }
+
+    return;
+  }
+
   // Set Zoltan parameters for RCB partitioning
   // General parameters
   //_zoltan->Set_Param("DEBUG_LEVEL", "7");
@@ -119,7 +142,9 @@ void ZoltanPartitioner::partition(Grid& grid)
   _zoltan->Set_Param("LB_METHOD", "RCB");
   _zoltan->Set_Param("RCB_OUTPUT_LEVEL", "1");
   _zoltan->Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
+  _zoltan->Set_Param("RCB_LOCK_DIRECTIONS", "1");
   _zoltan->Set_Param("RCB_SET_DIRECTIONS", "3");
+  _zoltan->Set_Param("RCB_RECOMPUTE_BOX", "1");
   // Query functions
   _zoltan->Set_Num_Obj_Fn(get_num_objects, &grid);
   _zoltan->Set_Obj_List_Fn(get_object_list, &grid);
@@ -152,6 +177,19 @@ void ZoltanPartitioner::partition(Grid& grid)
     exit(EXIT_FAILURE);
   }
 
+  // Find new bounding boxes for each process
+  int ndim;
+  double xmin, ymin, zmin;
+  double xmax, ymax, zmax;
+  _zoltan->RCB_Box(_rank, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
+  _global_0_new = (xmin == -DBL_MAX) ? 0 : std::ceil(xmin);
+  _global_1_new = (ymin == -DBL_MAX) ? 0 : std::ceil(ymin);
+  int global_0_lower, global_1_lower;
+  global_0_lower = (xmax == DBL_MAX) ? _global_ext_0 : std::ceil(xmax);
+  global_1_lower = (ymax == DBL_MAX) ? _global_ext_1 : std::ceil(ymax);
+  _local_ext_0_new = global_0_lower - _global_0_new;
+  _local_ext_1_new = global_1_lower - _global_1_new;
+
   if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
     const int* land_mask = grid.get_land_mask();
     _proc_id.resize(grid.get_num_objects(), -1);
@@ -178,110 +216,9 @@ void ZoltanPartitioner::partition(Grid& grid)
   Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs,
                        &export_to_part);
 
-  // Find new bounding boxes for each process
-  std::vector<int> min_x(_num_procs, _global_ext_0);
-  std::vector<int> min_y(_num_procs, _global_ext_1);
-  std::vector<int> max_x(_num_procs, -1);
-  std::vector<int> max_y(_num_procs, -1);
-  for (int i = 0; i < _proc_id.size(); i++) {
-    // Find global 2D coordinates of element
-    int x = i / _local_ext_1 + (_rank / _num_procs_1) * _local_ext_0;
-    int y = i % _local_ext_1 + (_rank % _num_procs_1) * _local_ext_1;
-    if (_proc_id[i] != -1) {
-      if (x > max_x[_proc_id[i]])
-        max_x[_proc_id[i]] = x;
-      if (y > max_y[_proc_id[i]])
-        max_y[_proc_id[i]] = y;
-      if (x < min_x[_proc_id[i]])
-        min_x[_proc_id[i]] = x;
-      if (y < min_y[_proc_id[i]])
-        min_y[_proc_id[i]] = y;
-    }
-  }
-
-  // Find global bounding boxes for each process and update grid
-  std::vector<int> global_min_x(_num_procs);
-  std::vector<int> global_min_y(_num_procs);
-  std::vector<int> global_max_x(_num_procs);
-  std::vector<int> global_max_y(_num_procs);
-  MPI_Allreduce(min_x.data(), global_min_x.data(), _num_procs, MPI_INT, MPI_MIN,
-                _comm);
-  MPI_Allreduce(min_y.data(), global_min_y.data(), _num_procs, MPI_INT, MPI_MIN,
-                _comm);
-  MPI_Allreduce(max_x.data(), global_max_x.data(), _num_procs, MPI_INT, MPI_MAX,
-                _comm);
-  MPI_Allreduce(max_y.data(), global_max_y.data(), _num_procs, MPI_INT, MPI_MAX,
-                _comm);
-
-  // Expand bounding boxes to account for land points in x dimension
-  std::vector<int> coords(_num_procs_0 * 2);
-  for (int j = 0; j < _num_procs_1; j++) {
-    const int step
-        = (_num_procs_0 == _num_procs || _num_procs_1 == _num_procs) ? 1 : 2;
-    // Sort points on x dimension for processes in column j
-    int cnt = 0;
-    for (int p = j; p < _num_procs; p += step) {
-      coords[2 * cnt] = global_min_x[p];
-      coords[2 * cnt + 1] = global_max_x[p];
-      cnt++;
-    }
-    std::sort(coords.begin(), coords.end());
-    for (int i = 1; i < coords.size() - 1; i += 2) {
-      if (coords[i + 1] - coords[i] != 1)
-        coords[i] += coords[i + 1] - coords[i] - 1;
-    }
-    // Correct first and last point if necessary
-    coords[0] = 0;
-    coords[2 * _num_procs_0 - 1] = _global_ext_0 - 1;
-
-    // Update bounding boxes
-    cnt = 0;
-    for (int p = j; p < _num_procs; p += step) {
-      global_min_x[p] = coords[2 * cnt];
-      global_max_x[p] = coords[2 * cnt + 1];
-      cnt++;
-    }
-  }
-
-  // Expand bounding boxes to account for land points in y dimension
-  coords.clear();
-  coords.resize(_num_procs_1 * 2);
-  for (int j = 0; j < _num_procs_0; j++) {
-    const int step
-        = (_num_procs_0 == _num_procs || _num_procs_1 == _num_procs) ? 1 : 2;
-    // Sort points on y dimension for processes in row j
-    int cnt = 0;
-    for (int p = step * j; p < (j + 1) * _num_procs_1; p++) {
-      coords[2 * cnt] = global_min_y[p];
-      coords[2 * cnt + 1] = global_max_y[p];
-      cnt++;
-    }
-    std::sort(coords.begin(), coords.end());
-    for (int i = 1; i < coords.size() - 1; i += 2) {
-      if (coords[i + 1] - coords[i] != 1)
-        coords[i] += coords[i + 1] - coords[i] - 1;
-    }
-    // Correct first and last point if necessary
-    coords[0] = 0;
-    coords[2 * _num_procs_1 - 1] = _global_ext_1 - 1;
-
-    cnt = 0;
-    for (int p = step * j; p < (j + 1) * _num_procs_1; p++) {
-      global_min_y[p] = coords[2 * cnt];
-      global_max_y[p] = coords[2 * cnt + 1];
-      cnt++;
-    }
-  }
-
-  // Update internal state
-  _global_0_cur = global_min_x[_rank];
-  _global_1_cur = global_min_y[_rank];
-  _local_ext_0_cur = global_max_x[_rank] - _global_0_cur + 1;
-  _local_ext_1_cur = global_max_y[_rank] - _global_1_cur + 1;
-
   // Update grid with new boxes
-  grid.set_global_0(_global_0_cur);
-  grid.set_global_1(_global_1_cur);
-  grid.set_local_ext_0(_local_ext_0_cur);
-  grid.set_local_ext_1(_local_ext_1_cur);
+  grid.set_global_0(_global_0_new);
+  grid.set_global_1(_global_1_new);
+  grid.set_local_ext_0(_local_ext_0_new);
+  grid.set_local_ext_1(_local_ext_1_new);
 }

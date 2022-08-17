@@ -85,13 +85,13 @@ void Partitioner::save_metadata(const std::string& filename) const
 
   // Store data
   NC_CHECK(nc_var_par_access(nc_id, top_x_vid, NC_COLLECTIVE));
-  NC_CHECK(nc_put_var1_int(nc_id, top_x_vid, &start, &_global_0_cur));
+  NC_CHECK(nc_put_var1_int(nc_id, top_x_vid, &start, &_global_0_new));
   NC_CHECK(nc_var_par_access(nc_id, top_y_vid, NC_COLLECTIVE));
-  NC_CHECK(nc_put_var1_int(nc_id, top_y_vid, &start, &_global_1_cur));
+  NC_CHECK(nc_put_var1_int(nc_id, top_y_vid, &start, &_global_1_new));
   NC_CHECK(nc_var_par_access(nc_id, cnt_x_vid, NC_COLLECTIVE));
-  NC_CHECK(nc_put_var1_int(nc_id, cnt_x_vid, &start, &_local_ext_0_cur));
+  NC_CHECK(nc_put_var1_int(nc_id, cnt_x_vid, &start, &_local_ext_0_new));
   NC_CHECK(nc_var_par_access(nc_id, cnt_y_vid, NC_COLLECTIVE));
-  NC_CHECK(nc_put_var1_int(nc_id, cnt_y_vid, &start, &_local_ext_1_cur));
+  NC_CHECK(nc_put_var1_int(nc_id, cnt_y_vid, &start, &_local_ext_1_new));
 
   NC_CHECK(nc_close(nc_id));
 }

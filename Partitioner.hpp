@@ -88,13 +88,13 @@ protected:
                          // corner (original)
   int _global_1 = -1;    // Global coordinate in second dimension of upper left
                          // corner (original)
-  int _local_ext_0_cur
+  int _local_ext_0_new
       = 0; /* Local extent in first dimension (after partitioning) */
-  int _local_ext_1_cur
+  int _local_ext_1_new
       = 0; /* Local extent in second dimension (after partitioning) */
-  int _global_0_cur = -1; /* Global coordinate in first dimension of upper left
+  int _global_0_new = -1; /* Global coordinate in first dimension of upper left
                              corner (after partitioning) */
-  int _global_1_cur = -1; /* Global coordinate in second dimension of upper left
+  int _global_1_new = -1; /* Global coordinate in second dimension of upper left
                              corner (after partitioning) */
   std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
 

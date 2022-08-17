@@ -99,14 +99,16 @@ public:
   int get_global_ext_1() const;
 
   /*!
-   * @brief Returns the local extent in the first dimension of the grid.
+   * @brief Returns the local extent in the first dimension of the grid of this
+   * process's partition.
    *
    * @return Local extent in first dimension.
    */
   int get_local_ext_0() const;
 
   /*!
-   * @brief Returns the local extent in the second dimension of the grid.
+   * @brief Returns the local extent in the second dimension of the grid of this
+   * process's partition.
    *
    * @return Local extent in second dimension.
    */
