@@ -6,12 +6,11 @@
 
 #pragma once
 
+#include <memory>
+#include <zoltan_cpp.h>
+
 #include "Grid.hpp"
 #include "Partitioner.hpp"
-
-#include <memory>
-
-#include <zoltan_cpp.h>
 
 /*!
  * @class ZoltanPartitioner

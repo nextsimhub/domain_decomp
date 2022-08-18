@@ -6,10 +6,11 @@
 
 #pragma once
 
+#include <mpi.h>
 #include <string>
 #include <vector>
 
-#include <mpi.h>
+#include "domain_decomp_export.hpp"
 
 /*!
  * @class Grid
@@ -22,7 +23,7 @@
  * evenly among processes using a 2D decomposition, ignoring any land mask. The
  * grid can be subsequently re-partitioned differently using a Partitioner.
  */
-class Grid
+class LIB_EXPORT Grid
 {
   // Default grid metadata naming conventions
   const std::string data_id = "data";

@@ -7,11 +7,12 @@
 #pragma once
 
 #include "Grid.hpp"
+#include "domain_decomp_export.hpp"
 
 /*!
  * Supported partitioners.
  */
-enum class PartitionerType {
+enum class LIB_EXPORT PartitionerType {
   Zoltan_RCB /*!< Recursive Coordinate Bisection (RCB) geometric partitioning
                 algorithm from the Zoltan toolkit */
 };
@@ -20,7 +21,7 @@ enum class PartitionerType {
  * @class Partitioner
  * @brief Abstract polymorphic class that encapsulates a 2D grid partitioner.
  */
-class Partitioner
+class LIB_EXPORT Partitioner
 {
 public:
   // Disallow compiler-generated special functions
@@ -99,7 +100,7 @@ protected:
   std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
 
 public:
-  struct Factory {
+  struct LIB_EXPORT Factory {
     /*!
      * @brief Factory function for creating grid partitioners.
      *
