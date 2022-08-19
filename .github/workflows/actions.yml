@@ -12,7 +12,7 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          sudo apt-get install -y cmake libboost-program-options-dev libhdf5-mpi-dev
+          sudo apt-get install -y cmake libboost-program-options-dev libhdf5-mpi-dev curl
           git clone -b v2.x https://github.com/catchorg/Catch2.git
           cd Catch2
           cmake -Bbuild -H. -DBUILD_TESTING=OFF
