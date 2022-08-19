@@ -10,13 +10,9 @@ We have identified the following requirements for the domain decomposition algor
  - be static (computed either offline or during the initialiasation phase)
  - be scalable
 
-The proposed approach is based on the Recursive Coordinate Bisection (RCB) geometric partitioning algorithm [^1]. Geometric coordinates are first partitioned into two balanced parts. Partitioning continues recursively in each part until the desired number of balanced parts has been created. The algorithm can be tuned to build rectilinear partitions.
+The proposed approach is based on the Recursive Coordinate Bisection (RCB) geometric partitioning algorithm [^1]. Geometric coordinates are first partitioned into two balanced parts. Partitioning continues recursively in each part until the desired number of balanced parts has been created. The algorithm can be tuned to build rectilinear partitions. We are using the implementation of the RCB algorithm available in the [Zoltan](https://sandialabs.github.io/Zoltan/) library developed by Sandia National Laboratories.
 
 [^1]: M. Berger and S. Bokhari. "A partitioning strategy for nonuniform problems on multiprocessors." IEEE Trans. Computers, C-36 (1987) 570-580.
-
-### Example: partitioning the NEMO ORCA1 global domain
-
-![NEMO ORCA1 decomposition to 16 processes](img/ORCA1_RCB_16.png)
 
 ## Getting Started
 
@@ -27,6 +23,8 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 * CMake >= 3.10
 * [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1), [netCDF-4 C++](https://github.com/Unidata/netcdf-cxx4/releases/tag/v4.3.1), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files through PnetCDF
 * Zoltan, built with CMake from the **[Trilinos](https://github.com/trilinos/Trilinos.git)** package
+* [Catch2](https://github.com/catchorg/Catch2) for unit testing
+* [Boost](https://www.boost.org/) program_options library
 
 #### Building Zoltan from source
 
@@ -101,7 +99,48 @@ It is recommended to build the code in a separate directory form the source dire
 4. Run `make` to build.
 
 ### How to run
-The project produces a single executable called `partition` that can be used to partition a 2D grid with an optional land mask represented as a netCDF file. By default, the name of the dimensions in the netCDF file are `x` and `y` with the `y` dimension increasing the fastest, and the name of the variable representing the land mask is `mask`. These can be overridden using command-line options. For example:
+The project produces a shared library named 'libdomain_decomp' and an executable named `decomp` that can be used to partition a 2D grid with an optional land mask represented as a netCDF file. By default, the name of the dimensions in the netCDF file are `x` and `y` with the `y` dimension increasing the fastest, and the name of the variable representing the land mask is `mask`. These can be overridden using command-line options. For example:
 ```
-mpirun -n 2 ./partition grid.nc --dim0 y --dim1 x --mask land_mask
+mpirun -n 2 ./decomp grid.nc --dim0 y --dim1 x --mask land_mask
 ```
+
+The `decomp` tool produces two netCDF files named `partition_mask_<num_mpi_processes>.nc` and `partition_metadata_<num_mpi_processes>.nc` with the following layout:
+
+```
+netcdf partition_mask_2 {
+dimensions:
+	x = 30 ;
+	y = 30 ;
+variables:
+	short pid(x, y) ;
+
+// global attributes:
+		:num_processes = 2s ;
+data:
+
+ pid = ...
+}
+```
+
+The netCDF variable `pid` is defined as the process ID of each point in the grid.
+
+```
+netcdf partition_metadata_2 {
+dimensions:
+	P = 2 ;
+variables:
+	int global_x(P) ;
+	int global_y(P) ;
+	int local_extent_x(P) ;
+	int local_extent_y(P) ;
+data:
+
+ global_x = 0, 16 ;
+ global_y = 0, 0 ;
+ local_extent_x = 16, 14 ;
+ local_extent_y = 30, 30 ;
+}
+
+```
+
+The netCDF variables `global_x/y` are defined as the coordinates of the upper left corner of the bounding box for each MPI process using zero-based indexing and `local_extent_x/y` are the extents in the corresponding dimensions of the bounding box for each MPI process.
