@@ -10,6 +10,8 @@
 #include <cmath>
 #include <stdexcept>
 
+#include <iostream>
+
 #include <netcdf.h>
 #include <netcdf_par.h>
 
@@ -41,9 +43,11 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   NC_CHECK(
       nc_open_par(filename.c_str(), nc_o_mode, _comm, MPI_INFO_NULL, &nc_id));
 
-  // Extract dimensions from data group
+  // Extract group ID in case of enhanced data model
   int data_nc_id;
-  NC_CHECK(nc_inq_ncid(nc_id, "data", &data_nc_id));
+  int ret = nc_inq_ncid(nc_id, "data", &data_nc_id);
+  if (ret != NC_NOERR)
+    data_nc_id = nc_id;
   int dim0_nc_id, dim1_nc_id;
   NC_CHECK(nc_inq_dimid(data_nc_id, dim0_name.c_str(), &dim0_nc_id));
   NC_CHECK(nc_inq_dimid(data_nc_id, dim1_name.c_str(), &dim1_nc_id));
