@@ -62,4 +62,5 @@ jobs:
       - name: Run unit tests
         shell: bash
         run: |
+          cd build
           make test
