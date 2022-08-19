@@ -21,7 +21,7 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 * ANSI C++ compiler
 * MPI library for message passing (e.g., MPICH or OpenMPI)
 * CMake >= 3.10
-* [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1), [netCDF-4 C++](https://github.com/Unidata/netcdf-cxx4/releases/tag/v4.3.1), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files through PnetCDF
+* [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files through PnetCDF
 * Zoltan, built with CMake from the **[Trilinos](https://github.com/trilinos/Trilinos.git)** package
 * [Catch2](https://github.com/catchorg/Catch2) for unit testing
 * [Boost](https://www.boost.org/) program_options library
@@ -53,7 +53,7 @@ If you want to use an MPI library installed in a non-standard location you will 
 ```
 
 #### Building netCDF from source with parallel I/O
-Download the latest releases of [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1) and [netCDF-4 C++](https://github.com/Unidata/netcdf-cxx4/releases/tag/v4.3.1). Parallel I/O is implemented through HDF5 (built with parallel I/O).
+Download v4.8.1 of [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1). Parallel I/O is implemented through HDF5 (built with parallel I/O).
 
 For netCDF-C (for more details see [here](https://docs.unidata.ucar.edu/netcdf-c/current/netCDF-CMake.html) for requirements):
 ```
@@ -70,26 +70,6 @@ make
 make test
 make install
 ```
-
-For netCDF-C++:
-```
-cd netcdf-cxx4-4.3.1
-mkdir build && cd build
-cmake \
- -DCMAKE_C_COMPILER=mpicc \
- -DCMAKE_CXX_COMPILER=mpicxx \
- -DCMAKE_BUILD_TYPE=Release \
- -DCMAKE_PREFIX_PATH=<path_to_hdf5> \
- -DCMAKE_INSTALL_PREFIX=<installation_path> \
- -DnetCDF_LIBRARIES=<installation_path>/lib/libnetcdf.so \
- -DnetCDF_INCLUDE_DIR=<installation_path>/include/ \
- ..
-make
-make test
-make install
-```
-
-**Note**: it is important to use the same installation path for both packages.
 
 ### Installation
 It is recommended to build the code in a separate directory form the source directory. The basic steps for building with CMake are:
