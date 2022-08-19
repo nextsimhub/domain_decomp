@@ -36,7 +36,7 @@ jobs:
           autoreconf -i
           CXX=mpicxx CC=mpicc ./configure --disable-fortran --enable-shared
           make -j2
-          make install
+          sudo make install
           cd ..
           git clone -b v4.8.1 https://github.com/Unidata/netcdf-c.git
           cd netcdf-c
