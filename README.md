@@ -52,6 +52,16 @@ If you want to use an MPI library installed in a non-standard location you will 
  -DCMAKE_CXX_COMPILER=<mpicxx> -DCMAKE_C_COMPILER=<mpicc>
 ```
 
+#### Building PnetCDF from source
+Download v1.12.3 of [PnetCDF](https://github.com/Parallel-NetCDF/PnetCDF/releases/tag/checkpoint.1.12.3).
+```
+cd PnetCDF
+autoreconf -i
+CXX=mpicxx CC=mpicc ./configure --disable-fortran --enable-shared --prefix=<installation_path>
+make
+make install
+```
+
 #### Building netCDF from source with parallel I/O
 Download v4.8.1 of [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1). Parallel I/O is implemented through HDF5 (built with parallel I/O).
 
