@@ -98,7 +98,7 @@ The binary `decomp` can be used to partition a 2D grid with an optional land mas
 mpirun -n 2 ./decomp grid.nc --dim0 y --dim1 x --mask land_mask
 ```
 
-The `decomp` tool produces two netCDF files named `partition_mask_<num_mpi_processes>.nc` and `partition_metadata_<num_mpi_processes>.nc` with the following layout:
+The `decomp` tool produces two netCDF-4 files (using the classic data model) named `partition_mask_<num_mpi_processes>.nc` and `partition_metadata_<num_mpi_processes>.nc` with the following layout:
 
 ```
 netcdf partition_mask_2 {
