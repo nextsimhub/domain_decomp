@@ -83,7 +83,7 @@ It is recommended to build the code in a separate directory form the source dire
 The project installs a shared library that can be imported by other CMake projects as neXtSIMutils::domain_decomp, as well as a binary `decomp` that be used to partition grids directly.
 
 ### How to run
-The binary `decomp` can be used to partition a 2D grid with an optional land mask represented as a netCDF file. By default, the name of the dimensions in the netCDF file are `x` and `y` with the `y` dimension increasing the fastest, and the name of the variable representing the land mask is `mask`. These can be overridden using command-line options. For example:
+The binary `decomp` can be used to partition a 2D grid with an optional land mask represented as a netCDF file. By default, the name of the dimensions in the netCDF file are `x` and `y` with the `y` dimension increasing the fastest, and the name of the variable representing the land mask is `mask`. For netCDF files using the enhanced model, we assume the group that contains the information of interest is named `data`. These can be overridden using command-line options. For example:
 ```
 mpirun -n 2 ./decomp grid.nc --dim0 y --dim1 x --mask land_mask
 ```
