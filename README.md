@@ -97,6 +97,10 @@ It is recommended to build the code in a separate directory form the source dire
 2. In your build directory run `cmake <path-to-src>`
 3. It is recommended to set options by calling `ccmake` in your build directory. Alternatively you can use the `-DVARIABLE=value` syntax in the previous step.
 4. Run `make` to build.
+5. Run `make test` to run tests.
+6. Run `make install` to install.
+
+The project installs a shared library that can be imported by other CMake projects as neXtSIMutils::domain_decomp, as well as a binary `decomp` that be used to partition grids directly.
 
 ### How to run
 The project produces a shared library named 'libdomain_decomp' and an executable named `decomp` that can be used to partition a 2D grid with an optional land mask represented as a netCDF file. By default, the name of the dimensions in the netCDF file are `x` and `y` with the `y` dimension increasing the fastest, and the name of the variable representing the land mask is `mask`. These can be overridden using command-line options. For example:
