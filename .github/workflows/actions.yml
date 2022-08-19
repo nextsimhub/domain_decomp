@@ -46,8 +46,8 @@ jobs:
           -Bbuild -H. \
           -DCMAKE_C_COMPILER=mpicc \
           -DCMAKE_CXX_COMPILER=mpicxx \
-          -DCMAKE_C_FLAGS="-I /usr/include/hdf5/openmpi/" \          
-          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_FLAGS="-I /usr/include/hdf5/openmpi/"
           sudo cmake --build build/ --target install
           cd ..
       - name: Configure
