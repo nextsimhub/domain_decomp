@@ -31,10 +31,18 @@ jobs:
           -DBUILD_SHARED_LIBS=ON
           sudo cmake --build build/ --target install
           cd ..
+          git clone -b checkpoint.1.12.3 https://github.com/Parallel-NetCDF/PnetCDF.git
+          cd PnetCDF
+          autoreconf -i
+          CXX=mpicxx CC=mpicc ./configure --disable-fortran --enable-shared
+          make -j2
+          make install
+          cd ..
           git clone -b v4.8.1 https://github.com/Unidata/netcdf-c.git
           cd netcdf-c
           cmake \
           -Bbuild -H. \
+          -DENABLE_PNETCDF=ON \
           -DCMAKE_C_COMPILER=mpicc \
           -DCMAKE_CXX_COMPILER=mpicxx \
           -DCMAKE_BUILD_TYPE=Release
