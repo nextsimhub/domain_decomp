@@ -61,7 +61,7 @@ add_library(${PROJECT_NAME}::${LIB_NAME} ALIAS ${LIB_NAME})
 # Set library dependencies
 target_link_libraries(${LIB_NAME}
   PUBLIC MPI::MPI_CXX
-  PRIVATE netcdf netcdf-cxx4 ${Zoltan_LIBRARIES}
+  PRIVATE netcdf ${Zoltan_LIBRARIES}
   )
 target_link_directories(${LIB_NAME}
   PRIVATE ${netCDF_LIB_DIR}
@@ -101,7 +101,7 @@ target_include_directories(${EXEC_NAME}
   )
 target_link_libraries(${EXEC_NAME}
   PUBLIC MPI::MPI_CXX
-  PRIVATE netcdf netcdf-cxx4 ${Zoltan_LIBRARIES} Boost::program_options
+  PRIVATE netcdf ${Zoltan_LIBRARIES} Boost::program_options
   )
 target_link_directories(${EXEC_NAME}
   PRIVATE ${netCDF_LIB_DIR}
