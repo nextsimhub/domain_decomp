@@ -70,6 +70,7 @@ For netCDF-C (for more details see [here](https://docs.unidata.ucar.edu/netcdf-c
 cd netcdf-c-4.8.1
 mkdir build && cd build
 cmake \
+ -DENABLE_PNETCDF=ON \
  -DCMAKE_C_COMPILER=mpicc \
  -DCMAKE_CXX_COMPILER=mpicxx \
  -DCMAKE_BUILD_TYPE=Release \
