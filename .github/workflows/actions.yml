@@ -40,16 +40,6 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release
           sudo cmake --build build/ --target install
           cd ..
-          git clone -b v4.3.1 https://github.com/Unidata/netcdf-cxx4.git
-          cd netcdf-cxx4
-          cmake \
-          -Bbuild -H. \
-          -DCMAKE_C_COMPILER=mpicc \
-          -DCMAKE_CXX_COMPILER=mpicxx \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_FLAGS="-I /usr/include/hdf5/openmpi/"
-          sudo cmake --build build/ --target install
-          cd ..
       - name: Configure
         shell: bash
         run: |

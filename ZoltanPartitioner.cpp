@@ -9,9 +9,10 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <iostream>
 #include <unordered_map>
 
-#include <netcdf>
+#include <netcdf.h>
 #include <netcdf_par.h>
 
 static int get_num_objects(void* data, int* ierr)
@@ -77,7 +78,7 @@ ZoltanPartitioner::ZoltanPartitioner(MPI_Comm comm, int argc, char** argv)
   float version;
   int ret = Zoltan_Initialize(argc, argv, &version);
   if (ret != ZOLTAN_OK) {
-    std::cout << "Zoltan initialization failed on process " << _rank
+    std::cerr << "Zoltan initialization failed on process " << _rank
               << std::endl;
     exit(EXIT_FAILURE);
   }
@@ -85,7 +86,7 @@ ZoltanPartitioner::ZoltanPartitioner(MPI_Comm comm, int argc, char** argv)
   // Create a Zoltan object
   _zoltan = std::make_unique<Zoltan>(comm);
   if (ret != ZOLTAN_OK) {
-    std::cout << "Creating Zoltan object failed on process " << _rank
+    std::cerr << "Creating Zoltan object failed on process " << _rank
               << std::endl;
     exit(EXIT_FAILURE);
   }
@@ -172,7 +173,7 @@ void ZoltanPartitioner::partition(Grid& grid)
       export_global_ids, export_local_ids, export_procs, export_to_part);
 
   if (ret != ZOLTAN_OK) {
-    std::cout << "Partitioning failed on process " << _rank << std::endl;
+    std::cerr << "Partitioning failed on process " << _rank << std::endl;
     MPI_Finalize();
     exit(EXIT_FAILURE);
   }

@@ -8,8 +8,9 @@
 #include "ZoltanPartitioner.hpp"
 
 #include <cmath>
+#include <stdexcept>
 
-#include <netcdf>
+#include <netcdf.h>
 #include <netcdf_par.h>
 
 Partitioner::Partitioner(MPI_Comm comm, int argc, char** argv)

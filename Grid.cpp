@@ -8,8 +8,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 
-#include <netcdf>
+#include <netcdf.h>
 #include <netcdf_par.h>
 
 static void find_factors(int n, int& factor_a, int& factor_b)
