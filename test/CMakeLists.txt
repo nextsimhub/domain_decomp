@@ -24,7 +24,7 @@ function(create_test)
     PRIVATE ${CMAKE_SOURCE_DIR}
     )
   foreach(numProcs RANGE 1 ${ARG_MAX_NUM_PROCS})
-    add_test(NAME ${ARG_TARGET}_n${numProcs} COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${numProcs} ${MPIEXEC_PREFLAGS} ./${ARG_TARGET})
+    add_test(NAME ${ARG_TARGET}_n${numProcs} COMMAND ${MPIEXEC} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} ${numProcs} ${MPIEXEC_PREFLAGS} ./${ARG_TARGET})
   endforeach()
 endfunction()
 
