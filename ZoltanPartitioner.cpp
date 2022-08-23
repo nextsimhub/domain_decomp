@@ -105,16 +105,20 @@ void ZoltanPartitioner::partition(Grid& grid)
   _num_procs_1 = grid.get_num_procs_1();
   _global_ext_0 = grid.get_global_ext_0();
   _global_ext_1 = grid.get_global_ext_1();
-  _local_ext_0 = grid.get_local_ext_0();
-  _local_ext_1 = grid.get_local_ext_1();
-  _global_0 = grid.get_global_0();
-  _global_1 = grid.get_global_1();
+  int blk_factor_0 = grid.get_blk_factor_0();
+  int blk_factor_1 = grid.get_blk_factor_1();
+  grid.get_bounding_box(_global_0, _global_1, _local_ext_0, _local_ext_1);
 
   if (_num_procs == 1) {
     _global_0_new = _global_0;
     _global_1_new = _global_1;
     _local_ext_0_new = _local_ext_0;
     _local_ext_1_new = _local_ext_1;
+    // Adapt to blocking
+    _global_0_new *= blk_factor_0;
+    _global_1_new *= blk_factor_1;
+    _local_ext_0_new *= blk_factor_0;
+    _local_ext_1_new *= blk_factor_1;
 
     if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
       const int* land_mask = grid.get_land_mask();
@@ -133,7 +137,7 @@ void ZoltanPartitioner::partition(Grid& grid)
 
   // Set Zoltan parameters for RCB partitioning
   // General parameters
-  //_zoltan->Set_Param("DEBUG_LEVEL", "7");
+  _zoltan->Set_Param("DEBUG_LEVEL", "0");
   _zoltan->Set_Param("NUM_GID_ENTRIES", "1");
   _zoltan->Set_Param("NUM_LID_ENTRIES", "1");
   _zoltan->Set_Param("CHECK_GEOM", "1");
@@ -179,17 +183,25 @@ void ZoltanPartitioner::partition(Grid& grid)
   }
 
   // Find new bounding boxes for each process
-  int ndim;
-  double xmin, ymin, zmin;
-  double xmax, ymax, zmax;
-  _zoltan->RCB_Box(_rank, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
-  _global_0_new = (xmin == -DBL_MAX) ? 0 : std::ceil(xmin);
-  _global_1_new = (ymin == -DBL_MAX) ? 0 : std::ceil(ymin);
-  int global_0_lower, global_1_lower;
-  global_0_lower = (xmax == DBL_MAX) ? _global_ext_0 : std::ceil(xmax);
-  global_1_lower = (ymax == DBL_MAX) ? _global_ext_1 : std::ceil(ymax);
-  _local_ext_0_new = global_0_lower - _global_0_new;
-  _local_ext_1_new = global_1_lower - _global_1_new;
+  if (changes == 1) {
+    std::cerr << "YEEEEEES " << _rank << std::endl;
+    int ndim;
+    double xmin, ymin, zmin;
+    double xmax, ymax, zmax;
+    _zoltan->RCB_Box(_rank, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
+    _global_0_new = (xmin == -DBL_MAX) ? 0 : std::ceil(xmin);
+    _global_1_new = (ymin == -DBL_MAX) ? 0 : std::ceil(ymin);
+    int global_0_lower, global_1_lower;
+    global_0_lower = (xmax == DBL_MAX) ? _global_ext_0 : std::ceil(xmax);
+    global_1_lower = (ymax == DBL_MAX) ? _global_ext_1 : std::ceil(ymax);
+    _local_ext_0_new = global_0_lower - _global_0_new;
+    _local_ext_1_new = global_1_lower - _global_1_new;
+  } else {
+    _global_0_new = _global_0;
+    _global_1_new = _global_1;
+    _local_ext_0_new = _local_ext_0;
+    _local_ext_1_new = _local_ext_1;
+  }
 
   if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
     const int* land_mask = grid.get_land_mask();
@@ -217,9 +229,15 @@ void ZoltanPartitioner::partition(Grid& grid)
   Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs,
                        &export_to_part);
 
-  // Update grid with new boxes
-  grid.set_global_0(_global_0_new);
-  grid.set_global_1(_global_1_new);
-  grid.set_local_ext_0(_local_ext_0_new);
-  grid.set_local_ext_1(_local_ext_1_new);
+  // Adapt to blocking
+  _global_0_new *= blk_factor_0;
+  _global_1_new *= blk_factor_1;
+  _local_ext_0_new *= blk_factor_0;
+  _local_ext_1_new *= blk_factor_1;
+  if (_global_0_new + _local_ext_0_new > grid.get_global_ext_orig_0()) {
+    _local_ext_0_new = grid.get_global_ext_orig_0() - _global_0_new;
+  }
+  if (_global_1_new + _local_ext_1_new > grid.get_global_ext_orig_1()) {
+    _local_ext_1_new = grid.get_global_ext_orig_1() - _global_1_new;
+  }
 }

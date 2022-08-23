@@ -10,8 +10,6 @@
 #include <cmath>
 #include <stdexcept>
 
-#include <iostream>
-
 #include <netcdf.h>
 #include <netcdf_par.h>
 
@@ -25,17 +23,36 @@ static void find_factors(int n, int& factor_a, int& factor_b)
   }
 }
 
-Grid* Grid::create(MPI_Comm comm, const std::string& filename,
-                   const std::string dim0_id, const std::string dim1_id,
-                   const std::string mask_id)
+Grid* Grid::create(MPI_Comm comm, const std::string& filename)
 {
-  return new Grid(comm, filename, dim0_id, dim1_id, mask_id);
+  return new Grid(comm, filename);
+}
+
+Grid* Grid::create(MPI_Comm comm, const std::string& filename, int blk_dim0,
+                   int blk_dim1)
+{
+  return new Grid(comm, filename, "x", "y", "mask", blk_dim0, blk_dim1);
+}
+
+Grid* Grid::create(MPI_Comm comm, const std::string& filename,
+                   const std::string dim0_name, const std::string dim1_name,
+                   const std::string mask_name)
+{
+  return new Grid(comm, filename, dim0_name, dim1_name, mask_name, 1, 1);
+}
+
+Grid* Grid::create(MPI_Comm comm, const std::string& filename,
+                   const std::string dim0_name, const std::string dim1_name,
+                   const std::string mask_name, int blk_dim0, int blk_dim1)
+{
+  return new Grid(comm, filename, dim0_name, dim1_name, mask_name, blk_dim0,
+                  blk_dim1);
 }
 
 Grid::Grid(MPI_Comm comm, const std::string& filename,
            const std::string& dim0_name, const std::string& dim1_name,
-           const std::string& mask_name)
-    : _comm(comm)
+           const std::string& mask_name, int blk_dim0, int blk_dim1)
+    : _comm(comm), _blk_factor_0(blk_dim0), _blk_factor_1(blk_dim1)
 {
   // Use C API for parallel I/O
   int nc_id, nc_o_mode;
@@ -57,8 +74,13 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   // Retrieve the extent of each dimension of interest. The dimensions of
   // interest are the spatial dimensions of the grid. These are named "x" and
   // "y" by default.
-  NC_CHECK(nc_inq_dimlen(data_nc_id, dim0_nc_id, &_global_ext_0));
-  NC_CHECK(nc_inq_dimlen(data_nc_id, dim1_nc_id, &_global_ext_1));
+  size_t tmp_0, tmp_1;
+  NC_CHECK(nc_inq_dimlen(data_nc_id, dim0_nc_id, &tmp_0));
+  NC_CHECK(nc_inq_dimlen(data_nc_id, dim1_nc_id, &tmp_1));
+  _global_ext_0 = static_cast<int>(tmp_0);
+  _global_ext_1 = static_cast<int>(tmp_1);
+  _global_ext_blk_0 = ceil(((float)_global_ext_0) / _blk_factor_0);
+  _global_ext_blk_1 = ceil(((float)_global_ext_1) / _blk_factor_1);
 
   // Initially we partition assuming there is no land mask
   // Figure out my subset of objects
@@ -69,17 +91,31 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   _num_procs_1 = 1;
   find_factors(_num_procs, _num_procs_0, _num_procs_1);
 
-  _local_ext_0 = ceil((float)_global_ext_0 / (_num_procs_0));
-  _local_ext_1 = ceil((float)_global_ext_1 / (_num_procs_1));
-  _global_0 = (_rank / _num_procs_1) * _local_ext_0;
-  _global_1 = (_rank % _num_procs_1) * _local_ext_1;
-  if ((_rank % _num_procs_1) == _num_procs_1 - 1) {
-    _local_ext_1 = _global_ext_1 - (_rank % _num_procs_1) * _local_ext_1;
-  }
+  _local_ext_blk_0 = ceil((float)_global_ext_blk_0 / _num_procs_0);
+  _local_ext_blk_1 = ceil((float)_global_ext_blk_1 / _num_procs_1);
+  _global_blk_0 = (_rank / _num_procs_1) * _local_ext_blk_0;
+  _global_blk_1 = (_rank % _num_procs_1) * _local_ext_blk_1;
   if ((_rank / _num_procs_1) == _num_procs_0 - 1) {
-    _local_ext_0 = _global_ext_0 - (_rank / _num_procs_1) * _local_ext_0;
+    _local_ext_blk_0
+        = _global_ext_blk_0 - (_rank / _num_procs_1) * _local_ext_blk_0;
   }
+  if ((_rank % _num_procs_1) == _num_procs_1 - 1) {
+    _local_ext_blk_1
+        = _global_ext_blk_1 - (_rank % _num_procs_1) * _local_ext_blk_1;
+  }
+
+  _local_ext_0 = _local_ext_blk_0 * _blk_factor_0;
+  _local_ext_1 = _local_ext_blk_1 * _blk_factor_1;
+  if ((_rank / _num_procs_1) == _num_procs_0 - 1) {
+    _local_ext_0 = _global_ext_0 - _global_blk_0 * _blk_factor_0;
+  }
+  if ((_rank % _num_procs_1) == _num_procs_1 - 1) {
+    _local_ext_1 = _global_ext_1 - _global_blk_1 * _blk_factor_1;
+  }
+  _global_0 = _global_blk_0 * _blk_factor_0;
+  _global_1 = _global_blk_1 * _blk_factor_1;
   _num_objects = _local_ext_0 * _local_ext_1;
+  _num_blks = _local_ext_blk_0 * _local_ext_blk_1;
 
   // Retrieve the land mask, if available
   int mask_nc_id;
@@ -116,47 +152,102 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
                              _land_mask.data()));
 
     // Apply land mask
-    for (int i = 0; i < _num_objects; i++) {
-      // The convention is that sea data points will have a positive value
-      // and land points a zero value
-      if (_land_mask[i] > 0) {
-        int local_0 = i / _local_ext_1;
-        int local_1 = i % _local_ext_1;
-        int global_0 = local_0 + _global_0;
-        int global_1 = local_1 + _global_1;
-        _object_id.push_back(global_0 * _global_ext_1 + global_1);
-        _sparse_to_dense.push_back(i);
-        _num_nonzero_objects++;
+    if (_blk_factor_0 == 1 && _blk_factor_1 == 1) {
+      for (int i = 0; i < _num_objects; i++) {
+        // The convention is that sea data points will have a positive value
+        // and land points a zero value
+        if (_land_mask[i] > 0) {
+          int local_0 = i / _local_ext_1;
+          int local_1 = i % _local_ext_1;
+          int global_0 = local_0 + _global_0;
+          int global_1 = local_1 + _global_1;
+          _object_id.push_back(global_0 * _global_ext_1 + global_1);
+          _sparse_to_dense.push_back(i);
+          _num_nonzero_objects++;
+        }
+      }
+      _num_nonzero_blks = _num_nonzero_objects;
+    } else {
+      // Compute blocked land mask. A block is considered land, when all its
+      // grid points are land, otherwise it is considered to be sea. The
+      // convention is that sea data points will have a positive value and land
+      // points a zero value.
+      _land_mask_blk.resize(_num_blks, 0);
+      for (int i = 0; i < _num_objects; i++) {
+        int local_0 = (i / _local_ext_1) / _local_ext_blk_1;
+        int local_1 = (i % _local_ext_1) / _local_ext_blk_1;
+        if (_land_mask[i] > 0) {
+          _land_mask_blk[local_0 * _local_ext_blk_1 + local_1] = 1;
+          _num_nonzero_objects++;
+        }
+      }
+      for (int i = 0; i < _num_blks; i++) {
+        // The convention is that sea data points will have a positive value
+        // and land points a zero value
+        if (_land_mask_blk[i] > 0) {
+          int local_0 = i / _local_ext_blk_1;
+          int local_1 = i % _local_ext_blk_1;
+          int global_0 = local_0 + _global_blk_0;
+          int global_1 = local_1 + _global_blk_1;
+          _object_id.push_back(global_0 * _global_ext_blk_1 + global_1);
+          _sparse_to_dense.push_back(i);
+          _num_nonzero_blks++;
+        }
       }
     }
   } else {
     _num_nonzero_objects = _num_objects;
-    for (int i = 0; i < _num_objects; i++) {
-      int local_0 = i / _local_ext_1;
-      int local_1 = i % _local_ext_1;
-      int global_0 = local_0 + _global_0;
-      int global_1 = local_1 + _global_1;
-      _object_id.push_back(global_0 * _global_ext_1 + global_1);
+    _num_nonzero_blks = _num_blks;
+    for (int i = 0; i < _num_blks; i++) {
+      int local_0 = i / _local_ext_blk_1;
+      int local_1 = i % _local_ext_blk_1;
+      int global_0 = local_0 + _global_blk_0;
+      int global_1 = local_1 + _global_blk_1;
+      _object_id.push_back(global_0 * _global_ext_blk_1 + global_1);
     }
   }
 
   NC_CHECK(nc_close(nc_id));
 }
 
-int Grid::get_num_objects() const { return _num_objects; }
-int Grid::get_num_nonzero_objects() const { return _num_nonzero_objects; }
-int Grid::get_global_ext_0() const { return _global_ext_0; }
-int Grid::get_global_ext_1() const { return _global_ext_1; }
-int Grid::get_local_ext_0() const { return _local_ext_0; }
-int Grid::get_local_ext_1() const { return _local_ext_1; }
-void Grid::set_local_ext_0(int val) { _local_ext_0 = val; }
-void Grid::set_local_ext_1(int val) { _local_ext_1 = val; }
-int Grid::get_global_0() const { return _global_0; }
-int Grid::get_global_1() const { return _global_1; }
-void Grid::set_global_0(int val) { _global_0 = val; }
-void Grid::set_global_1(int val) { _global_1 = val; }
+int Grid::get_global_ext_0() const { return _global_ext_blk_0; }
+
+int Grid::get_global_ext_1() const { return _global_ext_blk_1; }
+
+int Grid::get_global_ext_orig_0() const { return _global_ext_0; }
+
+int Grid::get_global_ext_orig_1() const { return _global_ext_1; }
+
+int Grid::get_blk_factor_0() const { return _blk_factor_0; }
+
+int Grid::get_blk_factor_1() const { return _blk_factor_1; }
+
+int Grid::get_num_objects() const { return _num_blks; }
+
+int Grid::get_num_nonzero_objects() const { return _num_nonzero_blks; }
+
 int Grid::get_num_procs_0() const { return _num_procs_0; }
+
 int Grid::get_num_procs_1() const { return _num_procs_1; }
-const int* Grid::get_land_mask() const { return _land_mask.data(); }
+
+const int* Grid::get_land_mask() const
+{
+  if (_blk_factor_0 == 1 && _blk_factor_1 == 1) {
+    return _land_mask.data();
+  } else {
+    return _land_mask_blk.data();
+  }
+}
+
 const int* Grid::get_sparse_to_dense() const { return _sparse_to_dense.data(); }
+
 const int* Grid::get_nonzero_object_ids() const { return _object_id.data(); }
+
+void Grid::get_bounding_box(int& global_0, int& global_1, int& local_ext_0,
+                            int& local_ext_1) const
+{
+  global_0 = _global_blk_0;
+  global_1 = _global_blk_1;
+  local_ext_0 = _local_ext_blk_0;
+  local_ext_1 = _local_ext_blk_1;
+}

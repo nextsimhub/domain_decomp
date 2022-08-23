@@ -20,11 +20,20 @@ Partitioner::Partitioner(MPI_Comm comm, int argc, char** argv)
   MPI_Comm_rank(comm, &_rank);
 }
 
+void Partitioner::get_bounding_box(int& global_0, int& global_1,
+                                   int& local_ext_0, int& local_ext_1) const
+{
+  global_0 = _global_0_new;
+  global_1 = _global_1_new;
+  local_ext_0 = _local_ext_0_new;
+  local_ext_1 = _local_ext_1_new;
+}
+
 void Partitioner::save_mask(const std::string& filename) const
 {
   // Use C API for parallel I/O
   int nc_id, nc_mode;
-  nc_mode = NC_MPIIO | NC_NETCDF4;
+  nc_mode = NC_CLOBBER | NC_NETCDF4;
   NC_CHECK(
       nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
   NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "num_processes", NC_SHORT, 1,

@@ -19,18 +19,34 @@ TEST_CASE("Grid: all land", "[grid]")
   assert(mpi_size <= 2);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
-  REQUIRE(grid->get_global_ext_0() == 6);
-  REQUIRE(grid->get_global_ext_1() == 4);
-  REQUIRE(grid->get_num_nonzero_objects() == 0);
-  if (mpi_size == 1) {
-    REQUIRE(grid->get_num_objects() == 24);
-  } else if (mpi_size == 2) {
-    REQUIRE(grid->get_num_objects() == 12);
+  if (grid->get_blk_factor_0() == 1 && grid->get_blk_factor_1() == 1) {
+    REQUIRE(grid->get_global_ext_0() == 6);
+    REQUIRE(grid->get_global_ext_1() == 4);
+    REQUIRE(grid->get_num_nonzero_objects() == 0);
+    if (mpi_size == 1) {
+      REQUIRE(grid->get_num_objects() == 24);
+    } else if (mpi_size == 2) {
+      REQUIRE(grid->get_num_objects() == 12);
+    }
+  } else if (grid->get_blk_factor_0() == 2 && grid->get_blk_factor_1() == 2) {
+    REQUIRE(grid->get_global_ext_0() == 3);
+    REQUIRE(grid->get_global_ext_1() == 2);
+    REQUIRE(grid->get_num_nonzero_objects() == 0);
+    if (mpi_size == 1) {
+      REQUIRE(grid->get_num_objects() == 6);
+    } else if (mpi_size == 2) {
+      if (mpi_rank == 0) {
+        REQUIRE(grid->get_num_objects() == 4);
+      } else {
+        REQUIRE(grid->get_num_objects() == 2);
+      }
+    }
   }
 
   const int* mask = grid->get_land_mask();
-  for (int i = 0; i < grid->get_num_objects(); i++)
+  for (int i = 0; i < grid->get_num_objects(); i++) {
     REQUIRE(mask[i] == 0);
+  }
 
   // Cleanup
   delete grid;

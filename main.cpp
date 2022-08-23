@@ -32,6 +32,10 @@ int main(int argc, char* argv[])
      "First spatial dimension in netCDF grid file")
     ("dim1", po::value<string>()->default_value("y"),
      "Second spatial dimension in netCDF grid file")
+    ("blk0", po::value<int>()->default_value(1),
+     "Blocking factor in first dimension")
+    ("blk1", po::value<int>()->default_value(1),
+     "Blocking factor in second dimension")
     ("mask,m", po::value<string>()->default_value("mask"),
      "Mask variable name in netCDF grid file");
 
@@ -52,7 +56,8 @@ int main(int argc, char* argv[])
   // Build grid from netCDF file
   Grid* grid
       = Grid::create(comm, vm["grid"].as<string>(), vm["dim0"].as<string>(),
-                     vm["dim1"].as<string>(), vm["mask"].as<string>());
+                     vm["dim1"].as<string>(), vm["mask"].as<string>(),
+                     vm["blk0"].as<int>(), vm["blk1"].as<int>());
 
   // Create a Zoltan partitioner
   Partitioner* partitioner = Partitioner::Factory::create(
