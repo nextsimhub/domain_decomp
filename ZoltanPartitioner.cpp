@@ -184,7 +184,6 @@ void ZoltanPartitioner::partition(Grid& grid)
 
   // Find new bounding boxes for each process
   if (changes == 1) {
-    std::cerr << "YEEEEEES " << _rank << std::endl;
     int ndim;
     double xmin, ymin, zmin;
     double xmax, ymax, zmax;

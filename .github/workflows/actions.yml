@@ -71,6 +71,7 @@ jobs:
           brew install cmake
           brew install catch2
           brew install boost
+          brew install hdf5-mpi
           brew install pnetcdf
           git clone https://github.com/trilinos/Trilinos.git
           cd Trilinos
