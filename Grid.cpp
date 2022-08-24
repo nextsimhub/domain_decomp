@@ -23,35 +23,39 @@ static void find_factors(int n, int& factor_a, int& factor_b)
   }
 }
 
-Grid* Grid::create(MPI_Comm comm, const std::string& filename)
+Grid* Grid::create(MPI_Comm comm, const std::string& filename, bool ignore_mask)
 {
-  return new Grid(comm, filename);
+  return new Grid(comm, filename, "x", "y", "mask", 1, 1, ignore_mask);
 }
 
 Grid* Grid::create(MPI_Comm comm, const std::string& filename, int blk_dim0,
-                   int blk_dim1)
+                   int blk_dim1, bool ignore_mask)
 {
-  return new Grid(comm, filename, "x", "y", "mask", blk_dim0, blk_dim1);
+  return new Grid(comm, filename, "x", "y", "mask", blk_dim0, blk_dim1,
+                  ignore_mask);
 }
 
 Grid* Grid::create(MPI_Comm comm, const std::string& filename,
                    const std::string dim0_name, const std::string dim1_name,
-                   const std::string mask_name)
+                   const std::string mask_name, bool ignore_mask)
 {
-  return new Grid(comm, filename, dim0_name, dim1_name, mask_name, 1, 1);
+  return new Grid(comm, filename, dim0_name, dim1_name, mask_name, 1, 1,
+                  ignore_mask);
 }
 
 Grid* Grid::create(MPI_Comm comm, const std::string& filename,
                    const std::string dim0_name, const std::string dim1_name,
-                   const std::string mask_name, int blk_dim0, int blk_dim1)
+                   const std::string mask_name, int blk_dim0, int blk_dim1,
+                   bool ignore_mask)
 {
   return new Grid(comm, filename, dim0_name, dim1_name, mask_name, blk_dim0,
-                  blk_dim1);
+                  blk_dim1, ignore_mask);
 }
 
 Grid::Grid(MPI_Comm comm, const std::string& filename,
            const std::string& dim0_name, const std::string& dim1_name,
-           const std::string& mask_name, int blk_dim0, int blk_dim1)
+           const std::string& mask_name, int blk_dim0, int blk_dim1,
+           bool ignore_mask)
     : _comm(comm), _blk_factor_0(blk_dim0), _blk_factor_1(blk_dim1)
 {
   // Use C API for parallel I/O
@@ -117,14 +121,14 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   _num_objects = _local_ext_0 * _local_ext_1;
   _num_blks = _local_ext_blk_0 * _local_ext_blk_1;
 
-  // Retrieve the land mask, if available
+  // Retrieve the land mask, if available and enabled
   int mask_nc_id;
   int nc_err;
   nc_err = nc_inq_varid(data_nc_id, mask_name.c_str(), &mask_nc_id);
 
-  if (nc_err == NC_NOERR && nc_err != NC_ENOTVAR) {
-    // Data reads are independent by default, so we need to switch to collective
-    // for improved parallel I/O performance
+  if (!ignore_mask && nc_err == NC_NOERR && nc_err != NC_ENOTVAR) {
+    // Data reads are independent by default, so we need to switch to
+    // collective for improved parallel I/O performance
     NC_CHECK(nc_var_par_access(data_nc_id, mask_nc_id, NC_COLLECTIVE));
 
     // Verify the order of dimensions provided is correct by comparing to the
@@ -170,8 +174,8 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
     } else {
       // Compute blocked land mask. A block is considered land, when all its
       // grid points are land, otherwise it is considered to be sea. The
-      // convention is that sea data points will have a positive value and land
-      // points a zero value.
+      // convention is that sea data points will have a positive value and
+      // land points a zero value.
       _land_mask_blk.resize(_num_blks, 0);
       for (int i = 0; i < _num_objects; i++) {
         int local_0 = (i / _local_ext_1) / _local_ext_blk_1;

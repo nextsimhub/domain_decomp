@@ -72,15 +72,17 @@ public:
    */
   // We are using the named constructor idiom so that objects can only be
   // created in the heap to ensure it's dtor is executed before MPI_Finalize()
-  static Grid* create(MPI_Comm comm, const std::string& filename);
+  static Grid* create(MPI_Comm comm, const std::string& filename,
+                      bool ignore_mask = false);
   static Grid* create(MPI_Comm comm, const std::string& filename, int blk_dim0,
-                      int blk_dim1);
+                      int blk_dim1, bool ignore_mask = false);
   static Grid* create(MPI_Comm comm, const std::string& filename,
                       const std::string dim0_name, const std::string dim1_name,
-                      const std::string mask_name);
+                      const std::string mask_name, bool ignore_mask = false);
   static Grid* create(MPI_Comm comm, const std::string& filename,
                       const std::string dim0_name, const std::string dim1_name,
-                      const std::string mask_name, int blk_dim0, int blk_dim1);
+                      const std::string mask_name, int blk_dim0, int blk_dim1,
+                      bool ignore_mask = false);
 
   /*!
    * @brief Returns the global extent in the 1st dimension of the grid. If
@@ -206,7 +208,8 @@ private:
   // Construct a ditributed grid from a NetCDF file describing the global domain
   Grid(MPI_Comm comm, const std::string& filename,
        const std::string& dim0_id = "x", const std::string& dim1_id = "y",
-       const std::string& mask_id = "mask", int blk0 = 1, int blk1 = 1);
+       const std::string& mask_id = "mask", int blk0 = 1, int blk1 = 1,
+       bool ignore_mask = false);
 
 private:
   MPI_Comm _comm;            // MPI communicator
