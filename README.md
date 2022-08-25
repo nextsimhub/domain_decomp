@@ -83,7 +83,7 @@ make install
 ```
 
 ### Installation
-It is recommended to build the code in a separate directory form the source directory. The basic steps for building with CMake are:
+It is recommended to build the code in a separate directory from the source directory. The basic steps for building with CMake are:
 1. Create a build directory, outside of the source directory.
 2. In your build directory run `cmake <path-to-src>`
 3. It is recommended to set options by calling `ccmake` in your build directory. Alternatively you can use the `-DVARIABLE=value` syntax in the previous step.
