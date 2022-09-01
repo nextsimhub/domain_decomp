@@ -5,6 +5,7 @@
  */
 
 #include "Grid.hpp"
+#include "Utils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -73,7 +74,7 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   NC_CHECK(nc_inq_dimid(data_nc_id, dim0_name.c_str(), &dim0_nc_id));
   NC_CHECK(nc_inq_dimid(data_nc_id, dim1_name.c_str(), &dim1_nc_id));
 
-  MPI_Comm_rank(comm, &_rank);
+  CHECK_MPI(MPI_Comm_rank(comm, &_rank));
 
   // Retrieve the extent of each dimension of interest. The dimensions of
   // interest are the spatial dimensions of the grid. These are named "x" and
@@ -88,7 +89,7 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
 
   // Initially we partition assuming there is no land mask
   // Figure out my subset of objects
-  MPI_Comm_size(comm, &_num_procs);
+  CHECK_MPI(MPI_Comm_size(comm, &_num_procs));
 
   // Start from a 2D decomposition
   _num_procs_0 = _num_procs;
@@ -178,8 +179,8 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
       // land points a zero value.
       _land_mask_blk.resize(_num_blks, 0);
       for (int i = 0; i < _num_objects; i++) {
-        int local_0 = (i / _local_ext_1) / _local_ext_blk_1;
-        int local_1 = (i % _local_ext_1) / _local_ext_blk_1;
+        int local_0 = (i / _local_ext_1) / _blk_factor_1;
+        int local_1 = (i % _local_ext_1) / _blk_factor_1;
         if (_land_mask[i] > 0) {
           _land_mask_blk[local_0 * _local_ext_blk_1 + local_1] = 1;
           _num_nonzero_objects++;

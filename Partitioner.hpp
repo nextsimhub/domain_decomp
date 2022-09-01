@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "Grid.hpp"
 #include "domain_decomp_export.hpp"
 
@@ -43,7 +45,7 @@ public:
   virtual void partition(Grid& grid) = 0;
 
   /*!
-   * @brief Returns the bounding box for this process.
+   * @brief Returns the new bounding box for this process after partitioning.
    *
    * @param global_0 Global coordinate in the 1st dimension of the upper left
    * corner.
@@ -54,6 +56,34 @@ public:
    */
   void get_bounding_box(int& global_0, int& global_1, int& local_ext_0,
                         int& local_ext_1) const;
+
+  /*!
+   * @brief Returns the MPI ranks and halo sizes of the top neighbors for this
+   * process after partitioning.
+   */
+  void get_top_neighbors(std::vector<int>& ids,
+                         std::vector<int>& halo_sizes) const;
+
+  /*!
+   * @brief Returns the MPI ranks and halo sizes of the bottom neighbors for
+   * this process after partitioning.
+   */
+  void get_bottom_neighbors(std::vector<int>& ids,
+                            std::vector<int>& halo_sizes) const;
+
+  /*!
+   * @brief Returns the MPI ranks and halo sizes of the left neighbors for this
+   * process after partitioning.
+   */
+  void get_left_neighbors(std::vector<int>& ids,
+                          std::vector<int>& halo_sizes) const;
+
+  /*!
+   * @brief Returns the MPI ranks and halo sizes of the right neighbors for this
+   * process after partitioning.
+   */
+  void get_right_neighbors(std::vector<int>& ids,
+                           std::vector<int>& halo_sizes) const;
 
   /*!
    * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -88,6 +118,9 @@ protected:
   // created in the heap to ensure it's dtor is executed before MPI_Finalize()
   Partitioner(MPI_Comm comm, int argc, char** argv);
 
+  // Discover the processe's neighbors and halo sizes after partitioning
+  void discover_neighbors();
+
 protected:
   MPI_Comm _comm;        // MPI communicator
   int _rank = -1;        // Process rank
@@ -111,6 +144,14 @@ protected:
   int _global_1_new = -1;   /* Global coordinate in 2nd dimension of upper left
                                corner (after partitioning) */
   std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
+  std::map<int, int> _top_neighbors
+      = {}; // Map of top neighbors to their halo sizes after partitioning
+  std::map<int, int> _bottom_neighbors
+      = {}; // Map of bottom neighbors to their halo sizes after partitioning
+  std::map<int, int> _right_neighbors
+      = {}; // Map of bottom neighbors to their halo sizes after partitioning
+  std::map<int, int> _left_neighbors
+      = {}; // Map of bottom neighbors to their halo sizes after partitioning
 
 public:
   struct LIB_EXPORT Factory {

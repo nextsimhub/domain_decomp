@@ -143,25 +143,25 @@ TEST_CASE("ZoltanPartitioner: non-default dimension naming, with blocking",
     }
   } else {
     if (mpi_rank == 0) {
-      REQUIRE(local_ext_0 == 4);
-      REQUIRE(local_ext_1 == 2);
+      REQUIRE(local_ext_0 == 0);
+      REQUIRE(local_ext_1 == 4);
       REQUIRE(global_0 == 0);
       REQUIRE(global_1 == 0);
     } else if (mpi_rank == 1) {
-      REQUIRE(local_ext_0 == 4);
-      REQUIRE(local_ext_1 == 2);
+      REQUIRE(local_ext_0 == 2);
+      REQUIRE(local_ext_1 == 4);
       REQUIRE(global_0 == 0);
-      REQUIRE(global_1 == 2);
+      REQUIRE(global_1 == 0);
     } else if (mpi_rank == 2) {
       REQUIRE(local_ext_0 == 2);
-      REQUIRE(local_ext_1 == 2);
-      REQUIRE(global_0 == 4);
+      REQUIRE(local_ext_1 == 4);
+      REQUIRE(global_0 == 2);
       REQUIRE(global_1 == 0);
     } else {
       REQUIRE(local_ext_0 == 2);
-      REQUIRE(local_ext_1 == 2);
+      REQUIRE(local_ext_1 == 4);
       REQUIRE(global_0 == 4);
-      REQUIRE(global_1 == 2);
+      REQUIRE(global_1 == 0);
     }
   }
 

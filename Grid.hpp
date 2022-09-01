@@ -101,16 +101,16 @@ public:
   int get_global_ext_1() const;
 
   /*!
-   * @brief Returns the global extent in the 1st dimension of the grid before
-   * blocking is applied.
+   * @brief Returns the global extent in the 1st dimension of the grid ignoring
+   * blocking.
    *
    * @return Global extent in 1st dimension.
    */
   int get_global_ext_orig_0() const;
 
   /*!
-   * @brief Returns the global extent in the 2nd dimension of the grid before
-   * blocking is applied.
+   * @brief Returns the global extent in the 2nd dimension of the grid ignoring
+   * blocking.
    *
    * @return Global extent in 2nd dimension.
    */

@@ -25,10 +25,13 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 include(GNUInstallDirs)
 # Define RPATH for executables via a relative expression to enable a
 # fully relocatable package
-file(RELATIVE_PATH relDir
+file(RELATIVE_PATH relDir1
  ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
  ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-set(CMAKE_INSTALL_RPATH $ORIGIN/${relDir})
+file(RELATIVE_PATH relDir2
+ ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/examples
+ ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_INSTALL_RPATH $ORIGIN/${relDir1}:$ORIGIN/${relDir2})
 
 # Dependencies
 find_package(Catch2 REQUIRED)
@@ -111,3 +114,6 @@ install(TARGETS ${EXEC_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 # Unit tests
 enable_testing()
 add_subdirectory(test)
+
+# Examples
+add_subdirectory(examples)

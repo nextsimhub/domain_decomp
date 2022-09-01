@@ -5,6 +5,7 @@
  */
 
 #include "ZoltanPartitioner.hpp"
+#include "Utils.hpp"
 
 #include <algorithm>
 #include <cfloat>
@@ -138,18 +139,20 @@ void ZoltanPartitioner::partition(Grid& grid)
   // Set Zoltan parameters for RCB partitioning
   // General parameters
   _zoltan->Set_Param("DEBUG_LEVEL", "0");
+  _zoltan->Set_Param("LB_METHOD", "RCB");
+  _zoltan->Set_Param("LB_APPROACH", "REPARTITION");
   _zoltan->Set_Param("NUM_GID_ENTRIES", "1");
   _zoltan->Set_Param("NUM_LID_ENTRIES", "1");
   _zoltan->Set_Param("CHECK_GEOM", "1");
   _zoltan->Set_Param("KEEP_CUTS", "1");
+  _zoltan->Set_Param("REMAP", "0");
   // RCB parameters
-  std::string method = "RCB";
-  _zoltan->Set_Param("LB_METHOD", "RCB");
   _zoltan->Set_Param("RCB_OUTPUT_LEVEL", "1");
   _zoltan->Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
   _zoltan->Set_Param("RCB_LOCK_DIRECTIONS", "1");
-  _zoltan->Set_Param("RCB_SET_DIRECTIONS", "3");
+  _zoltan->Set_Param("RCB_SET_DIRECTIONS", "1");
   _zoltan->Set_Param("RCB_RECOMPUTE_BOX", "1");
+  _zoltan->Set_Param("AVERAGE_CUTS", "1");
   // Query functions
   _zoltan->Set_Num_Obj_Fn(get_num_objects, &grid);
   _zoltan->Set_Obj_List_Fn(get_object_list, &grid);
@@ -178,7 +181,7 @@ void ZoltanPartitioner::partition(Grid& grid)
 
   if (ret != ZOLTAN_OK) {
     std::cerr << "Partitioning failed on process " << _rank << std::endl;
-    MPI_Finalize();
+    CHECK_MPI(MPI_Finalize());
     exit(EXIT_FAILURE);
   }
 
@@ -202,6 +205,22 @@ void ZoltanPartitioner::partition(Grid& grid)
     _local_ext_1_new = _local_ext_1;
   }
 
+  // Adapt to blocking
+  _global_0_new *= blk_factor_0;
+  _global_1_new *= blk_factor_1;
+  _local_ext_0_new *= blk_factor_0;
+  _local_ext_1_new *= blk_factor_1;
+  if (_global_0_new + _local_ext_0_new > grid.get_global_ext_orig_0()) {
+    _local_ext_0_new = grid.get_global_ext_orig_0() - _global_0_new;
+  }
+  if (_global_1_new + _local_ext_1_new > grid.get_global_ext_orig_1()) {
+    _local_ext_1_new = grid.get_global_ext_orig_1() - _global_1_new;
+  }
+
+  // Find my neighbors
+  discover_neighbors();
+
+  // Find the process IDs of each grid point I own
   if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
     const int* land_mask = grid.get_land_mask();
     _proc_id.resize(grid.get_num_objects(), -1);
@@ -227,16 +246,4 @@ void ZoltanPartitioner::partition(Grid& grid)
                        &import_to_part);
   Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs,
                        &export_to_part);
-
-  // Adapt to blocking
-  _global_0_new *= blk_factor_0;
-  _global_1_new *= blk_factor_1;
-  _local_ext_0_new *= blk_factor_0;
-  _local_ext_1_new *= blk_factor_1;
-  if (_global_0_new + _local_ext_0_new > grid.get_global_ext_orig_0()) {
-    _local_ext_0_new = grid.get_global_ext_orig_0() - _global_0_new;
-  }
-  if (_global_1_new + _local_ext_1_new > grid.get_global_ext_orig_1()) {
-    _local_ext_1_new = grid.get_global_ext_orig_1() - _global_1_new;
-  }
 }
