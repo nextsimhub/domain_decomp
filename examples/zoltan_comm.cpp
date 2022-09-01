@@ -1,7 +1,7 @@
 /*!
- * @file communication_benchmark.cpp
+ * @file zoltan_comm.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 1 May 2022
+ * @date 1 Sep 2022
  */
 
 #include <cstdio>
