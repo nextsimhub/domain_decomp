@@ -123,19 +123,43 @@ The netCDF variable `pid` is defined as the process ID of each point in the grid
 netcdf partition_metadata_2 {
 dimensions:
 	P = 2 ;
+	T = 1 ;
+	B = 1 ;
+	L = UNLIMITED ; // (0 currently)
+	R = UNLIMITED ; // (0 currently)
 variables:
 	int global_x(P) ;
 	int global_y(P) ;
 	int local_extent_x(P) ;
 	int local_extent_y(P) ;
+	int top_neighbors(P) ;
+	int top_neighbor_ids(T) ;
+	int top_neighbor_halos(T) ;
+	int bottom_neighbors(P) ;
+	int bottom_neighbor_ids(B) ;
+	int bottom_neighbor_halos(B) ;
+	int left_neighbors(P) ;
+	int left_neighbor_ids(L) ;
+	int left_neighbor_halos(L) ;
+	int right_neighbors(P) ;
+	int right_neighbor_ids(R) ;
+	int right_neighbor_halos(R) ;
 data:
 
  global_x = 0, 16 ;
  global_y = 0, 0 ;
  local_extent_x = 16, 14 ;
  local_extent_y = 30, 30 ;
+ top_neighbors = 0, 1 ;
+ top_neighbor_ids = 0 ;
+ top_neighbor_halos = 30 ;
+ bottom_neighbors = 1, 0 ;
+ bottom_neighbor_ids = 1 ;
+ bottom_neighbor_halos = 30 ;
+ left_neighbors = 0, 0 ;
+ right_neighbors = 0, 0 ;
 }
 
 ```
 
-The netCDF variables `global_x/y` are defined as the coordinates of the upper left corner of the bounding box for each MPI process using zero-based indexing and `local_extent_x/y` are the extents in the corresponding dimensions of the bounding box for each MPI process.
+The netCDF variables `global_x/y` are defined as the coordinates of the upper left corner of the bounding box for each MPI process using zero-based indexing and `local_extent_x/y` are the extents in the corresponding dimensions of the bounding box for each MPI process. The file also defines the variables `X_neighbors(P)`, `X_neighbor_ids(X_dim)` and `X_neighbor_halos(X_dim)`, where `X` is `top/bottom/left/right`, which correspond to the number of neighbors per process, the neighbor IDs and halo sizes of each process sorted from lower to higher MPI rank.
