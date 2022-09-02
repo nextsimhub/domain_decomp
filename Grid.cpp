@@ -84,8 +84,8 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   NC_CHECK(nc_inq_dimlen(data_nc_id, dim1_nc_id, &tmp_1));
   _global_ext_0 = static_cast<int>(tmp_0);
   _global_ext_1 = static_cast<int>(tmp_1);
-  _global_ext_blk_0 = ceil(((float)_global_ext_0) / _blk_factor_0);
-  _global_ext_blk_1 = ceil(((float)_global_ext_1) / _blk_factor_1);
+  _global_ext_blk_0 = ceil(static_cast<float>(_global_ext_0) / _blk_factor_0);
+  _global_ext_blk_1 = ceil(static_cast<float>(_global_ext_1) / _blk_factor_1);
 
   // Initially we partition assuming there is no land mask
   // Figure out my subset of objects
@@ -96,8 +96,8 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   _num_procs_1 = 1;
   find_factors(_num_procs, _num_procs_0, _num_procs_1);
 
-  _local_ext_blk_0 = ceil((float)_global_ext_blk_0 / _num_procs_0);
-  _local_ext_blk_1 = ceil((float)_global_ext_blk_1 / _num_procs_1);
+  _local_ext_blk_0 = ceil(static_cast<float>(_global_ext_blk_0) / _num_procs_0);
+  _local_ext_blk_1 = ceil(static_cast<float>(_global_ext_blk_1) / _num_procs_1);
   _global_blk_0 = (_rank / _num_procs_1) * _local_ext_blk_0;
   _global_blk_1 = (_rank % _num_procs_1) * _local_ext_blk_1;
   if ((_rank / _num_procs_1) == _num_procs_0 - 1) {

@@ -74,7 +74,7 @@ void Partitioner::save_mask(const std::string& filename) const
   nc_mode = NC_CLOBBER | NC_NETCDF4;
   NC_CHECK(
       nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
-  NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "num_processes", NC_SHORT, 1,
+  NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "num_processes", NC_INT, 1,
                           &_num_procs));
 
   // Create 2 dimensions
@@ -88,7 +88,7 @@ void Partitioner::save_mask(const std::string& filename) const
 
   // Create variables
   int mask_nc_id;
-  NC_CHECK(nc_def_var(nc_id, "pid", NC_SHORT, NDIMS, dimid, &mask_nc_id));
+  NC_CHECK(nc_def_var(nc_id, "pid", NC_INT, NDIMS, dimid, &mask_nc_id));
 
   // Write metadata to file
   NC_CHECK(nc_enddef(nc_id));
@@ -114,25 +114,90 @@ void Partitioner::save_metadata(const std::string& filename) const
   NC_CHECK(
       nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
 
-  // Define dimensions
-  int dimid;
-  NC_CHECK(nc_def_dim(nc_id, "P", _num_procs, &dimid));
+  // Prepare neighbor data
+  std::vector<int> top_ids, bottom_ids, left_ids, right_ids;
+  std::vector<int> top_halos, bottom_halos, left_halos, right_halos;
+  get_top_neighbors(top_ids, top_halos);
+  get_bottom_neighbors(bottom_ids, bottom_halos);
+  get_left_neighbors(left_ids, left_halos);
+  get_right_neighbors(right_ids, right_halos);
+  int top_num_neighbors = top_ids.size();
+  int bottom_num_neighbors = bottom_ids.size();
+  int left_num_neighbors = left_ids.size();
+  int right_num_neighbors = right_ids.size();
 
-  // Define variables
+  // Compute global dimensions
+  int top_dim, bottom_dim, left_dim, right_dim;
+  CHECK_MPI(
+      MPI_Allreduce(&top_num_neighbors, &top_dim, 1, MPI_INT, MPI_SUM, _comm));
+  CHECK_MPI(MPI_Allreduce(&bottom_num_neighbors, &bottom_dim, 1, MPI_INT,
+                          MPI_SUM, _comm));
+  CHECK_MPI(MPI_Allreduce(&left_num_neighbors, &left_dim, 1, MPI_INT, MPI_SUM,
+                          _comm));
+  CHECK_MPI(MPI_Allreduce(&right_num_neighbors, &right_dim, 1, MPI_INT, MPI_SUM,
+                          _comm));
+
+  // Compute global offsets
+  int top_offset = 0, bottom_offset = 0, left_offset = 0, right_offset = 0;
+  CHECK_MPI(
+      MPI_Exscan(&top_num_neighbors, &top_offset, 1, MPI_INT, MPI_SUM, _comm));
+  CHECK_MPI(MPI_Exscan(&bottom_num_neighbors, &bottom_offset, 1, MPI_INT,
+                       MPI_SUM, _comm));
+  CHECK_MPI(MPI_Exscan(&left_num_neighbors, &left_offset, 1, MPI_INT, MPI_SUM,
+                       _comm));
+  CHECK_MPI(MPI_Exscan(&right_num_neighbors, &right_offset, 1, MPI_INT, MPI_SUM,
+                       _comm));
+
+  // Define dimensions in netCDF file
+  int dimid, top_dimid, bottom_dimid, left_dimid, right_dimid;
+  NC_CHECK(nc_def_dim(nc_id, "P", _num_procs, &dimid));
+  NC_CHECK(nc_def_dim(nc_id, "T", top_dim, &top_dimid));
+  NC_CHECK(nc_def_dim(nc_id, "B", bottom_dim, &bottom_dimid));
+  NC_CHECK(nc_def_dim(nc_id, "L", left_dim, &left_dimid));
+  NC_CHECK(nc_def_dim(nc_id, "R", right_dim, &right_dimid));
+
+  // Define variables in netCDF file
   int top_x_vid, top_y_vid;
   int cnt_x_vid, cnt_y_vid;
+  int top_num_vid, bottom_num_vid, left_num_vid, right_num_vid;
+  int top_ids_vid, bottom_ids_vid, left_ids_vid, right_ids_vid;
+  int top_halos_vid, bottom_halos_vid, left_halos_vid, right_halos_vid;
   NC_CHECK(nc_def_var(nc_id, "global_x", NC_INT, 1, &dimid, &top_x_vid));
   NC_CHECK(nc_def_var(nc_id, "global_y", NC_INT, 1, &dimid, &top_y_vid));
   NC_CHECK(nc_def_var(nc_id, "local_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
   NC_CHECK(nc_def_var(nc_id, "local_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
+  NC_CHECK(nc_def_var(nc_id, "top_neighbors", NC_INT, 1, &dimid, &top_num_vid));
+  NC_CHECK(nc_def_var(nc_id, "top_neighbor_ids", NC_INT, 1, &top_dimid,
+                      &top_ids_vid));
+  NC_CHECK(nc_def_var(nc_id, "top_neighbor_halos", NC_INT, 1, &top_dimid,
+                      &top_halos_vid));
+  NC_CHECK(nc_def_var(nc_id, "bottom_neighbors", NC_INT, 1, &dimid,
+                      &bottom_num_vid));
+  NC_CHECK(nc_def_var(nc_id, "bottom_neighbor_ids", NC_INT, 1, &bottom_dimid,
+                      &bottom_ids_vid));
+  NC_CHECK(nc_def_var(nc_id, "bottom_neighbor_halos", NC_INT, 1, &bottom_dimid,
+                      &bottom_halos_vid));
+  NC_CHECK(
+      nc_def_var(nc_id, "left_neighbors", NC_INT, 1, &dimid, &left_num_vid));
+  NC_CHECK(nc_def_var(nc_id, "left_neighbor_ids", NC_INT, 1, &left_dimid,
+                      &left_ids_vid));
+  NC_CHECK(nc_def_var(nc_id, "left_neighbor_halos", NC_INT, 1, &left_dimid,
+                      &left_halos_vid));
+  NC_CHECK(
+      nc_def_var(nc_id, "right_neighbors", NC_INT, 1, &dimid, &right_num_vid));
+  NC_CHECK(nc_def_var(nc_id, "right_neighbor_ids", NC_INT, 1, &right_dimid,
+                      &right_ids_vid));
+  NC_CHECK(nc_def_var(nc_id, "right_neighbor_halos", NC_INT, 1, &right_dimid,
+                      &right_halos_vid));
 
   // Write metadata to file
   NC_CHECK(nc_enddef(nc_id));
 
   // Set up slab for this process
-  const size_t start = _rank;
+  size_t start, count;
 
   // Store data
+  start = _rank;
   NC_CHECK(nc_var_par_access(nc_id, top_x_vid, NC_COLLECTIVE));
   NC_CHECK(nc_put_var1_int(nc_id, top_x_vid, &start, &_global_0_new));
   NC_CHECK(nc_var_par_access(nc_id, top_y_vid, NC_COLLECTIVE));
@@ -141,6 +206,35 @@ void Partitioner::save_metadata(const std::string& filename) const
   NC_CHECK(nc_put_var1_int(nc_id, cnt_x_vid, &start, &_local_ext_0_new));
   NC_CHECK(nc_var_par_access(nc_id, cnt_y_vid, NC_COLLECTIVE));
   NC_CHECK(nc_put_var1_int(nc_id, cnt_y_vid, &start, &_local_ext_1_new));
+  NC_CHECK(nc_put_var1_int(nc_id, top_num_vid, &start, &top_num_neighbors));
+  NC_CHECK(
+      nc_put_var1_int(nc_id, bottom_num_vid, &start, &bottom_num_neighbors));
+  NC_CHECK(nc_put_var1_int(nc_id, left_num_vid, &start, &left_num_neighbors));
+  NC_CHECK(nc_put_var1_int(nc_id, right_num_vid, &start, &right_num_neighbors));
+
+  start = top_offset;
+  count = top_num_neighbors;
+  NC_CHECK(nc_put_vara_int(nc_id, top_ids_vid, &start, &count, top_ids.data()));
+  NC_CHECK(
+      nc_put_vara_int(nc_id, top_halos_vid, &start, &count, top_halos.data()));
+  start = bottom_offset;
+  count = bottom_num_neighbors;
+  NC_CHECK(nc_put_vara_int(nc_id, bottom_ids_vid, &start, &count,
+                           bottom_ids.data()));
+  NC_CHECK(nc_put_vara_int(nc_id, bottom_halos_vid, &start, &count,
+                           bottom_halos.data()));
+  start = left_offset;
+  count = left_num_neighbors;
+  NC_CHECK(
+      nc_put_vara_int(nc_id, left_ids_vid, &start, &count, left_ids.data()));
+  NC_CHECK(nc_put_vara_int(nc_id, left_halos_vid, &start, &count,
+                           left_halos.data()));
+  start = right_offset;
+  count = right_num_neighbors;
+  NC_CHECK(
+      nc_put_vara_int(nc_id, right_ids_vid, &start, &count, right_ids.data()));
+  NC_CHECK(nc_put_vara_int(nc_id, right_halos_vid, &start, &count,
+                           right_halos.data()));
 
   NC_CHECK(nc_close(nc_id));
 }

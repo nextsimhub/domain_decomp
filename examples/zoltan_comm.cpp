@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
   int offset = 0;
 
   // Top neighbors
-  for (int i = 0; i < top_ids.size(); i++) {
+  for (int i = 0; i < static_cast<int>(top_ids.size()); i++) {
     int subsizes[ndims] = {1, top_halos[i]};
 
     int send_top_start[ndims] = {1, offset + 1};
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 
   // Bottom neighbors
   offset = 0;
-  for (int i = 0; i < bottom_ids.size(); i++) {
+  for (int i = 0; i < static_cast<int>(bottom_ids.size()); i++) {
     int subsizes[ndims] = {1, bottom_halos[i]};
 
     int send_bottom_start[ndims] = {local_ext_0, offset + 1};
@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
 
   // Left neighbors
   offset = 0;
-  for (int i = 0; i < left_ids.size(); i++) {
+  for (int i = 0; i < static_cast<int>(left_ids.size()); i++) {
     int subsizes[ndims] = {left_halos[i], 1};
 
     int send_left_start[ndims] = {offset + 1, 1};
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
 
   // Right neighbors
   offset = 0;
-  for (int i = 0; i < right_ids.size(); i++) {
+  for (int i = 0; i < static_cast<int>(right_ids.size()); i++) {
     int subsizes[ndims] = {right_halos[i], 1};
 
     int send_right_start[ndims] = {offset + 1, local_ext_1};
@@ -241,9 +241,9 @@ int main(int argc, char* argv[])
   delete grid;
   delete partitioner;
 
-  for (int i = 0; i < sendtypes.size(); i++)
+  for (int i = 0; i < static_cast<int>(sendtypes.size()); i++)
     MPI_Type_free(&sendtypes[i]);
-  for (int i = 0; i < recvtypes.size(); i++)
+  for (int i = 0; i < static_cast<int>(recvtypes.size()); i++)
     MPI_Type_free(&recvtypes[i]);
 
   MPI_Finalize();
