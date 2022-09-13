@@ -127,11 +127,22 @@ dimensions:
 	B = 1 ;
 	L = UNLIMITED ; // (0 currently)
 	R = UNLIMITED ; // (0 currently)
-variables:
+
+group: bounding_boxes {
+  variables:
 	int global_x(P) ;
 	int global_y(P) ;
 	int local_extent_x(P) ;
 	int local_extent_y(P) ;
+  data:
+	global_x = 0, 16 ;
+	global_y = 0, 0 ;
+	local_extent_x = 16, 14 ;
+	local_extent_y = 30, 30 ;
+  } // group bounding_boxes
+
+group: connectivity {
+  variables:
 	int top_neighbors(P) ;
 	int top_neighbor_ids(T) ;
 	int top_neighbor_halos(T) ;
@@ -144,20 +155,16 @@ variables:
 	int right_neighbors(P) ;
 	int right_neighbor_ids(R) ;
 	int right_neighbor_halos(R) ;
-data:
-
- global_x = 0, 16 ;
- global_y = 0, 0 ;
- local_extent_x = 16, 14 ;
- local_extent_y = 30, 30 ;
- top_neighbors = 0, 1 ;
- top_neighbor_ids = 0 ;
- top_neighbor_halos = 30 ;
- bottom_neighbors = 1, 0 ;
- bottom_neighbor_ids = 1 ;
- bottom_neighbor_halos = 30 ;
- left_neighbors = 0, 0 ;
- right_neighbors = 0, 0 ;
+  data:
+	top_neighbors = 0, 1 ;
+	top_neighbor_ids = 0 ;
+	top_neighbor_halos = 30 ;
+	bottom_neighbors = 1, 0 ;
+	bottom_neighbor_ids = 1 ;
+	bottom_neighbor_halos = 30 ;
+	left_neighbors = 0, 0 ;
+	right_neighbors = 0, 0 ;
+  } // group connectivity
 }
 
 ```
