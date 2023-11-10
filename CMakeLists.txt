@@ -36,7 +36,15 @@ set(CMAKE_INSTALL_RPATH $ORIGIN/${relDir1}:$ORIGIN/${relDir2})
 # Dependencies
 find_package(Catch2 REQUIRED)
 find_package(MPI REQUIRED COMPONENTS CXX)
-find_package(netCDF REQUIRED)
+find_package(PkgConfig)
+pkg_search_module(NETCDF netcdf)
+if (NETCDF_FOUND)
+    set(netCDF_INCLUDE_DIR "${NETCDF_INCLUDE_DIRS}")
+    set(netCDF_LIB_DIR "${NETCDF_LIBRARY_DIRS}")
+else()
+    find_package(netCDF REQUIRED)
+endif()
+
 find_package(Zoltan REQUIRED)
 find_package(Boost COMPONENTS program_options REQUIRED)
 
