@@ -45,7 +45,11 @@ else()
     find_package(netCDF REQUIRED)
 endif()
 
-find_package(Zoltan REQUIRED)
+find_package(Zoltan)
+if (NOT Zoltan_FOUND)
+	find_library(Zoltan_LIBRARIES "zoltan" REQUIRED)
+endif()
+
 find_package(Boost COMPONENTS program_options REQUIRED)
 
 # Generic options for compilation
