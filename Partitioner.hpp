@@ -132,6 +132,8 @@ protected:
   int _num_procs = -1;   // Total number of processes in communicator
   int _num_procs_0 = -1; // Total number of processes in 1st dimension
   int _num_procs_1 = -1; // Total number of processes in 2nd dimension
+  std::string _dim0 = {};     // Name of dim0
+  std::string _dim1 = {};     // Name of dim1
   int _global_ext_0 = 0; // Global extent in 1st extension (blocking)
   int _global_ext_1 = 0; // Global extent in 2nd extension (blocking)
   int _local_ext_0 = 0;  // Local extent in 1st dimension (original, blocking)

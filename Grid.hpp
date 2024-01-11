@@ -101,6 +101,20 @@ public:
   int get_global_ext_1() const;
 
   /*!
+   * @brief Returns the coord name of dim0.
+   *
+   * @return dim0 name
+   */
+  std::string get_global_dim0() const;
+
+  /*!
+   * @brief Returns the coord name of dim1.
+   *
+   * @return dim1 name
+   */
+  std::string get_global_dim1() const;
+
+  /*!
    * @brief Returns the global extent in the 1st dimension of the grid ignoring
    * blocking.
    *
@@ -217,6 +231,8 @@ private:
   int _num_procs = -1;       // Total number of processes in communicator
   int _num_procs_0 = -1;     // Total number of processes in 1st dimension
   int _num_procs_1 = -1;     // Total number of processes in 2nd dimension
+  std::string _dim0 = {};     // Name of dim0
+  std::string _dim1 = {};     // Name of dim1
   int _blk_factor_0 = 1;     // Blocking factor in 1st dimension
   int _blk_factor_1 = 1;     // Blocking factor in 2nd dimension
   int _global_ext_0 = 0;     // Global extent in 1st dimension

@@ -74,6 +74,10 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   NC_CHECK(nc_inq_dimid(data_nc_id, dim0_name.c_str(), &dim0_nc_id));
   NC_CHECK(nc_inq_dimid(data_nc_id, dim1_name.c_str(), &dim1_nc_id));
 
+  // save dimension order for output
+  _dim0 = dim0_name;
+  _dim1 = dim1_name;
+
   CHECK_MPI(MPI_Comm_rank(comm, &_rank));
 
   // Retrieve the extent of each dimension of interest. The dimensions of
@@ -218,6 +222,10 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
 int Grid::get_global_ext_0() const { return _global_ext_blk_0; }
 
 int Grid::get_global_ext_1() const { return _global_ext_blk_1; }
+
+std::string Grid::get_global_dim0() const { return _dim0; }
+
+std::string Grid::get_global_dim1() const { return _dim1; }
 
 int Grid::get_global_ext_orig_0() const { return _global_ext_0; }
 

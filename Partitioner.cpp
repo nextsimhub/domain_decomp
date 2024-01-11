@@ -8,7 +8,11 @@
 #include "Utils.hpp"
 #include "ZoltanPartitioner.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <iostream>
+#include <ostream>
 #include <stdexcept>
 
 #include <netcdf.h>
@@ -83,8 +87,8 @@ void Partitioner::save_mask(const std::string& filename) const
   // the C interface
   const int NDIMS = 2;
   int dimid[NDIMS];
-  NC_CHECK(nc_def_dim(nc_id, "x", _global_ext_0, &dimid[0]));
-  NC_CHECK(nc_def_dim(nc_id, "y", _global_ext_1, &dimid[1]));
+  NC_CHECK(nc_def_dim(nc_id, _dim0.c_str(), _global_ext_0, &dimid[0]));
+  NC_CHECK(nc_def_dim(nc_id, _dim1.c_str(), _global_ext_1, &dimid[1]));
 
   // Create variables
   int mask_nc_id;
@@ -154,9 +158,11 @@ void Partitioner::save_metadata(const std::string& filename) const
   // the C interface
   const int NDIMS = 2;
   int dimid_global[NDIMS];
-  NC_CHECK(nc_def_dim(nc_id, "globalX", _global_ext_0, &dimid_global[0]));
-  NC_CHECK(nc_def_dim(nc_id, "globalY", _global_ext_1, &dimid_global[1]));
-
+  std::string tmp_name = {};
+  tmp_name = (_dim0 == "x") ? "globalX" : "globalY";
+  NC_CHECK(nc_def_dim(nc_id, tmp_name.c_str(), _global_ext_0, &dimid_global[0]));
+  tmp_name = (_dim1 == "y") ? "globalY" : "globalX";
+  NC_CHECK(nc_def_dim(nc_id, tmp_name.c_str(), _global_ext_1, &dimid_global[1]));
 
   // Define dimensions in netCDF file
   int dimid, top_dimid, bottom_dimid, left_dimid, right_dimid;
@@ -178,12 +184,16 @@ void Partitioner::save_metadata(const std::string& filename) const
   int top_ids_vid, bottom_ids_vid, left_ids_vid, right_ids_vid;
   int top_halos_vid, bottom_halos_vid, left_halos_vid, right_halos_vid;
   // Bounding boxes group
-  NC_CHECK(nc_def_var(bbox_gid, "global_x", NC_INT, 1, &dimid, &top_x_vid));
-  NC_CHECK(nc_def_var(bbox_gid, "global_y", NC_INT, 1, &dimid, &top_y_vid));
+  tmp_name = std::string("global_").append(_dim0);
+  NC_CHECK(nc_def_var(bbox_gid, tmp_name.c_str(), NC_INT, 1, &dimid, &top_x_vid));
+  tmp_name = std::string("global_").append(_dim1);
+  NC_CHECK(nc_def_var(bbox_gid, tmp_name.c_str(), NC_INT, 1, &dimid, &top_y_vid));
+  tmp_name = std::string("local_extent_").append(_dim0);
   NC_CHECK(
-      nc_def_var(bbox_gid, "local_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
+      nc_def_var(bbox_gid, tmp_name.c_str(), NC_INT, 1, &dimid, &cnt_x_vid));
+  tmp_name = std::string("local_extent_").append(_dim1);
   NC_CHECK(
-      nc_def_var(bbox_gid, "local_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
+      nc_def_var(bbox_gid, tmp_name.c_str(), NC_INT, 1, &dimid, &cnt_y_vid));
   // Connectivity group
   NC_CHECK(nc_def_var(connectivity_gid, "top_neighbors", NC_INT, 1, &dimid,
                       &top_num_vid));
