@@ -106,8 +106,8 @@ void ZoltanPartitioner::partition(Grid& grid)
   _num_procs_1 = grid.get_num_procs_1();
   _global_ext_0 = grid.get_global_ext_0();
   _global_ext_1 = grid.get_global_ext_1();
-  _dim0 = grid.get_global_dim0();
-  _dim1 = grid.get_global_dim1();
+  _dim0_name = grid.get_dim0_name();
+  _dim1_name = grid.get_dim1_name();
   int blk_factor_0 = grid.get_blk_factor_0();
   int blk_factor_1 = grid.get_blk_factor_1();
   grid.get_bounding_box(_global_0, _global_1, _local_ext_0, _local_ext_1);
