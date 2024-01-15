@@ -159,9 +159,14 @@ void Partitioner::save_metadata(const std::string& filename) const
   const int NDIMS = 2;
   int dimid_global[NDIMS];
   std::string tmp_name = {};
-  tmp_name = (_dim0_name == "x") ? "globalX" : "globalY";
+  std::string suffix = {};
+  suffix = _dim0_name;
+  std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::toupper);
+  tmp_name = std::string("global").append(suffix);
   NC_CHECK(nc_def_dim(nc_id, tmp_name.c_str(), _global_ext_0, &dimid_global[0]));
-  tmp_name = (_dim1_name == "y") ? "globalY" : "globalX";
+  suffix = _dim1_name;
+  std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::toupper);
+  tmp_name = std::string("global").append(suffix);
   NC_CHECK(nc_def_dim(nc_id, tmp_name.c_str(), _global_ext_1, &dimid_global[1]));
 
   // Define dimensions in netCDF file
