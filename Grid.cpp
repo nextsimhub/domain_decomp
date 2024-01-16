@@ -159,23 +159,14 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
     // create copy of land mask ready to transpose
     std::vector<int> _land_mask_copy(_land_mask);
 
-    printf("%d %d\n", count[0], count[1]);
-
+    // transpose _land_mask
     int index = 0;
     for (size_t j = 0; j < count[1]; j++) {
       for (size_t i = 0; i < count[0]; i++) {
-        // int idx = i*count[1]+j;
-        // printf("%d->%d  ", index, idx);
         _land_mask[index] = _land_mask_copy[i*count[1]+j];
         index++;
       }
     }
-      // printf("\n");
-
-    for (int i = 0; i < _num_objects; ++i) {
-      printf("%d ", _land_mask[i]);
-    }
-      printf("\n");
 
     // Apply land mask
     if (_blk_factor_0 == 1 && _blk_factor_1 == 1) {
@@ -187,7 +178,6 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
           int local_1 = i % _local_ext_1;
           int global_0 = local_0 + _global_0;
           int global_1 = local_1 + _global_1;
-          printf("local_0, local_1, global_0, global_1 = %d %d %d %d\n", local_0, local_1, global_0, global_1);
           _object_id.push_back(global_0 * _global_ext_1 + global_1);
           _sparse_to_dense.push_back(i);
           _num_nonzero_objects++;
