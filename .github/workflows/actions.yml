@@ -25,8 +25,8 @@ jobs:
           -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
           -DTrilinos_ENABLE_Zoltan:BOOL=ON \
           -DTrilinos_ENABLE_Fortran:BOOL=OFF \
-          -DZoltan_ENABLE_EXAMPLES:BOOL=ON \
-          -DZoltan_ENABLE_TESTS:BOOL=ON \
+          -DZoltan_ENABLE_EXAMPLES:BOOL=OFF \
+          -DZoltan_ENABLE_TESTS:BOOL=OFF \
           -DBUILD_SHARED_LIBS=ON \
           -Bbuild -S.
           sudo cmake --build build --config Release --target install
@@ -35,7 +35,7 @@ jobs:
           cd PnetCDF
           autoreconf -i
           CXX=mpicxx CC=mpicc ./configure --disable-fortran --enable-shared
-          make -j2
+          make
           sudo make install
           cd ..
           git clone -b v4.8.1 https://github.com/Unidata/netcdf-c.git
@@ -45,6 +45,8 @@ jobs:
           -DCMAKE_C_COMPILER=mpicc \
           -DCMAKE_CXX_COMPILER=mpicxx \
           -DCMAKE_BUILD_TYPE=Release \
+          -DENABLE_TESTS=OFF \
+          -DENABLE_PARALLEL_TESTS=OFF \
           -Bbuild -S.
           sudo cmake --build build --config Release --target install
           cd ..
@@ -81,8 +83,8 @@ jobs:
           -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
           -DTrilinos_ENABLE_Zoltan:BOOL=ON \
           -DTrilinos_ENABLE_Fortran:BOOL=OFF \
-          -DZoltan_ENABLE_EXAMPLES:BOOL=ON \
-          -DZoltan_ENABLE_TESTS:BOOL=ON \
+          -DZoltan_ENABLE_EXAMPLES:BOOL=OFF \
+          -DZoltan_ENABLE_TESTS:BOOL=OFF \
           -DBUILD_SHARED_LIBS=ON \
           -Bbuild -S.
           sudo cmake --build build --config Release --target install
@@ -94,6 +96,8 @@ jobs:
           -DCMAKE_C_COMPILER=mpicc \
           -DCMAKE_CXX_COMPILER=mpicxx \
           -DCMAKE_BUILD_TYPE=Release \
+          -DENABLE_TESTS=OFF \
+          -DENABLE_PARALLEL_TESTS=OFF \
           -Bbuild -S.
           sudo cmake --build build --config Release --target install
           cd ..
