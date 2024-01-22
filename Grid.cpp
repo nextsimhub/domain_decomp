@@ -71,17 +71,21 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   if (ret != NC_NOERR)
     data_nc_id = nc_id;
   int dim0_nc_id, dim1_nc_id;
-  NC_CHECK(nc_inq_dimid(data_nc_id, dim0_name.c_str(), &dim0_nc_id));
-  NC_CHECK(nc_inq_dimid(data_nc_id, dim1_name.c_str(), &dim1_nc_id));
+  // I have switched the order of the dimensions here to reflect the change of
+  // indices in nextsim-dg
+  NC_CHECK(nc_inq_dimid(data_nc_id, dim1_name.c_str(), &dim0_nc_id));
+  NC_CHECK(nc_inq_dimid(data_nc_id, dim0_name.c_str(), &dim1_nc_id));
 
   CHECK_MPI(MPI_Comm_rank(comm, &_rank));
 
   // Retrieve the extent of each dimension of interest. The dimensions of
   // interest are the spatial dimensions of the grid. These are named "x" and
   // "y" by default.
+  // I have switched the order of the dimensions here to reflect the change of
+  // indices in nextsim-dg
   size_t tmp_0, tmp_1;
-  NC_CHECK(nc_inq_dimlen(data_nc_id, dim0_nc_id, &tmp_0));
-  NC_CHECK(nc_inq_dimlen(data_nc_id, dim1_nc_id, &tmp_1));
+  NC_CHECK(nc_inq_dimlen(data_nc_id, dim1_nc_id, &tmp_0));
+  NC_CHECK(nc_inq_dimlen(data_nc_id, dim0_nc_id, &tmp_1));
   _global_ext_0 = static_cast<int>(tmp_0);
   _global_ext_1 = static_cast<int>(tmp_1);
   _global_ext_blk_0 = ceil(static_cast<float>(_global_ext_0) / _blk_factor_0);
@@ -138,8 +142,10 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
     int dim_id[NDIMS];
     char dim_name[NDIMS][128];
     NC_CHECK(nc_inq_vardimid(data_nc_id, mask_nc_id, &dim_id[0]));
-    NC_CHECK(nc_inq_dimname(data_nc_id, dim_id[0], &dim_name[0][0]));
-    NC_CHECK(nc_inq_dimname(data_nc_id, dim_id[1], &dim_name[1][0]));
+    // I have switched the order of the dimensions here to reflect the change of
+    // indices in nextsim-dg
+    NC_CHECK(nc_inq_dimname(data_nc_id, dim_id[1], &dim_name[0][0]));
+    NC_CHECK(nc_inq_dimname(data_nc_id, dim_id[0], &dim_name[1][0]));
     if (dim_name[0] != dim0_name || dim_name[1] != dim1_name) {
       throw std::runtime_error("Dimension ordering provided does not match "
                                "ordering in netCDF grid file");
@@ -147,14 +153,28 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
 
     _land_mask.resize(_num_objects);
     size_t start[NDIMS], count[NDIMS];
+    // I have switched the order of the dimensions here to reflect the change of
+    // indices in nextsim-dg
     // Coordinate of first element
-    start[0] = _global_0;
-    start[1] = _global_1;
+    start[1] = _global_0;
+    start[0] = _global_1;
     // Number of elements in every extension
-    count[0] = _local_ext_0;
-    count[1] = _local_ext_1;
+    count[1] = _local_ext_0;
+    count[0] = _local_ext_1;
     NC_CHECK(nc_get_vara_int(data_nc_id, mask_nc_id, start, count,
                              _land_mask.data()));
+
+    // create copy of land mask ready to transpose
+    std::vector<int> _land_mask_copy(_land_mask);
+
+    // transpose _land_mask to reflect the change of indices in nextsim-dg
+    int index = 0;
+    for (size_t j = 0; j < count[1]; j++) {
+      for (size_t i = 0; i < count[0]; i++) {
+        _land_mask[index] = _land_mask_copy[i*count[1]+j];
+        index++;
+      }
+    }
 
     // Apply land mask
     if (_blk_factor_0 == 1 && _blk_factor_1 == 1) {

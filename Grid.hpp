@@ -52,13 +52,19 @@ public:
    * dim1) dimensions of the Grid class, where dim1 is defined as the fastest
    * increasing dimension. For example, if the dimensions of interest in the
    * netCDF file are named x and y and the variables are dimensioned as (y, x),
-   * then the y dimension will be mapped to dim0 and x to dim1 of the Grid
+   * then the y dimension will be mapped to dim1 and x to dim0 of the Grid
    * class, since the netCDF C/C++ convention is that the last dimension in the
    * CDL notation is the fastest increasing dimension. The default dimension
    * names for the netCDF file are "x" for dim0 and "y" for dim1, and the
    * default name for the land mask variable is "mask". the We assume that all
    * variables defined in the netCDF file follow the same convention in terms of
    * dimension ordering.
+   *
+   * The code was originally written with the assumption that nextsim-dg would
+   * store arrays in (x,y) order. However, the indices have since been swapped
+   * and now nextsim-dg uses (y,x) order. To account for the switch of indices
+   * the grid input netcdf file is now transposed when it is read-in and the x
+   * and y dims are swapped in Grid.cpp.
    *
    * @param comm MPI communicator.
    * @param filename Grid file in netCDF format.
