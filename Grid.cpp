@@ -71,6 +71,8 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   if (ret != NC_NOERR)
     data_nc_id = nc_id;
   int dim0_nc_id, dim1_nc_id;
+  // I have switched the order of the dimensions here to reflect the change of
+  // indices in nextsim-dg
   NC_CHECK(nc_inq_dimid(data_nc_id, dim1_name.c_str(), &dim0_nc_id));
   NC_CHECK(nc_inq_dimid(data_nc_id, dim0_name.c_str(), &dim1_nc_id));
 
@@ -79,6 +81,8 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
   // Retrieve the extent of each dimension of interest. The dimensions of
   // interest are the spatial dimensions of the grid. These are named "x" and
   // "y" by default.
+  // I have switched the order of the dimensions here to reflect the change of
+  // indices in nextsim-dg
   size_t tmp_0, tmp_1;
   NC_CHECK(nc_inq_dimlen(data_nc_id, dim1_nc_id, &tmp_0));
   NC_CHECK(nc_inq_dimlen(data_nc_id, dim0_nc_id, &tmp_1));
@@ -138,6 +142,8 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
     int dim_id[NDIMS];
     char dim_name[NDIMS][128];
     NC_CHECK(nc_inq_vardimid(data_nc_id, mask_nc_id, &dim_id[0]));
+    // I have switched the order of the dimensions here to reflect the change of
+    // indices in nextsim-dg
     NC_CHECK(nc_inq_dimname(data_nc_id, dim_id[1], &dim_name[0][0]));
     NC_CHECK(nc_inq_dimname(data_nc_id, dim_id[0], &dim_name[1][0]));
     if (dim_name[0] != dim0_name || dim_name[1] != dim1_name) {
@@ -147,6 +153,8 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
 
     _land_mask.resize(_num_objects);
     size_t start[NDIMS], count[NDIMS];
+    // I have switched the order of the dimensions here to reflect the change of
+    // indices in nextsim-dg
     // Coordinate of first element
     start[1] = _global_0;
     start[0] = _global_1;
@@ -159,7 +167,7 @@ Grid::Grid(MPI_Comm comm, const std::string& filename,
     // create copy of land mask ready to transpose
     std::vector<int> _land_mask_copy(_land_mask);
 
-    // transpose _land_mask
+    // transpose _land_mask to reflect the change of indices in nextsim-dg
     int index = 0;
     for (size_t j = 0; j < count[1]; j++) {
       for (size_t i = 0; i < count[0]; i++) {
