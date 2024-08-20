@@ -34,12 +34,11 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install dependencies
         run: |
-          brew install open-mpi
-          brew install netcdf
-          brew install netcdf-cxx
-          brew install boost
           brew install cmake
           brew install catch2
+          brew install boost
+          brew install hdf5-mpi
+          brew install pnetcdf
           git clone https://github.com/trilinos/Trilinos.git
           cd Trilinos
           cmake \
@@ -50,6 +49,18 @@ jobs:
           -DZoltan_ENABLE_EXAMPLES:BOOL=OFF \
           -DZoltan_ENABLE_TESTS:BOOL=OFF \
           -DBUILD_SHARED_LIBS=ON \
+          -Bbuild -S.
+          sudo cmake --build build --config Release --target install
+          cd ..
+          git clone -b v4.9.2 https://github.com/Unidata/netcdf-c.git
+          cd netcdf-c
+          cmake \
+          -DENABLE_PNETCDF=ON \
+          -DCMAKE_C_COMPILER=mpicc \
+          -DCMAKE_CXX_COMPILER=mpicxx \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DENABLE_TESTS=OFF \
+          -DENABLE_PARALLEL_TESTS=OFF \
           -Bbuild -S.
           sudo cmake --build build --config Release --target install
       - name: Configure
