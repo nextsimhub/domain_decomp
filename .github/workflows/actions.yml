@@ -14,14 +14,17 @@ jobs:
       - name: Configure
         shell: bash
         run: |
+          . /opt/spack-environment/activate.sh
           cmake -G "Unix Makefiles" -Bbuild -S.
       - name: Build
         shell: bash
         run: |
+          . /opt/spack-environment/activate.sh
           cmake --build build --config Release
       - name: Run unit tests
         shell: bash
         run: |
+          . /opt/spack-environment/activate.sh
           cd build
           ctest -V
 
