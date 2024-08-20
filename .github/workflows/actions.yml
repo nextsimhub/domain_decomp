@@ -32,8 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew install cmake
-          brew extract --version=2.13.9 catch2 homebrew/cask-versions
-          brew install catch2@2.13.9
+          brew install catch2
           brew install boost
           brew install hdf5-mpi
           brew install netcdf
