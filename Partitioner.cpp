@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 25 June 2022
+ * @date 20 August 2024
  */
 
 #include "Partitioner.hpp"
@@ -154,8 +154,8 @@ void Partitioner::save_metadata(const std::string& filename) const
   // the C interface
   const int NDIMS = 2;
   int dimid_global[NDIMS];
-  NC_CHECK(nc_def_dim(nc_id, "globalX", _global_ext_0, &dimid_global[0]));
-  NC_CHECK(nc_def_dim(nc_id, "globalY", _global_ext_1, &dimid_global[1]));
+  NC_CHECK(nc_def_dim(nc_id, "NX", _global_ext_0, &dimid_global[0]));
+  NC_CHECK(nc_def_dim(nc_id, "NY", _global_ext_1, &dimid_global[1]));
 
 
   // Define dimensions in netCDF file
