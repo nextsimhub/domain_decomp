@@ -1,7 +1,7 @@
 /*!
  * @file main.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 13 August 2022
+ * @date 20 August 2024
  */
 
 #define CATCH_CONFIG_RUNNER
