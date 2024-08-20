@@ -36,32 +36,9 @@ jobs:
           brew install catch2@2.13.9
           brew install boost
           brew install hdf5-mpi
+          brew install netcdf
           brew install pnetcdf
-          git clone https://github.com/trilinos/Trilinos.git
-          cd Trilinos
-          cmake \
-          -DTPL_ENABLE_MPI:BOOL=ON \
-          -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
-          -DTrilinos_ENABLE_Zoltan:BOOL=ON \
-          -DTrilinos_ENABLE_Fortran:BOOL=OFF \
-          -DZoltan_ENABLE_EXAMPLES:BOOL=OFF \
-          -DZoltan_ENABLE_TESTS:BOOL=OFF \
-          -DBUILD_SHARED_LIBS=ON \
-          -Bbuild -S.
-          sudo cmake --build build --config Release --target install
-          cd ..
-          git clone -b v4.8.1 https://github.com/Unidata/netcdf-c.git
-          cd netcdf-c
-          cmake \
-          -DENABLE_PNETCDF=ON \
-          -DCMAKE_C_COMPILER=mpicc \
-          -DCMAKE_CXX_COMPILER=mpicxx \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DENABLE_TESTS=OFF \
-          -DENABLE_PARALLEL_TESTS=OFF \
-          -Bbuild -S.
-          sudo cmake --build build --config Release --target install
-          cd ..
+          brew install trilinos
       - name: Configure
         run: |
           cmake -Bbuild -S.
