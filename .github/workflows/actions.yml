@@ -39,7 +39,18 @@ jobs:
           brew install boost
           brew install cmake
           brew install catch2
-          brew install trilinos
+          git clone https://github.com/trilinos/Trilinos.git
+          cd Trilinos
+          cmake \
+          -DTPL_ENABLE_MPI:BOOL=ON \
+          -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+          -DTrilinos_ENABLE_Zoltan:BOOL=ON \
+          -DTrilinos_ENABLE_Fortran:BOOL=OFF \
+          -DZoltan_ENABLE_EXAMPLES:BOOL=OFF \
+          -DZoltan_ENABLE_TESTS:BOOL=OFF \
+          -DBUILD_SHARED_LIBS=ON \
+          -Bbuild -S.
+          sudo cmake --build build --config Release --target install
       - name: Configure
         run: |
           cmake -Bbuild -S.
