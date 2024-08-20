@@ -7,7 +7,7 @@
 #include "Grid.hpp"
 #include "Partitioner.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <mpi.h>
 
 extern int global_argc;
