@@ -21,7 +21,7 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 * ANSI C++ compiler
 * MPI library for message passing (e.g., MPICH or OpenMPI)
 * CMake >= 3.10
-* [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files through PnetCDF
+* [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.9.2), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files through PnetCDF
 * Zoltan, built with CMake from the **[Trilinos](https://github.com/trilinos/Trilinos.git)** package
 * [Catch2](https://github.com/catchorg/Catch2) for unit testing
 * [Boost](https://www.boost.org/) program_options library
@@ -63,11 +63,11 @@ make install
 ```
 
 #### Building netCDF from source with parallel I/O
-Download v4.8.1 of [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1). Parallel I/O is implemented through HDF5 (built with parallel I/O).
+Download v4.9.2 of [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.9.2). Parallel I/O is implemented through HDF5 (built with parallel I/O).
 
 For netCDF-C (for more details see [here](https://docs.unidata.ucar.edu/netcdf-c/current/netCDF-CMake.html) for requirements):
 ```
-cd netcdf-c-4.8.1
+cd netcdf-c-4.9.2
 mkdir build && cd build
 cmake \
  -DENABLE_PNETCDF=ON \
