@@ -96,7 +96,7 @@ The project installs a shared library that can be imported by other CMake projec
 ### How to run
 The binary `decomp` can be used to partition a 2D grid with an optional land mask represented as a netCDF file. By default, the name of the dimensions in the netCDF file are `x` and `y` with the `y` dimension increasing the fastest, and the name of the variable representing the land mask is `mask`. For netCDF files using the enhanced model, we assume the group that contains the information of interest is named `data`. These can be overridden using command-line options. For example:
 ```
-mpirun -n 2 ./decomp grid.nc --dim0 y --dim1 x --mask land_mask
+mpirun -n 2 ./decomp --grid grid.nc --dim0 y --dim1 x --mask land_mask
 ```
 
 The `decomp` tool produces two netCDF-4 files (using the classic data model) named `partition_mask_<num_mpi_processes>.nc` and `partition_metadata_<num_mpi_processes>.nc` with the following layout:
