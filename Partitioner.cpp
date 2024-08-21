@@ -181,9 +181,9 @@ void Partitioner::save_metadata(const std::string& filename) const
   NC_CHECK(nc_def_var(bbox_gid, "domain_x", NC_INT, 1, &dimid, &top_x_vid));
   NC_CHECK(nc_def_var(bbox_gid, "domain_y", NC_INT, 1, &dimid, &top_y_vid));
   NC_CHECK(
-      nc_def_var(bbox_gid, "local_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
+      nc_def_var(bbox_gid, "domain_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
   NC_CHECK(
-      nc_def_var(bbox_gid, "local_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
+      nc_def_var(bbox_gid, "domain_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
   // Connectivity group
   NC_CHECK(nc_def_var(connectivity_gid, "top_neighbors", NC_INT, 1, &dimid,
                       &top_num_vid));
