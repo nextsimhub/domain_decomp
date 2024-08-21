@@ -178,8 +178,8 @@ void Partitioner::save_metadata(const std::string& filename) const
   int top_ids_vid, bottom_ids_vid, left_ids_vid, right_ids_vid;
   int top_halos_vid, bottom_halos_vid, left_halos_vid, right_halos_vid;
   // Bounding boxes group
-  NC_CHECK(nc_def_var(bbox_gid, "global_x", NC_INT, 1, &dimid, &top_x_vid));
-  NC_CHECK(nc_def_var(bbox_gid, "global_y", NC_INT, 1, &dimid, &top_y_vid));
+  NC_CHECK(nc_def_var(bbox_gid, "domain_x", NC_INT, 1, &dimid, &top_x_vid));
+  NC_CHECK(nc_def_var(bbox_gid, "domain_y", NC_INT, 1, &dimid, &top_y_vid));
   NC_CHECK(
       nc_def_var(bbox_gid, "local_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
   NC_CHECK(

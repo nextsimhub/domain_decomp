@@ -103,9 +103,9 @@ public:
    *
    * Saves the boxes and connectivity information of the latest 2D domain
    * decomposition in a NetCDF file. The NetCDF file contains a dimension P
-   * equal to the number of partitions and integer variables global_x(P),
-   * global_y(P), local_extent_x(P) and local_extent_y(P). Variables global_x
-   * and global_y are defined as the coordinates of the upper left corner of the
+   * equal to the number of partitions and integer variables domain_x(P),
+   * domain_y(P), local_extent_x(P) and local_extent_y(P). Variables domain_x
+   * and domain_y are defined as the coordinates of the upper left corner of the
    * box for each partition, while the local_extent_x and local_extent_y
    * variables define the local extent of the x and y dimensions respectively.
    * The file also defines the variables X_neighbors(P), X_neighbor_ids(X_dim)
