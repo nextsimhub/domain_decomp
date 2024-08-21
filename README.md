@@ -130,15 +130,15 @@ dimensions:
 
 group: bounding_boxes {
   variables:
-	int global_x(P) ;
-	int global_y(P) ;
-	int local_extent_x(P) ;
-	int local_extent_y(P) ;
+	int domain_x(P) ;
+	int domain_y(P) ;
+	int domain_extent_x(P) ;
+	int domain_extent_y(P) ;
   data:
-	global_x = 0, 16 ;
-	global_y = 0, 0 ;
-	local_extent_x = 16, 14 ;
-	local_extent_y = 30, 30 ;
+	domain_x = 0, 16 ;
+	domain_y = 0, 0 ;
+	domain_extent_x = 16, 14 ;
+	domain_extent_y = 30, 30 ;
   } // group bounding_boxes
 
 group: connectivity {
@@ -169,7 +169,7 @@ group: connectivity {
 
 ```
 
-The netCDF variables `global_x/y` are defined as the coordinates of the upper left corner of the bounding box for each MPI process using zero-based indexing and `local_extent_x/y` are the extents in the corresponding dimensions of the bounding box for each MPI process. The file also defines the variables `X_neighbors(P)`, `X_neighbor_ids(X_dim)` and `X_neighbor_halos(X_dim)`, where `X` is `top/bottom/left/right`, which correspond to the number of neighbors per process, the neighbor IDs and halo sizes of each process sorted from lower to higher MPI rank.
+The netCDF variables `domain_x/y` are defined as the coordinates of the upper left corner of the bounding box for each MPI process using zero-based indexing and `domain_extent_x/y` are the extents in the corresponding dimensions of the bounding box for each MPI process. The file also defines the variables `X_neighbors(P)`, `X_neighbor_ids(X_dim)` and `X_neighbor_halos(X_dim)`, where `X` is `top/bottom/left/right`, which correspond to the number of neighbors per process, the neighbor IDs and halo sizes of each process sorted from lower to higher MPI rank.
 
 ## Layout
 
@@ -181,18 +181,18 @@ To remove disambiguity we renamed the outputs produced in the `partition_metadat
 ```
 netcdf partition_metadata_3 {
 dimensions:
- globalX = 30 ; (NX)
- globalY = 24 ; (NY)
+ NX = 30 ;
+ NY = 24 ;
  P = 3 ;
  T = 2 ;                                              0            12        24
  B = 2 ;                                               ┌──────────────────────►  y
  L = 1 ;                                               │
  R = 1 ;                                               │  ┌─────────┬─────────┐
 group: bounding_boxes {                                │  │         │         │
-   global_x = 0, 0, 20 ;  (domain_x)                   │  │         │         │
-   global_y = 0, 12, 0 ;  (domain_y)                   │  │         │         │
-   local_extent_x = 20, 20, 10 ; (domain_extent_x)     │  │    0    │    1    │
-   local_extent_y = 12, 12, 24 ; (domain_extent_y)     │  │         │         │
+   domain_x = 0, 0, 20 ;                               │  │         │         │
+   domain_y = 0, 12, 0 ;                               │  │         │         │
+   domain_extent_x = 20, 20, 10 ;                      │  │    0    │    1    │
+   domain_extent_y = 12, 12, 24 ;                      │  │         │         │
   } // group bounding_boxes                            │  │         │         │
 group: connectivity {                                  │  │         │         │
    top_neighbors = 0, 0, 2 ;                        20 │  ├─────────┴─────────┤
