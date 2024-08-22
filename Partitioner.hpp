@@ -80,6 +80,42 @@ public:
     void get_right_neighbors(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
 
     /*!
+     * @brief Returns the MPI ranks and halo sizes of the top neighbors by
+     * periodic boundary for the current process after partitioning.
+     *
+     * @param ids Vector to store neighbor IDs.
+     * @param halo_sizes Vector to store halo sizes.
+     */
+    void get_top_neighbors_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+
+    /*!
+     * @brief Returns the MPI ranks and halo sizes of the bottom neighbors by
+     * periodic boundary for the current process after partitioning.
+     *
+     * @param ids Vector to store neighbor IDs.
+     * @param halo_sizes Vector to store halo sizes.
+     */
+    void get_bottom_neighbors_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+
+    /*!
+     * @brief Returns the MPI ranks and halo sizes of the left neighbors by
+     * periodic boundary for the current process after partitioning.
+     *
+     * @param ids Vector to store neighbor IDs.
+     * @param halo_sizes Vector to store halo sizes.
+     */
+    void get_left_neighbors_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+
+    /*!
+     * @brief Returns the MPI ranks and halo sizes of the right neighbors by
+     * periodic boundary for the current process after partitioning.
+     *
+     * @param ids Vector to store neighbor IDs.
+     * @param halo_sizes Vector to store halo sizes.
+     */
+    void get_right_neighbors_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+
+    /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
      * NetCDF file.
      *
