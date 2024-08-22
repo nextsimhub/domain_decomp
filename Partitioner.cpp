@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 25 June 2022
+ * @date 20 August 2024
  */
 
 #include "Partitioner.hpp"
@@ -154,8 +154,8 @@ void Partitioner::save_metadata(const std::string& filename) const
   // the C interface
   const int NDIMS = 2;
   int dimid_global[NDIMS];
-  NC_CHECK(nc_def_dim(nc_id, "globalX", _global_ext_0, &dimid_global[0]));
-  NC_CHECK(nc_def_dim(nc_id, "globalY", _global_ext_1, &dimid_global[1]));
+  NC_CHECK(nc_def_dim(nc_id, "NX", _global_ext_0, &dimid_global[0]));
+  NC_CHECK(nc_def_dim(nc_id, "NY", _global_ext_1, &dimid_global[1]));
 
 
   // Define dimensions in netCDF file
@@ -178,12 +178,12 @@ void Partitioner::save_metadata(const std::string& filename) const
   int top_ids_vid, bottom_ids_vid, left_ids_vid, right_ids_vid;
   int top_halos_vid, bottom_halos_vid, left_halos_vid, right_halos_vid;
   // Bounding boxes group
-  NC_CHECK(nc_def_var(bbox_gid, "global_x", NC_INT, 1, &dimid, &top_x_vid));
-  NC_CHECK(nc_def_var(bbox_gid, "global_y", NC_INT, 1, &dimid, &top_y_vid));
+  NC_CHECK(nc_def_var(bbox_gid, "domain_x", NC_INT, 1, &dimid, &top_x_vid));
+  NC_CHECK(nc_def_var(bbox_gid, "domain_y", NC_INT, 1, &dimid, &top_y_vid));
   NC_CHECK(
-      nc_def_var(bbox_gid, "local_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
+      nc_def_var(bbox_gid, "domain_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
   NC_CHECK(
-      nc_def_var(bbox_gid, "local_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
+      nc_def_var(bbox_gid, "domain_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
   // Connectivity group
   NC_CHECK(nc_def_var(connectivity_gid, "top_neighbors", NC_INT, 1, &dimid,
                       &top_num_vid));
