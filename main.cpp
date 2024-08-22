@@ -30,7 +30,9 @@ int main(int argc, char* argv[])
         "dim1", po::value<string>()->default_value("y"),
         "Second spatial dimension in netCDF grid file")("mask,m",
         po::value<string>()->default_value("mask"), "Mask variable name in netCDF grid file")(
-        "ignore-mask", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file");
+        "ignore-mask", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file")(
+        "p0", po::bool_switch()->default_value(false), "Periodicity in the first dimension")(
+        "p1", po::bool_switch()->default_value(false), "Periodicity in the second dimension");
 
     // Parse optional command line options
     po::variables_map vm;
@@ -62,6 +64,10 @@ int main(int argc, char* argv[])
 
     // Partition grid
     partitioner->partition(*grid);
+
+    // TODO: Account for periodic boundaries
+    bool p0 = vm["p0"].as<bool>();
+    bool p1 = vm["p1"].as<bool>();
 
     // Store partitioning results in netCDF file
     int num_procs;
