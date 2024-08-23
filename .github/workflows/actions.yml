@@ -5,6 +5,19 @@ on:
   pull_request:
     branches: [main]
 jobs:
+  clang-formatter:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: clang-format
+      run: |
+        sudo apt update
+        sudo apt install clang-format
+        clang-format --dry-run -Werror *cpp *hpp
+        for component in examples test
+        do
+          clang-format --dry-run -Werror *cpp *hpp
+        done
   build-on-ubuntu:
     runs-on: ubuntu-latest
     steps:

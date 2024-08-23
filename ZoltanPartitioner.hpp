@@ -1,7 +1,7 @@
 /*!
  * @file ZoltanPartitioner.hpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 25 June 2022
+ * @date 23 Aug 2024
  */
 
 #pragma once
@@ -21,40 +21,39 @@
  * use the Recursive Coordinate Bisection (RCB) geometric partitioning
  * algorithm.
  */
-class ZoltanPartitioner final : public Partitioner
-{
+class ZoltanPartitioner final : public Partitioner {
 public:
-  // Disallow compiler-generated special functions
-  ZoltanPartitioner(const ZoltanPartitioner&) = delete;
-  ZoltanPartitioner& operator=(const ZoltanPartitioner&) = delete;
+    // Disallow compiler-generated special functions
+    ZoltanPartitioner(const ZoltanPartitioner&) = delete;
+    ZoltanPartitioner& operator=(const ZoltanPartitioner&) = delete;
 
-  /*!
-   * @brief Destructor.
-   */
-  ~ZoltanPartitioner() {}
+    /*!
+     * @brief Destructor.
+     */
+    ~ZoltanPartitioner() { }
 
-  /*!
-   * @brief Create a Zoltan partitioner.
-   *
-   * @param comm MPI communicator.
-   * @param argc The number of arguments.
-   * @param argv The argument vector.
-   * @return A ZoltanPartitioner object.
-   */
-  static ZoltanPartitioner* create(MPI_Comm comm, int argc, char** argv);
+    /*!
+     * @brief Create a Zoltan partitioner.
+     *
+     * @param comm MPI communicator.
+     * @param argc The number of arguments.
+     * @param argv The argument vector.
+     * @return A ZoltanPartitioner object.
+     */
+    static ZoltanPartitioner* create(MPI_Comm comm, int argc, char** argv);
 
-  /*!
-   * @brief Partitions a 2D grid into rectangular boxes, one per process.
-   *
-   * Partitions a 2D grid into rectangular boxes, one per process, taking into
-   * account a land mask, if provided.
-   */
-  void partition(Grid& grid) override;
+    /*!
+     * @brief Partitions a 2D grid into rectangular boxes, one per process.
+     *
+     * Partitions a 2D grid into rectangular boxes, one per process, taking into
+     * account a land mask, if provided.
+     */
+    void partition(Grid& grid) override;
 
 protected:
-  // Constructor
-  ZoltanPartitioner(MPI_Comm comm, int argc, char** argv);
+    // Constructor
+    ZoltanPartitioner(MPI_Comm comm, int argc, char** argv);
 
 private:
-  std::unique_ptr<Zoltan> _zoltan = nullptr; // Zoltan object
+    std::unique_ptr<Zoltan> _zoltan = nullptr; // Zoltan object
 };
