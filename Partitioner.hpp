@@ -165,4 +165,6 @@ public:
          */
         static Partitioner* create(MPI_Comm comm, int argc, char** argv, PartitionerType type);
     };
+    bool _p0 = false; // Periodic boundary in the 1st dimension // TODO: Privatise
+    bool _p1 = false; // Periodic boundary in the 2nd dimension // TODO: Privatise
 };

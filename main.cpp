@@ -66,8 +66,8 @@ int main(int argc, char* argv[])
     partitioner->partition(*grid);
 
     // TODO: Account for periodic boundaries
-    bool p0 = vm["p0"].as<bool>();
-    bool p1 = vm["p1"].as<bool>();
+    partitioner->_p0 = vm["p0"].as<bool>();
+    partitioner->_p1 = vm["p1"].as<bool>();
 
     // Store partitioning results in netCDF file
     int num_procs;
