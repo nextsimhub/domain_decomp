@@ -366,31 +366,27 @@ void Partitioner::save_metadata(const std::string& filename) const
     CHECK_MPI(MPI_Allgather(&_local_ext_0, 1, MPI_INT, count0.data(), 1, MPI_INT, _comm));
     CHECK_MPI(MPI_Allgather(&_local_ext_1, 1, MPI_INT, count1.data(), 1, MPI_INT, _comm));
 
-    std::cout << "Rank: " << _rank << std::endl;
-    std::cout << "_global_ext_0: " << _global_ext_0 << std::endl;
-    std::cout << "_global_ext_1: " << _global_ext_1 << std::endl;
-    std::cout << "start0.data(): ";
-    for (int i = 0; i < start0.size(); i++) {
-        std::cout << start0.data()[i] << ", ";
+    // Reshape _proc_id into 2D array
+    std::vector<std::vector<int>> proc_id(_global_ext_0);
+    for (int p = 0; p < _num_procs; p++) {
+        for (int i = start0[p], k = 0; k < count0[p]; i++, k++) {
+            proc_id[i] = std::vector<int>(_global_ext_1);
+            for (int j = start1[p], l = 0; l < count1[p]; j++, l++) {
+                proc_id[i][j] = p;
+            }
+        }
     }
-    std::cout << std::endl;
-    std::cout << "start1.data(): ";
-    for (int i = 0; i < start1.size(); i++) {
-        std::cout << start1.data()[i] << ", ";
-    }
-    std::cout << std::endl;
-    std::cout << "count0.data(): ";
-    for (int i = 0; i < count0.size(); i++) {
-        std::cout << count0.data()[i] << ", ";
-    }
-    std::cout << std::endl;
-    std::cout << "count1.data(): ";
-    for (int i = 0; i < count1.size(); i++) {
-        std::cout << count1.data()[i] << ", ";
-    }
-    std::cout << std::endl;
+    if (!_rank) {
+        std::cout << "proc_id.data(): " << std::endl;
+        for (int i = 0; i < _global_ext_0; i++) {
+            for (int j = 0; j < _global_ext_1; j++) {
+                std::cout << proc_id[i][j] << ", ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    };
 
-    // TODO: Reshape _proc_id
     // TODO: Determine periodic neighbours
 
     // TODO: Discover entries for _top_neighbours_periodic
