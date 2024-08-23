@@ -234,62 +234,51 @@ void Partitioner::discover_periodic_neighbours()
         std::cout << std::endl;
     };
 
-    // Determine periodic neighbours
-    std::vector<int> _top_neighbours_p, _bottom_neighbours_p;
+    // Determine top periodic neighbours
     if (_p0) {
+        std::vector<int> halo_sizes(_num_procs);
         for (int i = 0; i < _global_ext_0; i++) {
-            _top_neighbours_p.push_back(proc_id[i][_global_ext_1 - 1]);
-            _bottom_neighbours_p.push_back(proc_id[i][0]);
+            halo_sizes[proc_id[i][_global_ext_1 - 1]]++;
         }
-        {
-            std::vector<int> halo_sizes(_num_procs); // TODO: refactor to avoid work array
-            for (int i = 0; i < _global_ext_0; i++) {
-                halo_sizes[_top_neighbours_p[i]]++;
-            }
-            for (int p = 0; p < _num_procs; p++) {
-                if (halo_sizes[p]) {
-                    _top_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
-                }
-            }
-        }
-        {
-            std::vector<int> halo_sizes(_num_procs); // TODO: refactor to avoid work array
-            for (int i = 0; i < _global_ext_0; i++) {
-                halo_sizes[_bottom_neighbours_p[i]]++;
-            }
-            for (int p = 0; p < _num_procs; p++) {
-                if (halo_sizes[p]) {
-                    _bottom_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
-                }
+        for (int p = 0; p < _num_procs; p++) {
+            if (halo_sizes[p]) {
+                _top_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
             }
         }
     }
-    std::vector<int> _left_neighbours_p, _right_neighbours_p;
+    // Determine bottom periodic neighbours
+    if (_p0) {
+        std::vector<int> halo_sizes(_num_procs);
+        for (int i = 0; i < _global_ext_0; i++) {
+            halo_sizes[proc_id[i][0]]++;
+        }
+        for (int p = 0; p < _num_procs; p++) {
+            if (halo_sizes[p]) {
+                _bottom_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
+            }
+        }
+    }
+    // Determine left periodic neighbours
     if (_p1) {
+        std::vector<int> halo_sizes(_num_procs);
         for (int j = 0; j < _global_ext_1; j++) {
-            _left_neighbours_p.push_back(proc_id[_global_ext_0 - 1][j]);
-            _right_neighbours_p.push_back(proc_id[0][j]);
+            halo_sizes[proc_id[_global_ext_0 - 1][j]]++;
         }
-        {
-            std::vector<int> halo_sizes(_num_procs); // TODO: refactor to avoid work array
-            for (int j = 0; j < _global_ext_1; j++) {
-                halo_sizes[_left_neighbours_p[j]]++;
-            }
-            for (int p = 0; p < _num_procs; p++) {
-                if (halo_sizes[p]) {
-                    _left_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
-                }
+        for (int p = 0; p < _num_procs; p++) {
+            if (halo_sizes[p]) {
+                _left_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
             }
         }
-        {
-            std::vector<int> halo_sizes(_num_procs); // TODO: refactor to avoid work array
-            for (int j = 0; j < _global_ext_1; j++) {
-                halo_sizes[_right_neighbours_p[j]]++;
-            }
-            for (int p = 0; p < _num_procs; p++) {
-                if (halo_sizes[p]) {
-                    _right_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
-                }
+    }
+    // Determine right periodic neighbours
+    if (_p1) {
+        std::vector<int> halo_sizes(_num_procs);
+        for (int j = 0; j < _global_ext_1; j++) {
+            halo_sizes[proc_id[0][j]]++;
+        }
+        for (int p = 0; p < _num_procs; p++) {
+            if (halo_sizes[p]) {
+                _right_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
             }
         }
     }
