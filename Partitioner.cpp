@@ -9,6 +9,7 @@
 #include "ZoltanPartitioner.hpp"
 
 #include <cmath>
+#include <iostream> // TODO: Remove
 #include <stdexcept>
 
 #include <netcdf.h>
@@ -356,6 +357,27 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_var_par_access(connectivity_gid, right_halos_vid, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, right_halos_vid, &start, &count, right_halos.data()));
+
+    // TODO: Remove this temporary sandbox
+    std::cout << "Rank: " << _rank << std::endl;
+    std::cout << "Start: " << _global_0 << ", " << _global_1 << std::endl;
+    std::cout << "Count: " << _local_ext_0 << ", " << _local_ext_1 << std::endl;
+    std::cout << "_proc_id.size(): " << _proc_id.size() << std::endl;
+    std::cout << "_proc_id.data(): ";
+    for (int i = 0; i < _proc_id.size(); i++) {
+        std::cout << _proc_id.data()[i] << ", ";
+    }
+    std::cout << std::endl;
+
+    // TODO: Gather _proc_id
+    // TODO: Reshape _proc_id
+    // TODO: Determine periodic neighbours
+
+    // TODO: Discover entries for _top_neighbours_periodic
+    // TODO: Discover entries for _bottom_neighbours_periodic
+    // TODO: Discover entries for _left_neighbours_periodic
+    // TODO: Discover entries for _righ_neighbours_periodic
+
     start = top_offset_p;
     count = top_num_neighbours_p;
     NC_CHECK(nc_var_par_access(connectivity_gid, top_ids_vid_p, NC_COLLECTIVE));
@@ -500,6 +522,4 @@ void Partitioner::discover_neighbours()
             }
         }
     }
-
-    // TODO: Discover periodic neighbours, too
 }
