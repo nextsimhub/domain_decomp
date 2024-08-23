@@ -36,7 +36,22 @@ create_test(TARGET test_zoltan_0 SOURCES test_zoltan_partitioner_0.cpp MAX_NUM_P
 create_test(TARGET test_zoltan_1 SOURCES test_zoltan_partitioner_1.cpp MAX_NUM_PROCS 2)
 create_test(TARGET test_zoltan_2 SOURCES test_zoltan_partitioner_2.cpp MAX_NUM_PROCS 4)
 
-# Copy grid files used for testing
-file(COPY test_0.nc DESTINATION ${CMAKE_BINARY_DIR}/test)
-file(COPY test_1.nc DESTINATION ${CMAKE_BINARY_DIR}/test)
-file(COPY test_2.nc DESTINATION ${CMAKE_BINARY_DIR}/test)
+# Generate input files from respective cdl files
+add_custom_command(
+    OUTPUT test_0.nc
+    COMMAND
+        ncgen -b -o test_0.nc ${CMAKE_CURRENT_SOURCE_DIR}/test_0.cdl
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test_0.cdl
+)
+add_custom_command(
+    OUTPUT test_1.nc
+    COMMAND
+        ncgen -b -o test_1.nc ${CMAKE_CURRENT_SOURCE_DIR}/test_1.cdl
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test_1.cdl
+)
+add_custom_command(
+    OUTPUT test_2.nc
+    COMMAND
+        ncgen -b -o test_2.nc ${CMAKE_CURRENT_SOURCE_DIR}/test_2.cdl
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test_2.cdl
+)

@@ -1,0 +1,17 @@
+netcdf test_0 {
+dimensions:
+	x = 6 ;
+	y = 4 ;
+variables:
+	int mask(y, x) ;
+
+// global attributes:
+		:title = "All land mask" ;
+data:
+
+ mask =
+  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0 ;
+}
