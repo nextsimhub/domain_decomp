@@ -149,8 +149,6 @@ void Partitioner::save_mask(const std::string& filename) const
 
 void Partitioner::discover_periodic_neighbours()
 {
-    // FIXME: Dimensions are transposed from what I expected
-
     // Gather starts and counts for each dimension
     std::vector<int> start0(_num_procs), start1(_num_procs);
     std::vector<int> count0(_num_procs), count1(_num_procs);
@@ -173,9 +171,13 @@ void Partitioner::discover_periodic_neighbours()
     // Determine top and bottom periodic neighbours
     if (_p0) {
         std::vector<int> halo_sizes_t(_num_procs), halo_sizes_b(_num_procs);
-        for (int i = 0; i < _global_ext_0; i++) {
-            halo_sizes_t[proc_id[i][_global_ext_1 - 1]]++;
-            halo_sizes_b[proc_id[i][0]]++;
+        for (int j = start1[_rank], cnt = 0; cnt < count1[_rank]; j++, cnt++) {
+            if (start0[_rank] == 0) {
+                halo_sizes_t[proc_id[_global_ext_0 - 1][j]]++;
+            }
+            if (start0[_rank] + count0[_rank] == _global_ext_0) {
+                halo_sizes_b[proc_id[0][j]]++;
+            }
         }
         for (int p = 0; p < _num_procs; p++) {
             if (halo_sizes_t[p]) {
@@ -189,9 +191,13 @@ void Partitioner::discover_periodic_neighbours()
     // Determine left and right periodic neighbours
     if (_p1) {
         std::vector<int> halo_sizes_l(_num_procs), halo_sizes_r(_num_procs);
-        for (int j = 0; j < _global_ext_1; j++) {
-            halo_sizes_l[proc_id[_global_ext_0 - 1][j]]++;
-            halo_sizes_r[proc_id[0][j]]++;
+        for (int i = start0[_rank], cnt = 0; cnt < count0[_rank]; i++, cnt++) {
+            if (start1[_rank] == 0) {
+                halo_sizes_l[proc_id[i][_global_ext_1 - 1]]++;
+            }
+            if (start1[_rank] + count1[_rank] == _global_ext_1) {
+                halo_sizes_r[proc_id[i][0]]++;
+            }
         }
         for (int p = 0; p < _num_procs; p++) {
             if (halo_sizes_l[p]) {
