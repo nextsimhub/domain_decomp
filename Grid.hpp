@@ -77,14 +77,16 @@ public:
      */
     // We are using the named constructor idiom so that objects can only be
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
-    static Grid* create(MPI_Comm comm, const std::string& filename, bool ignore_mask = false);
+    static Grid* create(MPI_Comm comm, const std::string& filename, bool ignore_mask = false,
+        bool p0 = false, bool p1 = false);
     static Grid* create(MPI_Comm comm, const std::string& filename, int blk_dim0, int blk_dim1,
-        bool ignore_mask = false);
+        bool ignore_mask = false, bool p0 = false, bool p1 = false);
     static Grid* create(MPI_Comm comm, const std::string& filename, const std::string dim0_name,
-        const std::string dim1_name, const std::string mask_name, bool ignore_mask = false);
+        const std::string dim1_name, const std::string mask_name, bool ignore_mask = false,
+        bool p0 = false, bool p1 = false);
     static Grid* create(MPI_Comm comm, const std::string& filename, const std::string dim0_name,
         const std::string dim1_name, const std::string mask_name, int blk_dim0, int blk_dim1,
-        bool ignore_mask = false);
+        bool ignore_mask = false, bool p0 = false, bool p1 = false);
 
     /*!
      * @brief Returns the global extent in the 1st dimension of the grid. If
@@ -193,6 +195,20 @@ public:
     const int* get_nonzero_object_ids() const;
 
     /*!
+     * @brief Returns `true` if the grid is periodic in the 1st dimension, otherwise `false`.
+     *
+     * @return Periodicity in 1st dimension.
+     */
+    bool get_p0() const;
+
+    /*!
+     * @brief Returns `true` if the grid is periodic in the 2nd dimension, otherwise `false`.
+     *
+     * @return Periodicity in 2nd dimension.
+     */
+    bool get_p1() const;
+
+    /*!
      * @brief Returns the bounding box for this process. If blocking is used, then
      * the information returned is at the block level.
      *
@@ -209,7 +225,7 @@ private:
     // Construct a ditributed grid from a NetCDF file describing the global domain
     Grid(MPI_Comm comm, const std::string& filename, const std::string& dim0_id = "x",
         const std::string& dim1_id = "y", const std::string& mask_id = "mask", int blk0 = 1,
-        int blk1 = 1, bool ignore_mask = false);
+        int blk1 = 1, bool ignore_mask = false, bool p0 = false, bool p1 = false);
 
 private:
     MPI_Comm _comm; // MPI communicator
@@ -237,6 +253,8 @@ private:
     int _num_blks = 0; // Number of grid blocks ignoring land mask
     int _num_nonzero_objects = 0; // Number of non-land grid points
     int _num_nonzero_blks = 0; // Number of non-land grid blocks
+    bool _p0 = false; // Periodicity in the 1st dimension
+    bool _p1 = false; // Periodicity in the 2nd dimension
     std::vector<int> _land_mask = {}; // Land mask values of grid bGpoints
     std::vector<int> _land_mask_blk = {}; // Land mask values of grid blocks
     std::vector<int> _sparse_to_dense = {}; // Map from sparse to dense index of blocks

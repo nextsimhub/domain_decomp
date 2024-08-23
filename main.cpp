@@ -56,15 +56,12 @@ int main(int argc, char* argv[])
 
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["dim0"].as<string>(),
-        vm["dim1"].as<string>(), vm["mask"].as<string>(), blk0, blk1, vm["ignore-mask"].as<bool>());
+        vm["dim1"].as<string>(), vm["mask"].as<string>(), blk0, blk1, vm["ignore-mask"].as<bool>(),
+        vm["p0"].as<bool>(), vm["p1"].as<bool>());
 
     // Create a Zoltan partitioner
     Partitioner* partitioner
         = Partitioner::Factory::create(comm, argc, argv, PartitionerType::Zoltan_RCB);
-
-    // Account for periodic boundaries
-    partitioner->_p0 = vm["p0"].as<bool>();
-    partitioner->_p1 = vm["p1"].as<bool>();
 
     // Partition grid
     partitioner->partition(*grid);

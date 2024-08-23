@@ -99,6 +99,8 @@ void ZoltanPartitioner::partition(Grid& grid)
     _global_ext_1 = grid.get_global_ext_1();
     int blk_factor_0 = grid.get_blk_factor_0();
     int blk_factor_1 = grid.get_blk_factor_1();
+    _p0 = grid.get_p0();
+    _p1 = grid.get_p1();
     grid.get_bounding_box(_global_0, _global_1, _local_ext_0, _local_ext_1);
 
     if (_num_procs == 1) {

@@ -181,6 +181,8 @@ protected:
                                corner (after partitioning) */
     int _global_1_new = -1; /* Global coordinate in 2nd dimension of upper left
                                corner (after partitioning) */
+    bool _p0 = false; // Periodic boundary in the 1st dimension
+    bool _p1 = false; // Periodic boundary in the 2nd dimension
     std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
     std::map<int, int> _top_neighbours
         = {}; // Map of top neighbours to their halo sizes after partitioning
@@ -212,6 +214,4 @@ public:
          */
         static Partitioner* create(MPI_Comm comm, int argc, char** argv, PartitionerType type);
     };
-    bool _p0 = false; // Periodic boundary in the 1st dimension // TODO: Privatise
-    bool _p1 = false; // Periodic boundary in the 2nd dimension // TODO: Privatise
 };
