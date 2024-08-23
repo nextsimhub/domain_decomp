@@ -55,3 +55,8 @@ add_custom_command(
         ncgen -b -o test_2.nc ${CMAKE_CURRENT_SOURCE_DIR}/test_2.cdl
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test_2.cdl
 )
+add_custom_target(
+    generate_input_files
+    ALL
+    DEPENDS test_0.nc test_1.nc test_2.nc
+)
