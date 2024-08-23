@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
     // Partition grid
     partitioner->partition(*grid);
 
-    // TODO: Account for periodic boundaries
+    // Account for periodic boundaries
     partitioner->_p0 = vm["p0"].as<bool>();
     partitioner->_p1 = vm["p1"].as<bool>();
 

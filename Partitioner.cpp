@@ -358,18 +358,38 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, right_halos_vid, &start, &count, right_halos.data()));
 
-    // TODO: Remove this temporary sandbox
+    // Gather starts and counts for each dimension
+    std::vector<int> start0(_num_procs), start1(_num_procs);
+    std::vector<int> count0(_num_procs), count1(_num_procs);
+    CHECK_MPI(MPI_Allgather(&_global_0, 1, MPI_INT, start0.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_global_1, 1, MPI_INT, start1.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_local_ext_0, 1, MPI_INT, count0.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_local_ext_1, 1, MPI_INT, count1.data(), 1, MPI_INT, _comm));
+
     std::cout << "Rank: " << _rank << std::endl;
-    std::cout << "Start: " << _global_0 << ", " << _global_1 << std::endl;
-    std::cout << "Count: " << _local_ext_0 << ", " << _local_ext_1 << std::endl;
-    std::cout << "_proc_id.size(): " << _proc_id.size() << std::endl;
-    std::cout << "_proc_id.data(): ";
-    for (int i = 0; i < _proc_id.size(); i++) {
-        std::cout << _proc_id.data()[i] << ", ";
+    std::cout << "_global_ext_0: " << _global_ext_0 << std::endl;
+    std::cout << "_global_ext_1: " << _global_ext_1 << std::endl;
+    std::cout << "start0.data(): ";
+    for (int i = 0; i < start0.size(); i++) {
+        std::cout << start0.data()[i] << ", ";
+    }
+    std::cout << std::endl;
+    std::cout << "start1.data(): ";
+    for (int i = 0; i < start1.size(); i++) {
+        std::cout << start1.data()[i] << ", ";
+    }
+    std::cout << std::endl;
+    std::cout << "count0.data(): ";
+    for (int i = 0; i < count0.size(); i++) {
+        std::cout << count0.data()[i] << ", ";
+    }
+    std::cout << std::endl;
+    std::cout << "count1.data(): ";
+    for (int i = 0; i < count1.size(); i++) {
+        std::cout << count1.data()[i] << ", ";
     }
     std::cout << std::endl;
 
-    // TODO: Gather _proc_id
     // TODO: Reshape _proc_id
     // TODO: Determine periodic neighbours
 
