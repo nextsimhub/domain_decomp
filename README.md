@@ -2,12 +2,12 @@
 
 ## Problem Statement
 
-We address the problem of domain decomposition of numerical ocean and sea-ice models. Such models typically use a sea-land mask to omit unnecessary computations on land. A typical approach is to use a cartesian (or rectilinear or general block distribution) domain decomposition among processors, where the domain is divided in equally sized sub-domains, ignoring the sea-land mask. This, however, may lead to significant load imbalance which impedes scalability.
+We address the problem of domain decomposition of numerical ocean and sea-ice models. Such models typically use a sea-land mask to omit unnecessary computations on land. A typical approach is to use a Cartesian (or rectilinear or general block distribution) domain decomposition among processors, where the domain is divided in equally sized sub-domains, ignoring the sea-land mask. This, however, may lead to significant load imbalance which impedes scalability.
 
 We have identified the following requirements for the domain decomposition algorithm:
  - produce balanced sub-domains in terms of work and communication
  - produce rectangular sub-domains as this will help in handling communication during halo exchanges between neighbouring processes
- - be static (computed either offline or during the initialiasation phase)
+ - be static (computed either offline or during the initialisation phase)
  - be scalable
 
 The proposed approach is based on the Recursive Coordinate Bisection (RCB) geometric partitioning algorithm [^1]. Geometric coordinates are first partitioned into two balanced parts. Partitioning continues recursively in each part until the desired number of balanced parts has been created. The algorithm can be tuned to build rectilinear partitions. We are using the implementation of the RCB algorithm available in the [Zoltan](https://sandialabs.github.io/Zoltan/) library developed by Sandia National Laboratories.
@@ -143,40 +143,40 @@ group: bounding_boxes {
 
 group: connectivity {
   variables:
-	int top_neighbors(P) ;
-	int top_neighbor_ids(T) ;
-	int top_neighbor_halos(T) ;
-	int bottom_neighbors(P) ;
-	int bottom_neighbor_ids(B) ;
-	int bottom_neighbor_halos(B) ;
-	int left_neighbors(P) ;
-	int left_neighbor_ids(L) ;
-	int left_neighbor_halos(L) ;
-	int right_neighbors(P) ;
-	int right_neighbor_ids(R) ;
-	int right_neighbor_halos(R) ;
+	int top_neighbours(P) ;
+	int top_neighbour_ids(T) ;
+	int top_neighbour_halos(T) ;
+	int bottom_neighbours(P) ;
+	int bottom_neighbour_ids(B) ;
+	int bottom_neighbour_halos(B) ;
+	int left_neighbours(P) ;
+	int left_neighbour_ids(L) ;
+	int left_neighbour_halos(L) ;
+	int right_neighbours(P) ;
+	int right_neighbour_ids(R) ;
+	int right_neighbour_halos(R) ;
   data:
-	top_neighbors = 0, 1 ;
-	top_neighbor_ids = 0 ;
-	top_neighbor_halos = 30 ;
-	bottom_neighbors = 1, 0 ;
-	bottom_neighbor_ids = 1 ;
-	bottom_neighbor_halos = 30 ;
-	left_neighbors = 0, 0 ;
-	right_neighbors = 0, 0 ;
+	top_neighbours = 0, 1 ;
+	top_neighbour_ids = 0 ;
+	top_neighbour_halos = 30 ;
+	bottom_neighbours = 1, 0 ;
+	bottom_neighbour_ids = 1 ;
+	bottom_neighbour_halos = 30 ;
+	left_neighbours = 0, 0 ;
+	right_neighbours = 0, 0 ;
   } // group connectivity
 }
 
 ```
 
-The netCDF variables `domain_x/y` are defined as the coordinates of the upper left corner of the bounding box for each MPI process using zero-based indexing and `domain_extent_x/y` are the extents in the corresponding dimensions of the bounding box for each MPI process. The file also defines the variables `X_neighbors(P)`, `X_neighbor_ids(X_dim)` and `X_neighbor_halos(X_dim)`, where `X` is `top/bottom/left/right`, which correspond to the number of neighbors per process, the neighbor IDs and halo sizes of each process sorted from lower to higher MPI rank.
+The netCDF variables `domain_x/y` are defined as the coordinates of the upper left corner of the bounding box for each MPI process using zero-based indexing and `domain_extent_x/y` are the extents in the corresponding dimensions of the bounding box for each MPI process. The file also defines the variables `X_neighbours(P)`, `X_neighbour_ids(X_dim)` and `X_neighbour_halos(X_dim)`, where `X` is `top/bottom/left/right`, which correspond to the number of neighbours per process, the neighbour IDs and halo sizes of each process sorted from lower to higher MPI rank.
 
 ## Layout
 
 The original version of `decomp` used a TBLR naming convention (top, down, left, right), but this was confusing in how it
 related to x and y co-ordinates.
 
-To remove disambiguity we renamed the outputs produced in the `partition_metadata_<num_mpi_processes>.nc` file.
+To remove ambiguity we renamed the outputs produced in the `partition_metadata_<num_mpi_processes>.nc` file.
 
 ```
 netcdf partition_metadata_3 {
@@ -195,18 +195,18 @@ group: bounding_boxes {                                │  │         │     
    domain_extent_y = 12, 12, 24 ;                      │  │         │         │
   } // group bounding_boxes                            │  │         │         │
 group: connectivity {                                  │  │         │         │
-   top_neighbors = 0, 0, 2 ;                        20 │  ├─────────┴─────────┤
-   top_neighbor_ids = 0, 1 ;                           │  │                   │
-   top_neighbor_halos = 12, 12 ;                       │  │                   │
-   bottom_neighbors = 1, 1, 0 ;                        │  │         2         │
-   bottom_neighbor_ids = 2, 2 ;                        │  │                   │
-   bottom_neighbor_halos = 12, 12 ;                    │  │                   │
-   left_neighbors = 0, 1, 0 ;                       30 ▼  └───────────────────┘
-   left_neighbor_ids = 0 ;
-   left_neighbor_halos = 20 ;                          x
-   right_neighbors = 1, 0, 0 ;
-   right_neighbor_ids = 1 ;
-   right_neighbor_halos = 20 ;
+   top_neighbours = 0, 0, 2 ;                       20 │  ├─────────┴─────────┤
+   top_neighbour_ids = 0, 1 ;                          │  │                   │
+   top_neighbour_halos = 12, 12 ;                      │  │                   │
+   bottom_neighbours = 1, 1, 0 ;                       │  │         2         │
+   bottom_neighbour_ids = 2, 2 ;                       │  │                   │
+   bottom_neighbour_halos = 12, 12 ;                   │  │                   │
+   left_neighbours = 0, 1, 0 ;                      30 ▼  └───────────────────┘
+   left_neighbour_ids = 0 ;
+   left_neighbour_halos = 20 ;                         x
+   right_neighbours = 1, 0, 0 ;
+   right_neighbour_ids = 1 ;
+   right_neighbour_halos = 20 ;
   } // group connectivity
 }
 ```

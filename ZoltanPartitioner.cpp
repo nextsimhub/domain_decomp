@@ -99,6 +99,8 @@ void ZoltanPartitioner::partition(Grid& grid)
     _global_ext_1 = grid.get_global_ext_1();
     int blk_factor_0 = grid.get_blk_factor_0();
     int blk_factor_1 = grid.get_blk_factor_1();
+    _p0 = grid.get_p0();
+    _p1 = grid.get_p1();
     grid.get_bounding_box(_global_0, _global_1, _local_ext_0, _local_ext_1);
 
     if (_num_procs == 1) {
@@ -207,8 +209,8 @@ void ZoltanPartitioner::partition(Grid& grid)
         _local_ext_1_new = grid.get_global_ext_orig_1() - _global_1_new;
     }
 
-    // Find my neighbors
-    discover_neighbors();
+    // Find my neighbours
+    discover_neighbours();
 
     // Find the process IDs of each grid point I own
     if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
@@ -230,6 +232,9 @@ void ZoltanPartitioner::partition(Grid& grid)
             _proc_id[export_local_ids[i]] = export_procs[i];
         }
     }
+
+    // Find my periodic neighbours
+    discover_periodic_neighbours();
 
     // Free the arrays allocated by Zoltan
     Zoltan::LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs, &import_to_part);

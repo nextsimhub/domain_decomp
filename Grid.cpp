@@ -24,38 +24,41 @@ static void find_factors(int n, int& factor_a, int& factor_b)
     }
 }
 
-Grid* Grid::create(MPI_Comm comm, const std::string& filename, bool ignore_mask)
+Grid* Grid::create(MPI_Comm comm, const std::string& filename, bool ignore_mask, bool p0, bool p1)
 {
-    return new Grid(comm, filename, "x", "y", "mask", 1, 1, ignore_mask);
+    return new Grid(comm, filename, "x", "y", "mask", 1, 1, ignore_mask, p0, p1);
 }
 
-Grid* Grid::create(
-    MPI_Comm comm, const std::string& filename, int blk_dim0, int blk_dim1, bool ignore_mask)
+Grid* Grid::create(MPI_Comm comm, const std::string& filename, int blk_dim0, int blk_dim1,
+    bool ignore_mask, bool p0, bool p1)
 {
-    return new Grid(comm, filename, "x", "y", "mask", blk_dim0, blk_dim1, ignore_mask);
+    return new Grid(comm, filename, "x", "y", "mask", blk_dim0, blk_dim1, ignore_mask, p0, p1);
 }
 
 Grid* Grid::create(MPI_Comm comm, const std::string& filename, const std::string dim0_name,
-    const std::string dim1_name, const std::string mask_name, bool ignore_mask)
+    const std::string dim1_name, const std::string mask_name, bool ignore_mask, bool p0, bool p1)
 {
-    return new Grid(comm, filename, dim0_name, dim1_name, mask_name, 1, 1, ignore_mask);
+    return new Grid(comm, filename, dim0_name, dim1_name, mask_name, 1, 1, ignore_mask, p0, p1);
 }
 
 Grid* Grid::create(MPI_Comm comm, const std::string& filename, const std::string dim0_name,
     const std::string dim1_name, const std::string mask_name, int blk_dim0, int blk_dim1,
-    bool ignore_mask)
+    bool ignore_mask, bool p0, bool p1)
 {
     return new Grid(
-        comm, filename, dim0_name, dim1_name, mask_name, blk_dim0, blk_dim1, ignore_mask);
+        comm, filename, dim0_name, dim1_name, mask_name, blk_dim0, blk_dim1, ignore_mask, p0, p1);
 }
 
 Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& dim0_name,
     const std::string& dim1_name, const std::string& mask_name, int blk_dim0, int blk_dim1,
-    bool ignore_mask)
+    bool ignore_mask, bool p0, bool p1)
     : _comm(comm)
     , _blk_factor_0(blk_dim0)
     , _blk_factor_1(blk_dim1)
 {
+    _p0 = p0;
+    _p1 = p1;
+
     // Use C API for parallel I/O
     int nc_id, nc_o_mode;
     nc_o_mode = NC_NOWRITE;
@@ -247,6 +250,10 @@ int Grid::get_num_nonzero_objects() const { return _num_nonzero_blks; }
 int Grid::get_num_procs_0() const { return _num_procs_0; }
 
 int Grid::get_num_procs_1() const { return _num_procs_1; }
+
+bool Grid::get_p0() const { return _p0; }
+
+bool Grid::get_p1() const { return _p1; }
 
 const int* Grid::get_land_mask() const
 {

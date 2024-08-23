@@ -30,7 +30,9 @@ int main(int argc, char* argv[])
         "dim1", po::value<string>()->default_value("y"),
         "Second spatial dimension in netCDF grid file")("mask,m",
         po::value<string>()->default_value("mask"), "Mask variable name in netCDF grid file")(
-        "ignore-mask", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file");
+        "ignore-mask", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file")(
+        "p0", po::bool_switch()->default_value(false), "Periodicity in the first dimension")(
+        "p1", po::bool_switch()->default_value(false), "Periodicity in the second dimension");
 
     // Parse optional command line options
     po::variables_map vm;
@@ -54,7 +56,8 @@ int main(int argc, char* argv[])
 
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["dim0"].as<string>(),
-        vm["dim1"].as<string>(), vm["mask"].as<string>(), blk0, blk1, vm["ignore-mask"].as<bool>());
+        vm["dim1"].as<string>(), vm["mask"].as<string>(), blk0, blk1, vm["ignore-mask"].as<bool>(),
+        vm["p0"].as<bool>(), vm["p1"].as<bool>());
 
     // Create a Zoltan partitioner
     Partitioner* partitioner
