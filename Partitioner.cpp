@@ -268,10 +268,8 @@ void Partitioner::discover_periodic_neighbours()
     }
 }
 
-void Partitioner::save_metadata(const std::string& filename) // const // FIXME: this should be const
+void Partitioner::save_metadata(const std::string& filename) const
 {
-    discover_periodic_neighbours();
-
     // Use C API for parallel I/O
     int nc_id, nc_mode;
     nc_mode = NC_MPIIO | NC_NETCDF4;

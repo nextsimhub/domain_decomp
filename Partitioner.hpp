@@ -145,7 +145,7 @@ public:
      *
      * @param filename Name of the NetCDF file.
      */
-    void save_metadata(const std::string& filename); // FIXME: Should be const;
+    void save_metadata(const std::string& filename) const;
 
 protected:
     // Construct a partitioner
@@ -156,6 +156,7 @@ protected:
     // Discover the neighbours and halo sizes of the processes after partitioning
     void discover_neighbours();
 
+    // Discover the periodic neighbours and halo sizes of the processes after partitioning
     void discover_periodic_neighbours();
 
 protected:

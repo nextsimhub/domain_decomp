@@ -231,6 +231,9 @@ void ZoltanPartitioner::partition(Grid& grid)
         }
     }
 
+    // Find my periodic neighbours
+    discover_periodic_neighbours();
+
     // Free the arrays allocated by Zoltan
     Zoltan::LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs, &import_to_part);
     Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);

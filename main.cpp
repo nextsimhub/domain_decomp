@@ -62,12 +62,12 @@ int main(int argc, char* argv[])
     Partitioner* partitioner
         = Partitioner::Factory::create(comm, argc, argv, PartitionerType::Zoltan_RCB);
 
-    // Partition grid
-    partitioner->partition(*grid);
-
     // Account for periodic boundaries
     partitioner->_p0 = vm["p0"].as<bool>();
     partitioner->_p1 = vm["p1"].as<bool>();
+
+    // Partition grid
+    partitioner->partition(*grid);
 
     // Store partitioning results in netCDF file
     int num_procs;
