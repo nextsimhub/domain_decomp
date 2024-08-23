@@ -9,7 +9,6 @@
 #include "ZoltanPartitioner.hpp"
 
 #include <cmath>
-#include <iostream> // TODO: Remove
 #include <stdexcept>
 
 #include <netcdf.h>
@@ -67,19 +66,6 @@ void Partitioner::get_top_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p0) {
-        // TODO: remove stdout
-        std::cout << "_top_neighbour_ids_periodic.data(): " << std::endl;
-        for (auto it = _top_neighbours_periodic.begin(); it != _top_neighbours_periodic.end();
-             ++it) {
-            std::cout << it->first << ", ";
-        }
-        std::cout << std::endl;
-        std::cout << "_top_neighbour_halo_sizes_periodic.data(): " << std::endl;
-        for (auto it = _top_neighbours_periodic.begin(); it != _top_neighbours_periodic.end();
-             ++it) {
-            std::cout << it->second << ", ";
-        }
-        std::cout << std::endl;
         for (auto it = _top_neighbours_periodic.begin(); it != _top_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
@@ -92,19 +78,6 @@ void Partitioner::get_bottom_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p0) {
-        // TODO: remove stdout
-        std::cout << "_bottom_neighbour_ids_periodic.data(): " << std::endl;
-        for (auto it = _bottom_neighbours_periodic.begin(); it != _bottom_neighbours_periodic.end();
-             ++it) {
-            std::cout << it->first << ", ";
-        }
-        std::cout << std::endl;
-        std::cout << "_bottom_neighbour_halo_sizes_periodic.data(): " << std::endl;
-        for (auto it = _bottom_neighbours_periodic.begin(); it != _bottom_neighbours_periodic.end();
-             ++it) {
-            std::cout << it->second << ", ";
-        }
-        std::cout << std::endl;
         for (auto it = _bottom_neighbours_periodic.begin(); it != _bottom_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
@@ -117,19 +90,6 @@ void Partitioner::get_left_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p1) {
-        // TODO: remove stdout
-        std::cout << "_left_neighbour_ids_periodic.data(): " << std::endl;
-        for (auto it = _left_neighbours_periodic.begin(); it != _left_neighbours_periodic.end();
-             ++it) {
-            std::cout << it->first << ", ";
-        }
-        std::cout << std::endl;
-        std::cout << "_left_neighbour_halo_sizes_periodic.data(): " << std::endl;
-        for (auto it = _left_neighbours_periodic.begin(); it != _left_neighbours_periodic.end();
-             ++it) {
-            std::cout << it->second << ", ";
-        }
-        std::cout << std::endl;
         for (auto it = _left_neighbours_periodic.begin(); it != _left_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
@@ -142,19 +102,6 @@ void Partitioner::get_right_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p1) {
-        // TODO: remove stdout
-        std::cout << "_right_neighbour_ids_periodic.data(): " << std::endl;
-        for (auto it = _right_neighbours_periodic.begin(); it != _right_neighbours_periodic.end();
-             ++it) {
-            std::cout << it->first << ", ";
-        }
-        std::cout << std::endl;
-        std::cout << "_right_neighbour_halo_sizes_periodic.data(): " << std::endl;
-        for (auto it = _right_neighbours_periodic.begin(); it != _right_neighbours_periodic.end();
-             ++it) {
-            std::cout << it->second << ", ";
-        }
-        std::cout << std::endl;
         for (auto it = _right_neighbours_periodic.begin(); it != _right_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
@@ -222,17 +169,6 @@ void Partitioner::discover_periodic_neighbours()
             }
         }
     }
-    // TODO: remove stdout
-    if (!_rank) {
-        std::cout << "proc_id.data(): " << std::endl;
-        for (int i = 0; i < _global_ext_0; i++) {
-            for (int j = 0; j < _global_ext_1; j++) {
-                std::cout << proc_id[i][j] << ", ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    };
 
     // Determine top and bottom periodic neighbours
     if (_p0) {
