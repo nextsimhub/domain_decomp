@@ -184,9 +184,17 @@ protected:
     std::map<int, int> _bottom_neighbors
         = {}; // Map of bottom neighbors to their halo sizes after partitioning
     std::map<int, int> _right_neighbors
-        = {}; // Map of bottom neighbors to their halo sizes after partitioning
+        = {}; // Map of right neighbors to their halo sizes after partitioning
     std::map<int, int> _left_neighbors
-        = {}; // Map of bottom neighbors to their halo sizes after partitioning
+        = {}; // Map of left neighbors to their halo sizes after partitioning
+    std::map<int, int> _top_neighbors_periodic
+        = {}; // Map of top periodic neighbors to their halo sizes after partitioning
+    std::map<int, int> _bottom_neighbors_periodic
+        = {}; // Map of bottom periodic neighbors to their halo sizes after partitioning
+    std::map<int, int> _right_neighbors_periodic
+        = {}; // Map of right periodic neighbors to their halo sizes after partitioning
+    std::map<int, int> _left_neighbors_periodic
+        = {}; // Map of left periodic neighbors to their halo sizes after partitioning
 
 public:
     struct LIB_EXPORT Factory {
