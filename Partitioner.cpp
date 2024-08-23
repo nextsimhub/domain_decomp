@@ -67,6 +67,19 @@ void Partitioner::get_top_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p0) {
+        // TODO: remove stdout
+        std::cout << "_top_neighbour_ids_periodic.data(): " << std::endl;
+        for (auto it = _top_neighbours_periodic.begin(); it != _top_neighbours_periodic.end();
+             ++it) {
+            std::cout << it->first << ", ";
+        }
+        std::cout << std::endl;
+        std::cout << "_top_neighbour_halo_sizes_periodic.data(): " << std::endl;
+        for (auto it = _top_neighbours_periodic.begin(); it != _top_neighbours_periodic.end();
+             ++it) {
+            std::cout << it->second << ", ";
+        }
+        std::cout << std::endl;
         for (auto it = _top_neighbours_periodic.begin(); it != _top_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
@@ -79,6 +92,19 @@ void Partitioner::get_bottom_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p0) {
+        // TODO: remove stdout
+        std::cout << "_bottom_neighbour_ids_periodic.data(): " << std::endl;
+        for (auto it = _bottom_neighbours_periodic.begin(); it != _bottom_neighbours_periodic.end();
+             ++it) {
+            std::cout << it->first << ", ";
+        }
+        std::cout << std::endl;
+        std::cout << "_bottom_neighbour_halo_sizes_periodic.data(): " << std::endl;
+        for (auto it = _bottom_neighbours_periodic.begin(); it != _bottom_neighbours_periodic.end();
+             ++it) {
+            std::cout << it->second << ", ";
+        }
+        std::cout << std::endl;
         for (auto it = _bottom_neighbours_periodic.begin(); it != _bottom_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
@@ -91,6 +117,19 @@ void Partitioner::get_left_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p1) {
+        // TODO: remove stdout
+        std::cout << "_left_neighbour_ids_periodic.data(): " << std::endl;
+        for (auto it = _left_neighbours_periodic.begin(); it != _left_neighbours_periodic.end();
+             ++it) {
+            std::cout << it->first << ", ";
+        }
+        std::cout << std::endl;
+        std::cout << "_left_neighbour_halo_sizes_periodic.data(): " << std::endl;
+        for (auto it = _left_neighbours_periodic.begin(); it != _left_neighbours_periodic.end();
+             ++it) {
+            std::cout << it->second << ", ";
+        }
+        std::cout << std::endl;
         for (auto it = _left_neighbours_periodic.begin(); it != _left_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
@@ -103,6 +142,19 @@ void Partitioner::get_right_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p1) {
+        // TODO: remove stdout
+        std::cout << "_right_neighbour_ids_periodic.data(): " << std::endl;
+        for (auto it = _right_neighbours_periodic.begin(); it != _right_neighbours_periodic.end();
+             ++it) {
+            std::cout << it->first << ", ";
+        }
+        std::cout << std::endl;
+        std::cout << "_right_neighbour_halo_sizes_periodic.data(): " << std::endl;
+        for (auto it = _right_neighbours_periodic.begin(); it != _right_neighbours_periodic.end();
+             ++it) {
+            std::cout << it->second << ", ";
+        }
+        std::cout << std::endl;
         for (auto it = _right_neighbours_periodic.begin(); it != _right_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
@@ -148,8 +200,105 @@ void Partitioner::save_mask(const std::string& filename) const
     NC_CHECK(nc_close(nc_id));
 }
 
-void Partitioner::save_metadata(const std::string& filename) const
+void Partitioner::discover_periodic_neighbours()
 {
+    // FIXME: Dimensions are transposed from what I expected
+
+    // Gather starts and counts for each dimension
+    std::vector<int> start0(_num_procs), start1(_num_procs);
+    std::vector<int> count0(_num_procs), count1(_num_procs);
+    CHECK_MPI(MPI_Allgather(&_global_0, 1, MPI_INT, start0.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_global_1, 1, MPI_INT, start1.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_local_ext_0, 1, MPI_INT, count0.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_local_ext_1, 1, MPI_INT, count1.data(), 1, MPI_INT, _comm));
+
+    // Reshape _proc_id into 2D array
+    std::vector<std::vector<int>> proc_id(_global_ext_0);
+    for (int p = 0; p < _num_procs; p++) {
+        for (int i = start0[p], k = 0; k < count0[p]; i++, k++) {
+            proc_id[i] = std::vector<int>(_global_ext_1);
+            for (int j = start1[p], l = 0; l < count1[p]; j++, l++) {
+                proc_id[i][j] = p;
+            }
+        }
+    }
+    // TODO: remove stdout
+    if (!_rank) {
+        std::cout << "proc_id.data(): " << std::endl;
+        for (int i = 0; i < _global_ext_0; i++) {
+            for (int j = 0; j < _global_ext_1; j++) {
+                std::cout << proc_id[i][j] << ", ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    };
+
+    // Determine periodic neighbours
+    std::vector<int> _top_neighbours_p, _bottom_neighbours_p;
+    if (_p0) {
+        for (int i = 0; i < _global_ext_0; i++) {
+            _top_neighbours_p.push_back(proc_id[i][_global_ext_1 - 1]);
+            _bottom_neighbours_p.push_back(proc_id[i][0]);
+        }
+        {
+            std::vector<int> halo_sizes(_num_procs); // TODO: refactor to avoid work array
+            for (int i = 0; i < _global_ext_0; i++) {
+                halo_sizes[_top_neighbours_p[i]]++;
+            }
+            for (int p = 0; p < _num_procs; p++) {
+                if (halo_sizes[p]) {
+                    _top_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
+                }
+            }
+        }
+        {
+            std::vector<int> halo_sizes(_num_procs); // TODO: refactor to avoid work array
+            for (int i = 0; i < _global_ext_0; i++) {
+                halo_sizes[_bottom_neighbours_p[i]]++;
+            }
+            for (int p = 0; p < _num_procs; p++) {
+                if (halo_sizes[p]) {
+                    _bottom_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
+                }
+            }
+        }
+    }
+    std::vector<int> _left_neighbours_p, _right_neighbours_p;
+    if (_p1) {
+        for (int j = 0; j < _global_ext_1; j++) {
+            _left_neighbours_p.push_back(proc_id[_global_ext_0 - 1][j]);
+            _right_neighbours_p.push_back(proc_id[0][j]);
+        }
+        {
+            std::vector<int> halo_sizes(_num_procs); // TODO: refactor to avoid work array
+            for (int j = 0; j < _global_ext_1; j++) {
+                halo_sizes[_left_neighbours_p[j]]++;
+            }
+            for (int p = 0; p < _num_procs; p++) {
+                if (halo_sizes[p]) {
+                    _left_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
+                }
+            }
+        }
+        {
+            std::vector<int> halo_sizes(_num_procs); // TODO: refactor to avoid work array
+            for (int j = 0; j < _global_ext_1; j++) {
+                halo_sizes[_right_neighbours_p[j]]++;
+            }
+            for (int p = 0; p < _num_procs; p++) {
+                if (halo_sizes[p]) {
+                    _right_neighbours_periodic.insert(std::pair<int, int>(p, halo_sizes[p]));
+                }
+            }
+        }
+    }
+}
+
+void Partitioner::save_metadata(const std::string& filename) // const // FIXME: this should be const
+{
+    discover_periodic_neighbours();
+
     // Use C API for parallel I/O
     int nc_id, nc_mode;
     nc_mode = NC_MPIIO | NC_NETCDF4;
@@ -357,42 +506,6 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_var_par_access(connectivity_gid, right_halos_vid, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, right_halos_vid, &start, &count, right_halos.data()));
-
-    // Gather starts and counts for each dimension
-    std::vector<int> start0(_num_procs), start1(_num_procs);
-    std::vector<int> count0(_num_procs), count1(_num_procs);
-    CHECK_MPI(MPI_Allgather(&_global_0, 1, MPI_INT, start0.data(), 1, MPI_INT, _comm));
-    CHECK_MPI(MPI_Allgather(&_global_1, 1, MPI_INT, start1.data(), 1, MPI_INT, _comm));
-    CHECK_MPI(MPI_Allgather(&_local_ext_0, 1, MPI_INT, count0.data(), 1, MPI_INT, _comm));
-    CHECK_MPI(MPI_Allgather(&_local_ext_1, 1, MPI_INT, count1.data(), 1, MPI_INT, _comm));
-
-    // Reshape _proc_id into 2D array
-    std::vector<std::vector<int>> proc_id(_global_ext_0);
-    for (int p = 0; p < _num_procs; p++) {
-        for (int i = start0[p], k = 0; k < count0[p]; i++, k++) {
-            proc_id[i] = std::vector<int>(_global_ext_1);
-            for (int j = start1[p], l = 0; l < count1[p]; j++, l++) {
-                proc_id[i][j] = p;
-            }
-        }
-    }
-    if (!_rank) {
-        std::cout << "proc_id.data(): " << std::endl;
-        for (int i = 0; i < _global_ext_0; i++) {
-            for (int j = 0; j < _global_ext_1; j++) {
-                std::cout << proc_id[i][j] << ", ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    };
-
-    // TODO: Determine periodic neighbours
-
-    // TODO: Discover entries for _top_neighbours_periodic
-    // TODO: Discover entries for _bottom_neighbours_periodic
-    // TODO: Discover entries for _left_neighbours_periodic
-    // TODO: Discover entries for _righ_neighbours_periodic
 
     start = top_offset_p;
     count = top_num_neighbours_p;

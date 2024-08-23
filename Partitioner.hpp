@@ -145,7 +145,7 @@ public:
      *
      * @param filename Name of the NetCDF file.
      */
-    void save_metadata(const std::string& filename) const;
+    void save_metadata(const std::string& filename); // FIXME: Should be const;
 
 protected:
     // Construct a partitioner
@@ -155,6 +155,8 @@ protected:
 
     // Discover the neighbours and halo sizes of the processes after partitioning
     void discover_neighbours();
+
+    void discover_periodic_neighbours();
 
 protected:
     MPI_Comm _comm; // MPI communicator
