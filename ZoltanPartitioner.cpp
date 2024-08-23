@@ -24,8 +24,8 @@ static int get_num_objects(void* data, int* ierr)
     return grid->get_num_nonzero_objects();
 }
 
-static void get_object_list(void* data, int num_gid_entries, int num_lid_entries,
-    ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, int wgt_dim, float* obj_wgts, int* ierr)
+static void get_object_list(
+    void* data, int, int, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, int, float*, int* ierr)
 {
     Grid* grid = (Grid*)data;
     *ierr = ZOLTAN_OK;
@@ -39,14 +39,14 @@ static void get_object_list(void* data, int num_gid_entries, int num_lid_entries
     return;
 }
 
-static int get_num_geometry(void* data, int* ierr)
+static int get_num_geometry(void*, int* ierr)
 {
     *ierr = ZOLTAN_OK;
     return 2;
 }
 
 static void get_geometry_list(void* data, int num_gid_entries, int num_lid_entries, int num_obj,
-    ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, int num_dim, double* geom_vec, int* ierr)
+    ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int num_dim, double* geom_vec, int* ierr)
 {
     Grid* grid = (Grid*)data;
 
@@ -67,7 +67,7 @@ static void get_geometry_list(void* data, int num_gid_entries, int num_lid_entri
 }
 
 ZoltanPartitioner::ZoltanPartitioner(MPI_Comm comm, int argc, char** argv)
-    : Partitioner(comm, argc, argv)
+    : Partitioner(comm)
 {
     // Initialize Zoltan
     float version;

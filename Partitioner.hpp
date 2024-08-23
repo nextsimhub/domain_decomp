@@ -115,7 +115,7 @@ protected:
     // Construct a partitioner
     // We are using the named constructor idiom so that objects can only be
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
-    Partitioner(MPI_Comm comm, int argc, char** argv);
+    Partitioner(MPI_Comm comm);
 
     // Discover the processe's neighbors and halo sizes after partitioning
     void discover_neighbors();

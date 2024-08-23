@@ -14,7 +14,7 @@
 #include <netcdf.h>
 #include <netcdf_par.h>
 
-Partitioner::Partitioner(MPI_Comm comm, int argc, char** argv)
+Partitioner::Partitioner(MPI_Comm comm)
 {
     _comm = comm;
     CHECK_MPI(MPI_Comm_size(comm, &_num_procs));
