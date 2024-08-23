@@ -56,64 +56,64 @@ public:
     void get_bounding_box(int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the top neighbors for this
+     * @brief Returns the MPI ranks and halo sizes of the top neighbours for this
      * process after partitioning.
      */
-    void get_top_neighbors(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+    void get_top_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the bottom neighbors for
+     * @brief Returns the MPI ranks and halo sizes of the bottom neighbours for
      * this process after partitioning.
      */
-    void get_bottom_neighbors(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+    void get_bottom_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the left neighbors for this
+     * @brief Returns the MPI ranks and halo sizes of the left neighbours for this
      * process after partitioning.
      */
-    void get_left_neighbors(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+    void get_left_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the right neighbors for this
+     * @brief Returns the MPI ranks and halo sizes of the right neighbours for this
      * process after partitioning.
      */
-    void get_right_neighbors(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+    void get_right_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the top neighbors by
+     * @brief Returns the MPI ranks and halo sizes of the top neighbours by
      * periodic boundary for the current process after partitioning.
      *
-     * @param ids Vector to store neighbor IDs.
+     * @param ids Vector to store neighbour IDs.
      * @param halo_sizes Vector to store halo sizes.
      */
-    void get_top_neighbors_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+    void get_top_neighbours_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the bottom neighbors by
+     * @brief Returns the MPI ranks and halo sizes of the bottom neighbours by
      * periodic boundary for the current process after partitioning.
      *
-     * @param ids Vector to store neighbor IDs.
+     * @param ids Vector to store neighbour IDs.
      * @param halo_sizes Vector to store halo sizes.
      */
-    void get_bottom_neighbors_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+    void get_bottom_neighbours_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the left neighbors by
+     * @brief Returns the MPI ranks and halo sizes of the left neighbours by
      * periodic boundary for the current process after partitioning.
      *
-     * @param ids Vector to store neighbor IDs.
+     * @param ids Vector to store neighbour IDs.
      * @param halo_sizes Vector to store halo sizes.
      */
-    void get_left_neighbors_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+    void get_left_neighbours_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the right neighbors by
+     * @brief Returns the MPI ranks and halo sizes of the right neighbours by
      * periodic boundary for the current process after partitioning.
      *
-     * @param ids Vector to store neighbor IDs.
+     * @param ids Vector to store neighbour IDs.
      * @param halo_sizes Vector to store halo sizes.
      */
-    void get_right_neighbors_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+    void get_right_neighbours_periodic(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -138,9 +138,9 @@ public:
      * and domain_y are defined as the coordinates of the upper left corner of the
      * box for each partition, while the domain_extent_x and domain_extent_y
      * variables define the local extent of the x and y dimensions respectively.
-     * The file also defines the variables X_neighbors(P), X_neighbor_ids(X_dim)
-     * and X_neighbor_halos(X_dim), where X is top/bottom/left/right, which
-     * correspond to the number of neighbors per process, the neighbor IDs and
+     * The file also defines the variables X_neighbours(P), X_neighbour_ids(X_dim)
+     * and X_neighbour_halos(X_dim), where X is top/bottom/left/right, which
+     * correspond to the number of neighbours per process, the neighbour IDs and
      * halo sizes of each process sorted from lower to higher MPI rank.
      *
      * @param filename Name of the NetCDF file.
@@ -153,8 +153,8 @@ protected:
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
     Partitioner(MPI_Comm comm);
 
-    // Discover the processe's neighbors and halo sizes after partitioning
-    void discover_neighbors();
+    // Discover the neighbours and halo sizes of the processes after partitioning
+    void discover_neighbours();
 
 protected:
     MPI_Comm _comm; // MPI communicator
@@ -179,22 +179,22 @@ protected:
     int _global_1_new = -1; /* Global coordinate in 2nd dimension of upper left
                                corner (after partitioning) */
     std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
-    std::map<int, int> _top_neighbors
-        = {}; // Map of top neighbors to their halo sizes after partitioning
-    std::map<int, int> _bottom_neighbors
-        = {}; // Map of bottom neighbors to their halo sizes after partitioning
-    std::map<int, int> _right_neighbors
-        = {}; // Map of right neighbors to their halo sizes after partitioning
-    std::map<int, int> _left_neighbors
-        = {}; // Map of left neighbors to their halo sizes after partitioning
-    std::map<int, int> _top_neighbors_periodic
-        = {}; // Map of top periodic neighbors to their halo sizes after partitioning
-    std::map<int, int> _bottom_neighbors_periodic
-        = {}; // Map of bottom periodic neighbors to their halo sizes after partitioning
-    std::map<int, int> _right_neighbors_periodic
-        = {}; // Map of right periodic neighbors to their halo sizes after partitioning
-    std::map<int, int> _left_neighbors_periodic
-        = {}; // Map of left periodic neighbors to their halo sizes after partitioning
+    std::map<int, int> _top_neighbours
+        = {}; // Map of top neighbours to their halo sizes after partitioning
+    std::map<int, int> _bottom_neighbours
+        = {}; // Map of bottom neighbours to their halo sizes after partitioning
+    std::map<int, int> _right_neighbours
+        = {}; // Map of right neighbours to their halo sizes after partitioning
+    std::map<int, int> _left_neighbours
+        = {}; // Map of left neighbours to their halo sizes after partitioning
+    std::map<int, int> _top_neighbours_periodic
+        = {}; // Map of top periodic neighbours to their halo sizes after partitioning
+    std::map<int, int> _bottom_neighbours_periodic
+        = {}; // Map of bottom periodic neighbours to their halo sizes after partitioning
+    std::map<int, int> _right_neighbours_periodic
+        = {}; // Map of right periodic neighbours to their halo sizes after partitioning
+    std::map<int, int> _left_neighbours_periodic
+        = {}; // Map of left periodic neighbours to their halo sizes after partitioning
 
 public:
     struct LIB_EXPORT Factory {

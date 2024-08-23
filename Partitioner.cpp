@@ -30,54 +30,43 @@ void Partitioner::get_bounding_box(
     local_ext_1 = _local_ext_1_new;
 }
 
-void Partitioner::get_top_neighbors(std::vector<int>& ids, std::vector<int>& halo_sizes) const
+void Partitioner::get_top_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
-    for (auto it = _top_neighbors.begin(); it != _top_neighbors.end(); ++it) {
+    for (auto it = _top_neighbours.begin(); it != _top_neighbours.end(); ++it) {
         ids.push_back(it->first);
         halo_sizes.push_back(it->second);
     }
 }
 
-void Partitioner::get_bottom_neighbors(std::vector<int>& ids, std::vector<int>& halo_sizes) const
+void Partitioner::get_bottom_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
-    for (auto it = _bottom_neighbors.begin(); it != _bottom_neighbors.end(); ++it) {
+    for (auto it = _bottom_neighbours.begin(); it != _bottom_neighbours.end(); ++it) {
         ids.push_back(it->first);
         halo_sizes.push_back(it->second);
     }
 }
 
-void Partitioner::get_left_neighbors(std::vector<int>& ids, std::vector<int>& halo_sizes) const
+void Partitioner::get_left_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
-    for (auto it = _left_neighbors.begin(); it != _left_neighbors.end(); ++it) {
+    for (auto it = _left_neighbours.begin(); it != _left_neighbours.end(); ++it) {
         ids.push_back(it->first);
         halo_sizes.push_back(it->second);
     }
 }
 
-void Partitioner::get_right_neighbors(std::vector<int>& ids, std::vector<int>& halo_sizes) const
+void Partitioner::get_right_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
-    for (auto it = _right_neighbors.begin(); it != _right_neighbors.end(); ++it) {
+    for (auto it = _right_neighbours.begin(); it != _right_neighbours.end(); ++it) {
         ids.push_back(it->first);
         halo_sizes.push_back(it->second);
     }
 }
 
-void Partitioner::get_top_neighbors_periodic(
+void Partitioner::get_top_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p0) {
-        for (auto it = _top_neighbors_periodic.begin(); it != _top_neighbors_periodic.end(); ++it) {
-            ids.push_back(it->first);
-            halo_sizes.push_back(it->second);
-        }
-    }
-}
-
-void Partitioner::get_bottom_neighbors_periodic(
-    std::vector<int>& ids, std::vector<int>& halo_sizes) const
-{
-    if (_p0) {
-        for (auto it = _bottom_neighbors_periodic.begin(); it != _bottom_neighbors_periodic.end();
+        for (auto it = _top_neighbours_periodic.begin(); it != _top_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
             halo_sizes.push_back(it->second);
@@ -85,11 +74,11 @@ void Partitioner::get_bottom_neighbors_periodic(
     }
 }
 
-void Partitioner::get_left_neighbors_periodic(
+void Partitioner::get_bottom_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
-    if (_p1) {
-        for (auto it = _left_neighbors_periodic.begin(); it != _left_neighbors_periodic.end();
+    if (_p0) {
+        for (auto it = _bottom_neighbours_periodic.begin(); it != _bottom_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
             halo_sizes.push_back(it->second);
@@ -97,11 +86,23 @@ void Partitioner::get_left_neighbors_periodic(
     }
 }
 
-void Partitioner::get_right_neighbors_periodic(
+void Partitioner::get_left_neighbours_periodic(
     std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
     if (_p1) {
-        for (auto it = _right_neighbors_periodic.begin(); it != _right_neighbors_periodic.end();
+        for (auto it = _left_neighbours_periodic.begin(); it != _left_neighbours_periodic.end();
+             ++it) {
+            ids.push_back(it->first);
+            halo_sizes.push_back(it->second);
+        }
+    }
+}
+
+void Partitioner::get_right_neighbours_periodic(
+    std::vector<int>& ids, std::vector<int>& halo_sizes) const
+{
+    if (_p1) {
+        for (auto it = _right_neighbours_periodic.begin(); it != _right_neighbours_periodic.end();
              ++it) {
             ids.push_back(it->first);
             halo_sizes.push_back(it->second);
@@ -153,57 +154,57 @@ void Partitioner::save_metadata(const std::string& filename) const
     nc_mode = NC_MPIIO | NC_NETCDF4;
     NC_CHECK(nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
 
-    // Prepare neighbor data
+    // Prepare neighbour data
     std::vector<int> top_ids, bottom_ids, left_ids, right_ids;
     std::vector<int> top_halos, bottom_halos, left_halos, right_halos;
-    get_top_neighbors(top_ids, top_halos);
-    get_bottom_neighbors(bottom_ids, bottom_halos);
-    get_left_neighbors(left_ids, left_halos);
-    get_right_neighbors(right_ids, right_halos);
-    int top_num_neighbors = top_ids.size();
-    int bottom_num_neighbors = bottom_ids.size();
-    int left_num_neighbors = left_ids.size();
-    int right_num_neighbors = right_ids.size();
+    get_top_neighbours(top_ids, top_halos);
+    get_bottom_neighbours(bottom_ids, bottom_halos);
+    get_left_neighbours(left_ids, left_halos);
+    get_right_neighbours(right_ids, right_halos);
+    int top_num_neighbours = top_ids.size();
+    int bottom_num_neighbours = bottom_ids.size();
+    int left_num_neighbours = left_ids.size();
+    int right_num_neighbours = right_ids.size();
 
     // Prepare periodic neighbour data
     std::vector<int> top_ids_p, bottom_ids_p, left_ids_p, right_ids_p;
     std::vector<int> top_halos_p, bottom_halos_p, left_halos_p, right_halos_p;
-    get_top_neighbors_periodic(top_ids_p, top_halos_p);
-    get_bottom_neighbors_periodic(bottom_ids_p, bottom_halos_p);
-    get_left_neighbors_periodic(left_ids_p, left_halos_p);
-    get_right_neighbors_periodic(right_ids_p, right_halos_p);
-    int top_num_neighbors_p = top_ids_p.size();
-    int bottom_num_neighbors_p = bottom_ids_p.size();
-    int left_num_neighbors_p = left_ids_p.size();
-    int right_num_neighbors_p = right_ids_p.size();
+    get_top_neighbours_periodic(top_ids_p, top_halos_p);
+    get_bottom_neighbours_periodic(bottom_ids_p, bottom_halos_p);
+    get_left_neighbours_periodic(left_ids_p, left_halos_p);
+    get_right_neighbours_periodic(right_ids_p, right_halos_p);
+    int top_num_neighbours_p = top_ids_p.size();
+    int bottom_num_neighbours_p = bottom_ids_p.size();
+    int left_num_neighbours_p = left_ids_p.size();
+    int right_num_neighbours_p = right_ids_p.size();
 
     // Compute global dimensions
     int top_dim, bottom_dim, left_dim, right_dim;
-    CHECK_MPI(MPI_Allreduce(&top_num_neighbors, &top_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&bottom_num_neighbors, &bottom_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&left_num_neighbors, &left_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&right_num_neighbors, &right_dim, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&top_num_neighbours, &top_dim, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&bottom_num_neighbours, &bottom_dim, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&left_num_neighbours, &left_dim, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&right_num_neighbours, &right_dim, 1, MPI_INT, MPI_SUM, _comm));
 
     // Compute global dimensions for periodic case
     int top_dim_p, bottom_dim_p, left_dim_p, right_dim_p;
-    CHECK_MPI(MPI_Allreduce(&top_num_neighbors_p, &top_dim_p, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&bottom_num_neighbors_p, &bottom_dim_p, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&left_num_neighbors_p, &left_dim_p, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&right_num_neighbors_p, &right_dim_p, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&top_num_neighbours_p, &top_dim_p, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&bottom_num_neighbours_p, &bottom_dim_p, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&left_num_neighbours_p, &left_dim_p, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&right_num_neighbours_p, &right_dim_p, 1, MPI_INT, MPI_SUM, _comm));
 
     // Compute global offsets
     int top_offset = 0, bottom_offset = 0, left_offset = 0, right_offset = 0;
-    CHECK_MPI(MPI_Exscan(&top_num_neighbors, &top_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&bottom_num_neighbors, &bottom_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&left_num_neighbors, &left_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&right_num_neighbors, &right_offset, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&top_num_neighbours, &top_offset, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&bottom_num_neighbours, &bottom_offset, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&left_num_neighbours, &left_offset, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&right_num_neighbours, &right_offset, 1, MPI_INT, MPI_SUM, _comm));
 
     // Compute global offsets for periodic case
     int top_offset_p = 0, bottom_offset_p = 0, left_offset_p = 0, right_offset_p = 0;
-    CHECK_MPI(MPI_Exscan(&top_num_neighbors_p, &top_offset_p, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&bottom_num_neighbors_p, &bottom_offset_p, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&left_num_neighbors_p, &left_offset_p, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&right_num_neighbors_p, &right_offset_p, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&top_num_neighbours_p, &top_offset_p, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&bottom_num_neighbours_p, &bottom_offset_p, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&left_num_neighbours_p, &left_offset_p, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&right_num_neighbours_p, &right_offset_p, 1, MPI_INT, MPI_SUM, _comm));
 
     // Create 2 dimensions
     // The values to be written are associated with the netCDF variable by
@@ -249,49 +250,50 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_def_var(bbox_gid, "domain_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
     NC_CHECK(nc_def_var(bbox_gid, "domain_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
     // Connectivity group
-    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbors", NC_INT, 1, &dimid, &top_num_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbor_ids", NC_INT, 1, &top_dimid, &top_ids_vid));
+    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbours", NC_INT, 1, &dimid, &top_num_vid));
     NC_CHECK(
-        nc_def_var(connectivity_gid, "top_neighbor_halos", NC_INT, 1, &top_dimid, &top_halos_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbors", NC_INT, 1, &dimid, &bottom_num_vid));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "bottom_neighbor_ids", NC_INT, 1, &bottom_dimid, &bottom_ids_vid));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "bottom_neighbor_halos", NC_INT, 1, &bottom_dimid, &bottom_halos_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "left_neighbors", NC_INT, 1, &dimid, &left_num_vid));
+        nc_def_var(connectivity_gid, "top_neighbour_ids", NC_INT, 1, &top_dimid, &top_ids_vid));
     NC_CHECK(
-        nc_def_var(connectivity_gid, "left_neighbor_ids", NC_INT, 1, &left_dimid, &left_ids_vid));
+        nc_def_var(connectivity_gid, "top_neighbour_halos", NC_INT, 1, &top_dimid, &top_halos_vid));
+    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbours", NC_INT, 1, &dimid, &bottom_num_vid));
     NC_CHECK(nc_def_var(
-        connectivity_gid, "left_neighbor_halos", NC_INT, 1, &left_dimid, &left_halos_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbors", NC_INT, 1, &dimid, &right_num_vid));
+        connectivity_gid, "bottom_neighbour_ids", NC_INT, 1, &bottom_dimid, &bottom_ids_vid));
     NC_CHECK(nc_def_var(
-        connectivity_gid, "right_neighbor_ids", NC_INT, 1, &right_dimid, &right_ids_vid));
+        connectivity_gid, "bottom_neighbour_halos", NC_INT, 1, &bottom_dimid, &bottom_halos_vid));
+    NC_CHECK(nc_def_var(connectivity_gid, "left_neighbours", NC_INT, 1, &dimid, &left_num_vid));
+    NC_CHECK(
+        nc_def_var(connectivity_gid, "left_neighbour_ids", NC_INT, 1, &left_dimid, &left_ids_vid));
     NC_CHECK(nc_def_var(
-        connectivity_gid, "right_neighbor_halos", NC_INT, 1, &right_dimid, &right_halos_vid));
+        connectivity_gid, "left_neighbour_halos", NC_INT, 1, &left_dimid, &left_halos_vid));
+    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbours", NC_INT, 1, &dimid, &right_num_vid));
+    NC_CHECK(nc_def_var(
+        connectivity_gid, "right_neighbour_ids", NC_INT, 1, &right_dimid, &right_ids_vid));
+    NC_CHECK(nc_def_var(
+        connectivity_gid, "right_neighbour_halos", NC_INT, 1, &right_dimid, &right_halos_vid));
     // Periodic members of connectivity group
     NC_CHECK(
-        nc_def_var(connectivity_gid, "top_neighbors_periodic", NC_INT, 1, &dimid, &top_num_vid_p));
+        nc_def_var(connectivity_gid, "top_neighbours_periodic", NC_INT, 1, &dimid, &top_num_vid_p));
     NC_CHECK(nc_def_var(
-        connectivity_gid, "top_neighbor_ids_periodic", NC_INT, 1, &top_dimid_p, &top_ids_vid_p));
-    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbor_halos_periodic", NC_INT, 1, &top_dimid_p,
+        connectivity_gid, "top_neighbour_ids_periodic", NC_INT, 1, &top_dimid_p, &top_ids_vid_p));
+    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbour_halos_periodic", NC_INT, 1, &top_dimid_p,
         &top_halos_vid_p));
     NC_CHECK(nc_def_var(
-        connectivity_gid, "bottom_neighbors_periodic", NC_INT, 1, &dimid, &bottom_num_vid_p));
-    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbor_ids_periodic", NC_INT, 1,
+        connectivity_gid, "bottom_neighbours_periodic", NC_INT, 1, &dimid, &bottom_num_vid_p));
+    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbour_ids_periodic", NC_INT, 1,
         &bottom_dimid_p, &bottom_ids_vid_p));
-    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbor_halos_periodic", NC_INT, 1,
+    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbour_halos_periodic", NC_INT, 1,
         &bottom_dimid_p, &bottom_halos_vid_p));
     NC_CHECK(nc_def_var(
-        connectivity_gid, "left_neighbors_periodic", NC_INT, 1, &dimid, &left_num_vid_p));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "left_neighbor_ids_periodic", NC_INT, 1, &left_dimid_p, &left_ids_vid_p));
-    NC_CHECK(nc_def_var(connectivity_gid, "left_neighbor_halos_periodic", NC_INT, 1, &left_dimid_p,
+        connectivity_gid, "left_neighbours_periodic", NC_INT, 1, &dimid, &left_num_vid_p));
+    NC_CHECK(nc_def_var(connectivity_gid, "left_neighbour_ids_periodic", NC_INT, 1, &left_dimid_p,
+        &left_ids_vid_p));
+    NC_CHECK(nc_def_var(connectivity_gid, "left_neighbour_halos_periodic", NC_INT, 1, &left_dimid_p,
         &left_halos_vid_p));
     NC_CHECK(nc_def_var(
-        connectivity_gid, "right_neighbors_periodic", NC_INT, 1, &dimid, &right_num_vid_p));
-    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbor_ids_periodic", NC_INT, 1, &right_dimid_p,
+        connectivity_gid, "right_neighbours_periodic", NC_INT, 1, &dimid, &right_num_vid_p));
+    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbour_ids_periodic", NC_INT, 1, &right_dimid_p,
         &right_ids_vid_p));
-    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbor_halos_periodic", NC_INT, 1,
+    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbour_halos_periodic", NC_INT, 1,
         &right_dimid_p, &right_halos_vid_p));
 
     // Write metadata to file
@@ -312,57 +314,57 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_put_var1_int(bbox_gid, cnt_y_vid, &start, &_local_ext_1_new));
 
     NC_CHECK(nc_var_par_access(connectivity_gid, top_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, top_num_vid, &start, &top_num_neighbors));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, top_num_vid, &start, &top_num_neighbours));
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, bottom_num_vid, &start, &bottom_num_neighbors));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, bottom_num_vid, &start, &bottom_num_neighbours));
     NC_CHECK(nc_var_par_access(connectivity_gid, left_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, left_num_vid, &start, &left_num_neighbors));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, left_num_vid, &start, &left_num_neighbours));
     NC_CHECK(nc_var_par_access(connectivity_gid, right_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, right_num_vid, &start, &right_num_neighbors));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, right_num_vid, &start, &right_num_neighbours));
     NC_CHECK(nc_var_par_access(connectivity_gid, top_num_vid_p, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, top_num_vid_p, &start, &top_num_neighbors_p));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, top_num_vid_p, &start, &top_num_neighbours_p));
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_num_vid_p, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, bottom_num_vid_p, &start, &bottom_num_neighbors_p));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, bottom_num_vid_p, &start, &bottom_num_neighbours_p));
     NC_CHECK(nc_var_par_access(connectivity_gid, left_num_vid_p, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, left_num_vid_p, &start, &left_num_neighbors_p));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, left_num_vid_p, &start, &left_num_neighbours_p));
     NC_CHECK(nc_var_par_access(connectivity_gid, right_num_vid_p, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, right_num_vid_p, &start, &right_num_neighbors_p));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, right_num_vid_p, &start, &right_num_neighbours_p));
 
     start = top_offset;
-    count = top_num_neighbors;
+    count = top_num_neighbours;
     NC_CHECK(nc_var_par_access(connectivity_gid, top_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, top_ids_vid, &start, &count, top_ids.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, top_halos_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, top_halos_vid, &start, &count, top_halos.data()));
     start = bottom_offset;
-    count = bottom_num_neighbors;
+    count = bottom_num_neighbours;
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, bottom_ids_vid, &start, &count, bottom_ids.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_halos_vid, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, bottom_halos_vid, &start, &count, bottom_halos.data()));
     start = left_offset;
-    count = left_num_neighbors;
+    count = left_num_neighbours;
     NC_CHECK(nc_var_par_access(connectivity_gid, left_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, left_ids_vid, &start, &count, left_ids.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, left_halos_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, left_halos_vid, &start, &count, left_halos.data()));
     start = right_offset;
-    count = right_num_neighbors;
+    count = right_num_neighbours;
     NC_CHECK(nc_var_par_access(connectivity_gid, right_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, right_ids_vid, &start, &count, right_ids.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, right_halos_vid, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, right_halos_vid, &start, &count, right_halos.data()));
     start = top_offset_p;
-    count = top_num_neighbors_p;
+    count = top_num_neighbours_p;
     NC_CHECK(nc_var_par_access(connectivity_gid, top_ids_vid_p, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, top_ids_vid_p, &start, &count, top_ids_p.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, top_halos_vid_p, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, top_halos_vid_p, &start, &count, top_halos_p.data()));
     start = bottom_offset_p;
-    count = bottom_num_neighbors_p;
+    count = bottom_num_neighbours_p;
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_ids_vid_p, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, bottom_ids_vid_p, &start, &count, bottom_ids_p.data()));
@@ -370,14 +372,14 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_put_vara_int(
         connectivity_gid, bottom_halos_vid_p, &start, &count, bottom_halos_p.data()));
     start = left_offset_p;
-    count = left_num_neighbors_p;
+    count = left_num_neighbours_p;
     NC_CHECK(nc_var_par_access(connectivity_gid, left_ids_vid_p, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, left_ids_vid_p, &start, &count, left_ids_p.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, left_halos_vid_p, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, left_halos_vid_p, &start, &count, left_halos_p.data()));
     start = right_offset_p;
-    count = right_num_neighbors_p;
+    count = right_num_neighbours_p;
     NC_CHECK(nc_var_par_access(connectivity_gid, right_ids_vid_p, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, right_ids_vid_p, &start, &count, right_ids_p.data()));
@@ -397,7 +399,7 @@ Partitioner* Partitioner::Factory::create(
         throw std::runtime_error("Invalid partitioner!");
 }
 
-void Partitioner::discover_neighbors()
+void Partitioner::discover_neighbours()
 {
     // Gather bounding boxes for all processes
     std::vector<int> top_left_0(_num_procs, -1);
@@ -427,75 +429,77 @@ void Partitioner::discover_neighbors()
     for (int i = 0; i < _num_procs; i++)
         bottom_right_1[i] += top_left_1[i] - 1;
 
-    // Find my top neighbors and their halo sizes
+    // Find my top neighbours and their halo sizes
     for (int i = 0; i < _num_procs; i++) {
         if (i != _rank) {
             if (top_left_1[_rank] >= bottom_left_1[i] && top_left_1[_rank] <= bottom_right_1[i]
                 && bottom_right_1[i] <= top_right_1[_rank]
                 && (top_left_0[_rank] - bottom_left_0[i] == 1)) {
                 int halo_size = bottom_right_1[i] - top_left_1[_rank] + 1;
-                _top_neighbors.insert(std::pair<int, int>(i, halo_size));
+                _top_neighbours.insert(std::pair<int, int>(i, halo_size));
             }
             if (top_right_1[_rank] >= bottom_left_1[i] && top_right_1[_rank] <= bottom_right_1[i]
                 && bottom_left_1[i] >= top_left_1[_rank]
                 && (top_right_0[_rank] - bottom_right_0[i] == 1)) {
                 int halo_size = top_right_1[_rank] - bottom_left_1[i] + 1;
-                _top_neighbors.insert(std::pair<int, int>(i, halo_size));
+                _top_neighbours.insert(std::pair<int, int>(i, halo_size));
             }
         }
     }
 
-    // Find my bottom neighbors
+    // Find my bottom neighbours
     for (int i = 0; i < _num_procs; i++) {
         if (i != _rank) {
             if (bottom_left_1[_rank] >= top_left_1[i] && bottom_left_1[_rank] <= top_right_1[i]
                 && top_right_1[i] <= bottom_right_1[_rank]
                 && (top_left_0[i] - bottom_left_0[_rank] == 1)) {
                 int halo_size = top_right_1[i] - bottom_left_1[_rank] + 1;
-                _bottom_neighbors.insert(std::pair<int, int>(i, halo_size));
+                _bottom_neighbours.insert(std::pair<int, int>(i, halo_size));
             }
             if (bottom_right_1[_rank] >= top_left_1[i] && bottom_right_1[_rank] <= top_right_1[i]
                 && top_left_1[i] >= bottom_left_1[_rank]
                 && (top_right_0[i] - bottom_right_0[_rank] == 1)) {
                 int halo_size = bottom_right_1[_rank] - top_left_1[i] + 1;
-                _bottom_neighbors.insert(std::pair<int, int>(i, halo_size));
+                _bottom_neighbours.insert(std::pair<int, int>(i, halo_size));
             }
         }
     }
 
-    // Find my left neighbors
+    // Find my left neighbours
     for (int i = 0; i < _num_procs; i++) {
         if (i != _rank) {
             if (top_left_0[_rank] >= top_right_0[i] && top_left_0[_rank] <= bottom_right_0[i]
                 && bottom_left_0[_rank] <= bottom_right_0[i]
                 && (top_left_1[_rank] - top_right_1[i] == 1)) {
                 int halo_size = bottom_right_0[i] - top_left_0[_rank] + 1;
-                _left_neighbors.insert(std::pair<int, int>(i, halo_size));
+                _left_neighbours.insert(std::pair<int, int>(i, halo_size));
             }
             if (bottom_left_0[_rank] >= top_right_0[i] && bottom_left_0[_rank] <= bottom_right_0[i]
                 && top_left_0[_rank] <= top_right_0[i]
                 && (bottom_left_1[_rank] - top_right_1[i] == 1)) {
                 int halo_size = bottom_left_0[_rank] - top_right_0[i] + 1;
-                _left_neighbors.insert(std::pair<int, int>(i, halo_size));
+                _left_neighbours.insert(std::pair<int, int>(i, halo_size));
             }
         }
     }
 
-    // Find my right neighbors
+    // Find my right neighbours
     for (int i = 0; i < _num_procs; i++) {
         if (i != _rank) {
             if (top_right_0[_rank] >= top_left_0[i] && top_right_0[_rank] <= bottom_left_0[i]
                 && bottom_right_0[_rank] >= bottom_left_0[i]
                 && (top_left_1[i] - top_right_1[_rank] == 1)) {
                 int halo_size = bottom_left_0[i] - top_right_0[_rank] + 1;
-                _right_neighbors.insert(std::pair<int, int>(i, halo_size));
+                _right_neighbours.insert(std::pair<int, int>(i, halo_size));
             }
             if (bottom_right_0[_rank] >= top_left_0[i] && bottom_right_0[_rank] <= bottom_left_0[i]
                 && top_right_0[_rank] <= top_left_0[i]
                 && (top_left_1[i] - top_right_1[_rank] == 1)) {
                 int halo_size = bottom_right_0[_rank] - top_left_0[i] + 1;
-                _right_neighbors.insert(std::pair<int, int>(i, halo_size));
+                _right_neighbours.insert(std::pair<int, int>(i, halo_size));
             }
         }
     }
+
+    // TODO: Discover periodic neighbours, too
 }

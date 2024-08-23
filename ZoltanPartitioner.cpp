@@ -207,8 +207,8 @@ void ZoltanPartitioner::partition(Grid& grid)
         _local_ext_1_new = grid.get_global_ext_orig_1() - _global_1_new;
     }
 
-    // Find my neighbors
-    discover_neighbors();
+    // Find my neighbours
+    discover_neighbours();
 
     // Find the process IDs of each grid point I own
     if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
