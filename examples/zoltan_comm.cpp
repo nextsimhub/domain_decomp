@@ -62,11 +62,11 @@ int main(int argc, char* argv[])
 
     // Retrieve neighbours
     vector<vector<int>> id_vec = { {}, {}, {}, {} };
-    vector<int> top_halos, bottom_halos, left_halos, right_halos;
-    partitioner->get_neighbours(id_vec[0], left_halos, 0);
-    partitioner->get_neighbours(id_vec[1], right_halos, 1);
-    partitioner->get_neighbours(id_vec[2], bottom_halos, 2);
-    partitioner->get_neighbours(id_vec[3], top_halos, 3);
+    vector<vector<int>> halos = { {}, {}, {}, {} };
+    partitioner->get_neighbours(id_vec[0], halos[0], 0);
+    partitioner->get_neighbours(id_vec[1], halos[1], 1);
+    partitioner->get_neighbours(id_vec[2], halos[2], 2);
+    partitioner->get_neighbours(id_vec[3], halos[3], 3);
 
     // MPI ranks of neighbours in order: top, bottom, left, right
     vector<int> ids(id_vec[3]);
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 
     // Top neighbours
     for (int i = 0; i < static_cast<int>(id_vec[3].size()); i++) {
-        int subsizes[ndims] = { 1, top_halos[i] };
+        int subsizes[ndims] = { 1, halos[3][i] };
 
         int send_top_start[ndims] = { 1, offset + 1 };
         MPI_Type_create_subarray(
@@ -141,14 +141,14 @@ int main(int argc, char* argv[])
         rcounts[cnt] = 1;
         rdispls[cnt] = 0;
 
-        offset += top_halos[i];
+        offset += halos[3][i];
         cnt++;
     }
 
     // Bottom neighbours
     offset = 0;
     for (int i = 0; i < static_cast<int>(id_vec[2].size()); i++) {
-        int subsizes[ndims] = { 1, bottom_halos[i] };
+        int subsizes[ndims] = { 1, halos[2][i] };
 
         int send_bottom_start[ndims] = { local_ext_0, offset + 1 };
         MPI_Type_create_subarray(
@@ -166,14 +166,14 @@ int main(int argc, char* argv[])
         rcounts[cnt] = 1;
         rdispls[cnt] = 0;
 
-        offset += bottom_halos[i];
+        offset += halos[2][i];
         cnt++;
     }
 
     // Left neighbours
     offset = 0;
     for (int i = 0; i < static_cast<int>(id_vec[0].size()); i++) {
-        int subsizes[ndims] = { left_halos[i], 1 };
+        int subsizes[ndims] = { halos[0][i], 1 };
 
         int send_left_start[ndims] = { offset + 1, 1 };
         MPI_Type_create_subarray(
@@ -191,14 +191,14 @@ int main(int argc, char* argv[])
         rcounts[cnt] = 1;
         rdispls[cnt] = 0;
 
-        offset += left_halos[i];
+        offset += halos[0][i];
         cnt++;
     }
 
     // Right neighbours
     offset = 0;
     for (int i = 0; i < static_cast<int>(id_vec[1].size()); i++) {
-        int subsizes[ndims] = { right_halos[i], 1 };
+        int subsizes[ndims] = { halos[1][i], 1 };
 
         int send_right_start[ndims] = { offset + 1, local_ext_1 };
         MPI_Type_create_subarray(
@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
         rcounts[cnt] = 1;
         rdispls[cnt] = 0;
 
-        offset += right_halos[i];
+        offset += halos[1][i];
         cnt++;
     }
 
