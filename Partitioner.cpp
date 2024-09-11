@@ -83,14 +83,14 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
 
     // Prepare neighbour data
-    std::vector<int> top_ids, bottom_ids, left_ids, right_ids;
+    std::vector<std::vector<int>> ids = { {}, {}, {}, {} };
     std::vector<int> top_halos, bottom_halos, left_halos, right_halos;
-    get_neighbours(left_ids, left_halos, 0);
-    get_neighbours(right_ids, right_halos, 1);
-    get_neighbours(bottom_ids, bottom_halos, 2);
-    get_neighbours(top_ids, top_halos, 3);
-    std::vector<int> num_neighbours = { (int)left_ids.size(), (int)right_ids.size(),
-        (int)bottom_ids.size(), (int)top_ids.size() };
+    get_neighbours(ids[0], left_halos, 0);
+    get_neighbours(ids[1], right_halos, 1);
+    get_neighbours(ids[2], bottom_halos, 2);
+    get_neighbours(ids[3], top_halos, 3);
+    std::vector<int> num_neighbours
+        = { (int)ids[0].size(), (int)ids[1].size(), (int)ids[2].size(), (int)ids[3].size() };
 
     // Compute global dimensions
     std::vector<int> dims = { 0, 0, 0, 0 };
@@ -190,27 +190,27 @@ void Partitioner::save_metadata(const std::string& filename) const
     start = offsets[0];
     count = num_neighbours[0];
     NC_CHECK(nc_var_par_access(connectivity_gid, left_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, left_ids_vid, &start, &count, left_ids.data()));
+    NC_CHECK(nc_put_vara_int(connectivity_gid, left_ids_vid, &start, &count, ids[0].data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, left_halos_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, left_halos_vid, &start, &count, left_halos.data()));
     start = offsets[1];
     count = num_neighbours[1];
     NC_CHECK(nc_var_par_access(connectivity_gid, right_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, right_ids_vid, &start, &count, right_ids.data()));
+    NC_CHECK(nc_put_vara_int(connectivity_gid, right_ids_vid, &start, &count, ids[1].data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, right_halos_vid, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, right_halos_vid, &start, &count, right_halos.data()));
     start = offsets[2];
     count = num_neighbours[2];
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, bottom_ids_vid, &start, &count, bottom_ids.data()));
+    NC_CHECK(nc_put_vara_int(connectivity_gid, bottom_ids_vid, &start, &count, ids[2].data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_halos_vid, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, bottom_halos_vid, &start, &count, bottom_halos.data()));
     start = offsets[3];
     count = num_neighbours[3];
     NC_CHECK(nc_var_par_access(connectivity_gid, top_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, top_ids_vid, &start, &count, top_ids.data()));
+    NC_CHECK(nc_put_vara_int(connectivity_gid, top_ids_vid, &start, &count, ids[3].data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, top_halos_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, top_halos_vid, &start, &count, top_halos.data()));
 
