@@ -55,9 +55,9 @@ void Partitioner::save_mask(const std::string& filename) const
     // the C interface
     const int NDIMS = 2; // TODO: Why redeclared?
     int dimid[NDIMS];
-    std::vector<std::string> dim_names = { "x", "y" };
+    std::vector<std::string> dim_chars = { "x", "y" };
     for (int idx = 0; idx < NDIMS; idx++) {
-        NC_CHECK(nc_def_dim(nc_id, dim_names[idx].c_str(), _global_ext[idx], &dimid[idx]));
+        NC_CHECK(nc_def_dim(nc_id, dim_chars[idx].c_str(), _global_ext[idx], &dimid[idx]));
     }
 
     // Create variables
@@ -93,10 +93,9 @@ void Partitioner::save_metadata(const std::string& filename) const
     // the C interface
     const int NDIMS = 2; // TODO: Why redeclared?
     int dimid_global[NDIMS];
-    std::vector<std::string> global_dim_names = { "NX", "NY" };
     for (int idx = 0; idx < NDIMS; idx++) {
-        NC_CHECK(
-            nc_def_dim(nc_id, global_dim_names[idx].c_str(), _global_ext[idx], &dimid_global[idx]));
+        NC_CHECK(nc_def_dim(
+            nc_id, global_extent_names[idx].c_str(), _global_ext[idx], &dimid_global[idx]));
     }
 
     // There are two neighbours for each dimension
@@ -122,9 +121,8 @@ void Partitioner::save_metadata(const std::string& filename) const
     int dimid;
     std::vector<int> dimids(NNBRS);
     NC_CHECK(nc_def_dim(nc_id, "P", _total_num_procs, &dimid));
-    std::vector<std::string> dim_letters = { "L", "R", "B", "T" };
     for (int idx = 0; idx < NNBRS; idx++) {
-        NC_CHECK(nc_def_dim(nc_id, dim_letters[idx].c_str(), dims[idx], &dimids[idx]));
+        NC_CHECK(nc_def_dim(nc_id, dir_chars[idx].c_str(), dims[idx], &dimids[idx]));
     }
 
     // Define groups in netCDF file
@@ -138,13 +136,11 @@ void Partitioner::save_metadata(const std::string& filename) const
     int num_vid[NNBRS];
     int ids_vid[NNBRS];
     int halos_vid[NNBRS];
-    std::vector<std::string> dir_names = { "left", "right", "bottom", "top" };
-    std::vector<std::string> dim_names = { "x", "y" };
     for (int idx = 0; idx < NNBRS; idx++) {
         // Bounding boxes group
         NC_CHECK(nc_def_var(
-            bbox_gid, ("domain_" + dim_names[idx]).c_str(), NC_INT, 1, &dimid, &top_vid[idx]));
-        NC_CHECK(nc_def_var(bbox_gid, ("domain_extent_" + dim_names[idx]).c_str(), NC_INT, 1,
+            bbox_gid, ("domain_" + dim_chars[idx]).c_str(), NC_INT, 1, &dimid, &top_vid[idx]));
+        NC_CHECK(nc_def_var(bbox_gid, ("domain_extent_" + dim_chars[idx]).c_str(), NC_INT, 1,
             &dimid, &cnt_vid[idx]));
         // Connectivity group
         NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbours").c_str(), NC_INT, 1,

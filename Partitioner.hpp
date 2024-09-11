@@ -113,6 +113,18 @@ protected:
     const int NDIMS = 2; // Number of dimensions
     const int NNBRS = 2 * NDIMS; // Number of neighbours (two per dimension)
 
+    // Letters used for each dimension
+    std::vector<std::string> dim_chars = { "x", "y" };
+
+    // Letters used for each direction
+    std::vector<std::string> dir_chars = { "L", "R", "B", "T" };
+
+    // Names used for each direction
+    std::vector<std::string> dir_names = { "left", "right", "bottom", "top" };
+
+    // Names used for global dimension extents
+    std::vector<std::string> global_extent_names = { "NX", "NY" };
+
     // Total number of processes in each dimension
     std::vector<int> _num_procs = std::vector<int>(NDIMS, -1);
 
