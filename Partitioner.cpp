@@ -100,11 +100,11 @@ void Partitioner::save_metadata(const std::string& filename) const
     CHECK_MPI(MPI_Allreduce(&num_neighbours[3], &dims[3], 1, MPI_INT, MPI_SUM, _comm));
 
     // Compute global offsets
-    int top_offset = 0, bottom_offset = 0, left_offset = 0, right_offset = 0;
-    CHECK_MPI(MPI_Exscan(&num_neighbours[0], &left_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&num_neighbours[1], &right_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&num_neighbours[2], &bottom_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&num_neighbours[3], &top_offset, 1, MPI_INT, MPI_SUM, _comm));
+    std::vector<int> offsets = { 0, 0, 0, 0 };
+    CHECK_MPI(MPI_Exscan(&num_neighbours[0], &offsets[0], 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&num_neighbours[1], &offsets[1], 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&num_neighbours[2], &offsets[2], 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&num_neighbours[3], &offsets[3], 1, MPI_INT, MPI_SUM, _comm));
 
     // Create 2 dimensions
     // The values to be written are associated with the netCDF variable by
@@ -187,27 +187,27 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_var_par_access(connectivity_gid, right_num_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_var1_int(connectivity_gid, right_num_vid, &start, &num_neighbours[1]));
 
-    start = left_offset;
+    start = offsets[0];
     count = num_neighbours[0];
     NC_CHECK(nc_var_par_access(connectivity_gid, left_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, left_ids_vid, &start, &count, left_ids.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, left_halos_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, left_halos_vid, &start, &count, left_halos.data()));
-    start = right_offset;
+    start = offsets[1];
     count = num_neighbours[1];
     NC_CHECK(nc_var_par_access(connectivity_gid, right_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, right_ids_vid, &start, &count, right_ids.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, right_halos_vid, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, right_halos_vid, &start, &count, right_halos.data()));
-    start = bottom_offset;
+    start = offsets[2];
     count = num_neighbours[2];
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, bottom_ids_vid, &start, &count, bottom_ids.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_halos_vid, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, bottom_halos_vid, &start, &count, bottom_halos.data()));
-    start = top_offset;
+    start = offsets[3];
     count = num_neighbours[3];
     NC_CHECK(nc_var_par_access(connectivity_gid, top_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, top_ids_vid, &start, &count, top_ids.data()));
