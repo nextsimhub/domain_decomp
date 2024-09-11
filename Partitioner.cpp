@@ -85,20 +85,6 @@ void Partitioner::save_metadata(const std::string& filename) const
     nc_mode = NC_MPIIO | NC_NETCDF4;
     NC_CHECK(nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
 
-    // Prepare neighbour data
-    std::vector<std::vector<int>> ids = { {}, {}, {}, {} };
-    std::vector<std::vector<int>> halos = { {}, {}, {}, {} };
-    get_neighbours(ids, halos);
-    std::vector<int> num_neighbours
-        = { (int)ids[0].size(), (int)ids[1].size(), (int)ids[2].size(), (int)ids[3].size() };
-
-    // Compute global dimensions and offsets
-    std::vector<int> dims = { 0, 0, 0, 0 }, offsets = { 0, 0, 0, 0 };
-    for (int idx = 0; idx < 4; idx++) {
-        CHECK_MPI(MPI_Allreduce(&num_neighbours[idx], &dims[idx], 1, MPI_INT, MPI_SUM, _comm));
-        CHECK_MPI(MPI_Exscan(&num_neighbours[idx], &offsets[idx], 1, MPI_INT, MPI_SUM, _comm));
-    }
-
     // Create 2 dimensions
     // The values to be written are associated with the netCDF variable by
     // assuming that the last dimension of the netCDF variable varies fastest in
@@ -108,12 +94,29 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_def_dim(nc_id, "NX", _global_ext[0], &dimid_global[0]));
     NC_CHECK(nc_def_dim(nc_id, "NY", _global_ext[1], &dimid_global[1]));
 
+    // There are two neighbours for each dimension
+    const int NNBRS = NDIMS * 2;
+
+    // Prepare neighbour data
+    std::vector<std::vector<int>> ids(NNBRS);
+    std::vector<std::vector<int>> halos(NNBRS);
+    get_neighbours(ids, halos);
+    std::vector<int> num_neighbours
+        = { (int)ids[0].size(), (int)ids[1].size(), (int)ids[2].size(), (int)ids[3].size() };
+
+    // Compute global dimensions and offsets
+    std::vector<int> dims(NNBRS, 0), offsets(NNBRS, 0);
+    for (int idx = 0; idx < NNBRS; idx++) {
+        CHECK_MPI(MPI_Allreduce(&num_neighbours[idx], &dims[idx], 1, MPI_INT, MPI_SUM, _comm));
+        CHECK_MPI(MPI_Exscan(&num_neighbours[idx], &offsets[idx], 1, MPI_INT, MPI_SUM, _comm));
+    }
+
     // Define dimensions in netCDF file
     int dimid;
-    std::vector<int> dimids(4);
+    std::vector<int> dimids(NNBRS);
     NC_CHECK(nc_def_dim(nc_id, "P", _total_num_procs, &dimid));
     std::vector<std::string> dim_letters = { "L", "R", "B", "T" };
-    for (int idx = 0; idx < 4; idx++) {
+    for (int idx = 0; idx < NNBRS; idx++) {
         NC_CHECK(nc_def_dim(nc_id, dim_letters[idx].c_str(), dims[idx], &dimids[idx]));
     }
 
@@ -125,9 +128,9 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Define variables in netCDF file
     int top_x_vid, top_y_vid;
     int cnt_x_vid, cnt_y_vid;
-    std::vector<int> num_vid(4);
-    std::vector<int> ids_vid(4);
-    std::vector<int> halos_vid(4);
+    std::vector<int> num_vid(NNBRS);
+    std::vector<int> ids_vid(NNBRS);
+    std::vector<int> halos_vid(NNBRS);
     std::vector<std::string> dim_names = { "left", "right", "bottom", "top" };
     // Bounding boxes group
     NC_CHECK(nc_def_var(bbox_gid, "domain_x", NC_INT, 1, &dimid, &top_x_vid));
@@ -135,7 +138,7 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_def_var(bbox_gid, "domain_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
     NC_CHECK(nc_def_var(bbox_gid, "domain_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
     // Connectivity group
-    for (int idx = 0; idx < 4; idx++) {
+    for (int idx = 0; idx < NNBRS; idx++) {
         NC_CHECK(nc_def_var(connectivity_gid, (dim_names[idx] + "_neighbours").c_str(), NC_INT, 1,
             &dimid, &num_vid[idx]));
         NC_CHECK(nc_def_var(connectivity_gid, (dim_names[idx] + "_neighbour_ids").c_str(), NC_INT,
@@ -160,7 +163,7 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_put_var1_int(bbox_gid, cnt_x_vid, &start, &_local_ext_new[0]));
     NC_CHECK(nc_var_par_access(bbox_gid, cnt_y_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_var1_int(bbox_gid, cnt_y_vid, &start, &_local_ext_new[1]));
-    for (int idx = 0; idx < 4; idx++) {
+    for (int idx = 0; idx < NNBRS; idx++) {
         NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[idx], &start, &num_neighbours[idx]));
         start = offsets[idx];
