@@ -125,7 +125,7 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Define variables in netCDF file
     int top_x_vid, top_y_vid;
     int cnt_x_vid, cnt_y_vid;
-    int top_num_vid, bottom_num_vid, left_num_vid, right_num_vid;
+    std::vector<int> num_vid(4);
     int top_ids_vid, bottom_ids_vid, left_ids_vid, right_ids_vid;
     int top_halos_vid, bottom_halos_vid, left_halos_vid, right_halos_vid;
     // Bounding boxes group
@@ -134,22 +134,22 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_def_var(bbox_gid, "domain_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
     NC_CHECK(nc_def_var(bbox_gid, "domain_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
     // Connectivity group
-    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbours", NC_INT, 1, &dimid, &top_num_vid));
+    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbours", NC_INT, 1, &dimid, &num_vid[3]));
     NC_CHECK(
         nc_def_var(connectivity_gid, "top_neighbour_ids", NC_INT, 1, &dimids[3], &top_ids_vid));
     NC_CHECK(
         nc_def_var(connectivity_gid, "top_neighbour_halos", NC_INT, 1, &dimids[3], &top_halos_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbours", NC_INT, 1, &dimid, &bottom_num_vid));
+    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbours", NC_INT, 1, &dimid, &num_vid[2]));
     NC_CHECK(nc_def_var(
         connectivity_gid, "bottom_neighbour_ids", NC_INT, 1, &dimids[2], &bottom_ids_vid));
     NC_CHECK(nc_def_var(
         connectivity_gid, "bottom_neighbour_halos", NC_INT, 1, &dimids[2], &bottom_halos_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "left_neighbours", NC_INT, 1, &dimid, &left_num_vid));
+    NC_CHECK(nc_def_var(connectivity_gid, "left_neighbours", NC_INT, 1, &dimid, &num_vid[0]));
     NC_CHECK(
         nc_def_var(connectivity_gid, "left_neighbour_ids", NC_INT, 1, &dimids[0], &left_ids_vid));
     NC_CHECK(nc_def_var(
         connectivity_gid, "left_neighbour_halos", NC_INT, 1, &dimids[0], &left_halos_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbours", NC_INT, 1, &dimid, &right_num_vid));
+    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbours", NC_INT, 1, &dimid, &num_vid[1]));
     NC_CHECK(
         nc_def_var(connectivity_gid, "right_neighbour_ids", NC_INT, 1, &dimids[1], &right_ids_vid));
     NC_CHECK(nc_def_var(
@@ -172,14 +172,10 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_var_par_access(bbox_gid, cnt_y_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_var1_int(bbox_gid, cnt_y_vid, &start, &_local_ext_1_new));
 
-    NC_CHECK(nc_var_par_access(connectivity_gid, top_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, top_num_vid, &start, &num_neighbours[3]));
-    NC_CHECK(nc_var_par_access(connectivity_gid, bottom_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, bottom_num_vid, &start, &num_neighbours[2]));
-    NC_CHECK(nc_var_par_access(connectivity_gid, left_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, left_num_vid, &start, &num_neighbours[0]));
-    NC_CHECK(nc_var_par_access(connectivity_gid, right_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, right_num_vid, &start, &num_neighbours[1]));
+    for (int idx = 0; idx < 4; idx++) {
+        NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[idx], NC_COLLECTIVE));
+        NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[idx], &start, &num_neighbours[idx]));
+    }
 
     start = offsets[0];
     count = num_neighbours[0];
