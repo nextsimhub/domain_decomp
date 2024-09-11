@@ -56,6 +56,19 @@ public:
     void get_bounding_box(int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const;
 
     /*!
+     * @brief Returns the MPI ranks and halo sizes of the requested neighbours for this process
+     * after partitioning.
+     *
+     * @param ids MPI ranks of the neighbours
+     * @param halo_sizes Halo sizes of the neighbours
+     * @param dim Dimension to consider
+     * @param start If true, consider neighbours at the start of the dimension (left/bottom).
+     * Otherwise, consider those at the end (right/top).
+     */
+    void get_neighbours(
+        std::vector<int>& ids, std::vector<int>& halo_sizes, int dim, bool start) const;
+
+    /*!
      * @brief Returns the MPI ranks and halo sizes of the top neighbours for this
      * process after partitioning.
      */

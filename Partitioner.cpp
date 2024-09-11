@@ -30,36 +30,47 @@ void Partitioner::get_bounding_box(
     local_ext_1 = _local_ext_1_new;
 }
 
-void Partitioner::get_top_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
+void Partitioner::get_neighbours(
+    std::vector<int>& ids, std::vector<int>& halo_sizes, int dim, bool start) const
 {
-    for (auto it = _top_neighbours.begin(); it != _top_neighbours.end(); ++it) {
+    std::map<int, int> neighbours;
+    if (dim == 0) {
+        if (start) {
+            neighbours = _bottom_neighbours;
+        } else {
+            neighbours = _top_neighbours;
+        }
+    } else if (dim == 1) {
+        if (start) {
+            neighbours = _left_neighbours;
+        } else {
+            neighbours = _right_neighbours;
+        }
+    }
+    for (auto it = neighbours.begin(); it != neighbours.end(); ++it) {
         ids.push_back(it->first);
         halo_sizes.push_back(it->second);
     }
+}
+
+void Partitioner::get_top_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
+{
+    get_neighbours(ids, halo_sizes, 1, false);
 }
 
 void Partitioner::get_bottom_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
-    for (auto it = _bottom_neighbours.begin(); it != _bottom_neighbours.end(); ++it) {
-        ids.push_back(it->first);
-        halo_sizes.push_back(it->second);
-    }
+    get_neighbours(ids, halo_sizes, 1, true);
 }
 
 void Partitioner::get_left_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
-    for (auto it = _left_neighbours.begin(); it != _left_neighbours.end(); ++it) {
-        ids.push_back(it->first);
-        halo_sizes.push_back(it->second);
-    }
+    get_neighbours(ids, halo_sizes, 0, true);
 }
 
 void Partitioner::get_right_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
 {
-    for (auto it = _right_neighbours.begin(); it != _right_neighbours.end(); ++it) {
-        ids.push_back(it->first);
-        halo_sizes.push_back(it->second);
-    }
+    get_neighbours(ids, halo_sizes, 0, false);
 }
 
 void Partitioner::save_mask(const std::string& filename) const
