@@ -112,10 +112,10 @@ void Partitioner::save_metadata(const std::string& filename) const
     int dimid;
     std::vector<int> dimids(4);
     NC_CHECK(nc_def_dim(nc_id, "P", _num_procs, &dimid));
-    NC_CHECK(nc_def_dim(nc_id, "T", dims[3], &dimids[3]));
-    NC_CHECK(nc_def_dim(nc_id, "B", dims[2], &dimids[2]));
-    NC_CHECK(nc_def_dim(nc_id, "L", dims[0], &dimids[0]));
-    NC_CHECK(nc_def_dim(nc_id, "R", dims[1], &dimids[1]));
+    std::vector<std::string> dim_letters = { "L", "R", "B", "T" };
+    for (int idx = 0; idx < 4; idx++) {
+        NC_CHECK(nc_def_dim(nc_id, dim_letters[idx].c_str(), dims[idx], &dimids[idx]));
+    }
 
     // Define groups in netCDF file
     int bbox_gid, connectivity_gid;
@@ -128,31 +128,21 @@ void Partitioner::save_metadata(const std::string& filename) const
     std::vector<int> num_vid(4);
     std::vector<int> ids_vid(4);
     std::vector<int> halos_vid(4);
+    std::vector<std::string> dim_names = { "left", "right", "bottom", "top" };
     // Bounding boxes group
     NC_CHECK(nc_def_var(bbox_gid, "domain_x", NC_INT, 1, &dimid, &top_x_vid));
     NC_CHECK(nc_def_var(bbox_gid, "domain_y", NC_INT, 1, &dimid, &top_y_vid));
     NC_CHECK(nc_def_var(bbox_gid, "domain_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
     NC_CHECK(nc_def_var(bbox_gid, "domain_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
     // Connectivity group
-    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbours", NC_INT, 1, &dimid, &num_vid[3]));
-    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbour_ids", NC_INT, 1, &dimids[3], &ids_vid[3]));
-    NC_CHECK(
-        nc_def_var(connectivity_gid, "top_neighbour_halos", NC_INT, 1, &dimids[3], &halos_vid[3]));
-    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbours", NC_INT, 1, &dimid, &num_vid[2]));
-    NC_CHECK(
-        nc_def_var(connectivity_gid, "bottom_neighbour_ids", NC_INT, 1, &dimids[2], &ids_vid[2]));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "bottom_neighbour_halos", NC_INT, 1, &dimids[2], &halos_vid[2]));
-    NC_CHECK(nc_def_var(connectivity_gid, "left_neighbours", NC_INT, 1, &dimid, &num_vid[0]));
-    NC_CHECK(
-        nc_def_var(connectivity_gid, "left_neighbour_ids", NC_INT, 1, &dimids[0], &ids_vid[0]));
-    NC_CHECK(
-        nc_def_var(connectivity_gid, "left_neighbour_halos", NC_INT, 1, &dimids[0], &halos_vid[0]));
-    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbours", NC_INT, 1, &dimid, &num_vid[1]));
-    NC_CHECK(
-        nc_def_var(connectivity_gid, "right_neighbour_ids", NC_INT, 1, &dimids[1], &ids_vid[1]));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "right_neighbour_halos", NC_INT, 1, &dimids[1], &halos_vid[1]));
+    for (int idx = 0; idx < 4; idx++) {
+        NC_CHECK(nc_def_var(connectivity_gid, (dim_names[idx] + "_neighbours").c_str(), NC_INT, 1,
+            &dimid, &num_vid[idx]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dim_names[idx] + "_neighbour_ids").c_str(), NC_INT,
+            1, &dimids[idx], &ids_vid[idx]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dim_names[idx] + "_neighbour_halos").c_str(), NC_INT,
+            1, &dimids[idx], &halos_vid[idx]));
+    }
 
     // Write metadata to file
     NC_CHECK(nc_enddef(nc_id));
