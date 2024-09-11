@@ -55,8 +55,10 @@ void Partitioner::save_mask(const std::string& filename) const
     // the C interface
     const int NDIMS = 2;
     int dimid[NDIMS];
-    NC_CHECK(nc_def_dim(nc_id, "x", _global_ext[0], &dimid[0]));
-    NC_CHECK(nc_def_dim(nc_id, "y", _global_ext[1], &dimid[1]));
+    std::vector<std::string> dim_names = { "x", "y" };
+    for (int idx = 0; idx < NDIMS; idx++) {
+        NC_CHECK(nc_def_dim(nc_id, dim_names[idx].c_str(), _global_ext[idx], &dimid[idx]));
+    }
 
     // Create variables
     int mask_nc_id;
@@ -67,10 +69,10 @@ void Partitioner::save_mask(const std::string& filename) const
 
     // Set up slab for this process
     size_t start[NDIMS], count[NDIMS];
-    start[0] = _global[0];
-    start[1] = _global[1];
-    count[0] = _local_ext[0];
-    count[1] = _local_ext[1];
+    for (int idx = 0; idx < NDIMS; idx++) {
+        start[idx] = _global[idx];
+        count[idx] = _local_ext[idx];
+    }
 
     // Store data
     NC_CHECK(nc_var_par_access(nc_id, mask_nc_id, NC_COLLECTIVE));
@@ -91,8 +93,11 @@ void Partitioner::save_metadata(const std::string& filename) const
     // the C interface
     const int NDIMS = 2;
     int dimid_global[NDIMS];
-    NC_CHECK(nc_def_dim(nc_id, "NX", _global_ext[0], &dimid_global[0]));
-    NC_CHECK(nc_def_dim(nc_id, "NY", _global_ext[1], &dimid_global[1]));
+    std::vector<std::string> global_dim_names = { "NX", "NY" };
+    for (int idx = 0; idx < NDIMS; idx++) {
+        NC_CHECK(
+            nc_def_dim(nc_id, global_dim_names[idx].c_str(), _global_ext[idx], &dimid_global[idx]));
+    }
 
     // There are two neighbours for each dimension
     const int NNBRS = NDIMS * 2;
@@ -101,8 +106,10 @@ void Partitioner::save_metadata(const std::string& filename) const
     std::vector<std::vector<int>> ids(NNBRS);
     std::vector<std::vector<int>> halos(NNBRS);
     get_neighbours(ids, halos);
-    std::vector<int> num_neighbours
-        = { (int)ids[0].size(), (int)ids[1].size(), (int)ids[2].size(), (int)ids[3].size() };
+    std::vector<int> num_neighbours(NNBRS);
+    for (int idx = 0; idx < NNBRS; idx++) {
+        num_neighbours[idx] = (int)ids[idx].size();
+    }
 
     // Compute global dimensions and offsets
     std::vector<int> dims(NNBRS, 0), offsets(NNBRS, 0);
@@ -151,24 +158,17 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Write metadata to file
     NC_CHECK(nc_enddef(nc_id));
 
-    // Set up slab for this process
-    size_t start, count;
-
     // Store data
-    start = _rank;
-    NC_CHECK(nc_var_par_access(bbox_gid, top_vid[0], NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, top_vid[0], &start, &_global_new[0]));
-    NC_CHECK(nc_var_par_access(bbox_gid, top_vid[1], NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, top_vid[1], &start, &_global_new[1]));
-    NC_CHECK(nc_var_par_access(bbox_gid, cnt_vid[0], NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[0], &start, &_local_ext_new[0]));
-    NC_CHECK(nc_var_par_access(bbox_gid, cnt_vid[1], NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[1], &start, &_local_ext_new[1]));
-    for (int idx = 0; idx < NNBRS; idx++) {
+    for (int idx = 0; idx < NDIMS; idx++) {
+        size_t start = _rank;
+        NC_CHECK(nc_var_par_access(bbox_gid, top_vid[idx], NC_COLLECTIVE));
+        NC_CHECK(nc_put_var1_int(bbox_gid, top_vid[idx], &start, &_global_new[idx]));
+        NC_CHECK(nc_var_par_access(bbox_gid, cnt_vid[idx], NC_COLLECTIVE));
+        NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[idx], &start, &_local_ext_new[idx]));
         NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[idx], &start, &num_neighbours[idx]));
         start = offsets[idx];
-        count = num_neighbours[idx];
+        size_t count = num_neighbours[idx];
         NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_vara_int(connectivity_gid, ids_vid[idx], &start, &count, ids[idx].data()));
         NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid[idx], NC_COLLECTIVE));

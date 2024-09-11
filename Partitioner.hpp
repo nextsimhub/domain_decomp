@@ -110,18 +110,31 @@ protected:
     MPI_Comm _comm; // MPI communicator
     int _rank = -1; // Process rank
     int _total_num_procs = -1; // Total number of processes in communicator
-    std::vector<int> _num_procs = { -1, -1 }; // Total number of processes in each dimension
-    std::vector<int> _global_ext = { 0, 0 }; // Global extents in each extension (blocking)
-    std::vector<int> _local_ext = { 0, 0 }; // Local extents in each dimension (original, blocking)
-    std::vector<int> _global = { -1, -1 }; /* Global coordinates of upper left corner (original,
-                                              blocking) */
-    std::vector<int> _local_ext_new = { 0, 0 }; /* Local extents in each dimension (after
-                                                   partitioning) */
-    std::vector<int> _global_new = { -1, -1 }; /* Global coordinates of upper left corner (after
-                                                  partitioning) */
-    std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
-    std::vector<std::map<int, int>> _neighbours
-        = { {}, {}, {}, {} }; // Vector of maps of neighbours to their halo sizes after partitioning
+    const int NDIMS = 2; // Number of dimensions
+
+    // Total number of processes in each dimension
+    std::vector<int> _num_procs = std::vector<int>(NDIMS, -1);
+
+    // Global extents in each extension (blocking)
+    std::vector<int> _global_ext = std::vector<int>(NDIMS, 0);
+
+    // Local extents in each dimension (original, blocking)
+    std::vector<int> _local_ext = std::vector<int>(NDIMS, 0);
+
+    // Global coordinates of upper left corner (original, blocking)
+    std::vector<int> _global = std::vector<int>(NDIMS, -1);
+
+    // Local extents in each dimension (after partitioning)
+    std::vector<int> _local_ext_new = std::vector<int>(NDIMS, 0);
+
+    // Global coordinates of upper left corner (after partitioning)
+    std::vector<int> _global_new = std::vector<int>(NDIMS, -1);
+
+    // Process ids of partition (dense form)
+    std::vector<int> _proc_id = {};
+
+    // Vector of maps of neighbours to their halo sizes after partitioning
+    std::vector<std::map<int, int>> _neighbours = { {}, {}, {}, {} };
 
 public:
     struct LIB_EXPORT Factory {
