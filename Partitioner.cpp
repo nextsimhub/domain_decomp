@@ -92,19 +92,12 @@ void Partitioner::save_metadata(const std::string& filename) const
     std::vector<int> num_neighbours
         = { (int)ids[0].size(), (int)ids[1].size(), (int)ids[2].size(), (int)ids[3].size() };
 
-    // Compute global dimensions
-    std::vector<int> dims = { 0, 0, 0, 0 };
-    CHECK_MPI(MPI_Allreduce(&num_neighbours[0], &dims[0], 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&num_neighbours[1], &dims[1], 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&num_neighbours[2], &dims[2], 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&num_neighbours[3], &dims[3], 1, MPI_INT, MPI_SUM, _comm));
-
-    // Compute global offsets
-    std::vector<int> offsets = { 0, 0, 0, 0 };
-    CHECK_MPI(MPI_Exscan(&num_neighbours[0], &offsets[0], 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&num_neighbours[1], &offsets[1], 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&num_neighbours[2], &offsets[2], 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&num_neighbours[3], &offsets[3], 1, MPI_INT, MPI_SUM, _comm));
+    // Compute global dimensions and offsets
+    std::vector<int> dims = { 0, 0, 0, 0 }, offsets = { 0, 0, 0, 0 };
+    for (int idx = 0; idx < 4; idx++) {
+        CHECK_MPI(MPI_Allreduce(&num_neighbours[idx], &dims[idx], 1, MPI_INT, MPI_SUM, _comm));
+        CHECK_MPI(MPI_Exscan(&num_neighbours[idx], &offsets[idx], 1, MPI_INT, MPI_SUM, _comm));
+    }
 
     // Create 2 dimensions
     // The values to be written are associated with the netCDF variable by
