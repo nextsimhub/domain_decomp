@@ -69,30 +69,6 @@ public:
         std::vector<int>& ids, std::vector<int>& halo_sizes, int dim, bool start) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the top neighbours for this
-     * process after partitioning.
-     */
-    void get_top_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
-
-    /*!
-     * @brief Returns the MPI ranks and halo sizes of the bottom neighbours for
-     * this process after partitioning.
-     */
-    void get_bottom_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
-
-    /*!
-     * @brief Returns the MPI ranks and halo sizes of the left neighbours for this
-     * process after partitioning.
-     */
-    void get_left_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
-
-    /*!
-     * @brief Returns the MPI ranks and halo sizes of the right neighbours for this
-     * process after partitioning.
-     */
-    void get_right_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
-
-    /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
      * NetCDF file.
      *

@@ -53,26 +53,6 @@ void Partitioner::get_neighbours(
     }
 }
 
-void Partitioner::get_top_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
-{
-    get_neighbours(ids, halo_sizes, 1, false);
-}
-
-void Partitioner::get_bottom_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
-{
-    get_neighbours(ids, halo_sizes, 1, true);
-}
-
-void Partitioner::get_left_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
-{
-    get_neighbours(ids, halo_sizes, 0, true);
-}
-
-void Partitioner::get_right_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
-{
-    get_neighbours(ids, halo_sizes, 0, false);
-}
-
 void Partitioner::save_mask(const std::string& filename) const
 {
     // Use C API for parallel I/O
@@ -120,10 +100,10 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Prepare neighbour data
     std::vector<int> top_ids, bottom_ids, left_ids, right_ids;
     std::vector<int> top_halos, bottom_halos, left_halos, right_halos;
-    get_top_neighbours(top_ids, top_halos);
-    get_bottom_neighbours(bottom_ids, bottom_halos);
-    get_left_neighbours(left_ids, left_halos);
-    get_right_neighbours(right_ids, right_halos);
+    get_neighbours(left_ids, left_halos, 0, true);
+    get_neighbours(right_ids, right_halos, 0, false);
+    get_neighbours(bottom_ids, bottom_halos, 1, true);
+    get_neighbours(top_ids, top_halos, 1, false);
     int top_num_neighbours = top_ids.size();
     int bottom_num_neighbours = bottom_ids.size();
     int left_num_neighbours = left_ids.size();
