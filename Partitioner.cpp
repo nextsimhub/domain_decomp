@@ -126,24 +126,25 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_def_grp(nc_id, "connectivity", &connectivity_gid));
 
     // Define variables in netCDF file
-    int top_x_vid, top_y_vid;
-    int cnt_x_vid, cnt_y_vid;
-    std::vector<int> num_vid(NNBRS);
-    std::vector<int> ids_vid(NNBRS);
-    std::vector<int> halos_vid(NNBRS);
-    std::vector<std::string> dim_names = { "left", "right", "bottom", "top" };
-    // Bounding boxes group
-    NC_CHECK(nc_def_var(bbox_gid, "domain_x", NC_INT, 1, &dimid, &top_x_vid));
-    NC_CHECK(nc_def_var(bbox_gid, "domain_y", NC_INT, 1, &dimid, &top_y_vid));
-    NC_CHECK(nc_def_var(bbox_gid, "domain_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
-    NC_CHECK(nc_def_var(bbox_gid, "domain_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
-    // Connectivity group
+    int top_vid[NDIMS];
+    int cnt_vid[NDIMS];
+    int num_vid[NNBRS];
+    int ids_vid[NNBRS];
+    int halos_vid[NNBRS];
+    std::vector<std::string> dir_names = { "left", "right", "bottom", "top" };
+    std::vector<std::string> dim_names = { "x", "y" };
     for (int idx = 0; idx < NNBRS; idx++) {
-        NC_CHECK(nc_def_var(connectivity_gid, (dim_names[idx] + "_neighbours").c_str(), NC_INT, 1,
+        // Bounding boxes group
+        NC_CHECK(nc_def_var(
+            bbox_gid, ("domain_" + dim_names[idx]).c_str(), NC_INT, 1, &dimid, &top_vid[idx]));
+        NC_CHECK(nc_def_var(bbox_gid, ("domain_extent_" + dim_names[idx]).c_str(), NC_INT, 1,
+            &dimid, &cnt_vid[idx]));
+        // Connectivity group
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbours").c_str(), NC_INT, 1,
             &dimid, &num_vid[idx]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dim_names[idx] + "_neighbour_ids").c_str(), NC_INT,
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_ids").c_str(), NC_INT,
             1, &dimids[idx], &ids_vid[idx]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dim_names[idx] + "_neighbour_halos").c_str(), NC_INT,
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_halos").c_str(), NC_INT,
             1, &dimids[idx], &halos_vid[idx]));
     }
 
@@ -155,14 +156,14 @@ void Partitioner::save_metadata(const std::string& filename) const
 
     // Store data
     start = _rank;
-    NC_CHECK(nc_var_par_access(bbox_gid, top_x_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, top_x_vid, &start, &_global_new[0]));
-    NC_CHECK(nc_var_par_access(bbox_gid, top_y_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, top_y_vid, &start, &_global_new[1]));
-    NC_CHECK(nc_var_par_access(bbox_gid, cnt_x_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_x_vid, &start, &_local_ext_new[0]));
-    NC_CHECK(nc_var_par_access(bbox_gid, cnt_y_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_y_vid, &start, &_local_ext_new[1]));
+    NC_CHECK(nc_var_par_access(bbox_gid, top_vid[0], NC_COLLECTIVE));
+    NC_CHECK(nc_put_var1_int(bbox_gid, top_vid[0], &start, &_global_new[0]));
+    NC_CHECK(nc_var_par_access(bbox_gid, top_vid[1], NC_COLLECTIVE));
+    NC_CHECK(nc_put_var1_int(bbox_gid, top_vid[1], &start, &_global_new[1]));
+    NC_CHECK(nc_var_par_access(bbox_gid, cnt_vid[0], NC_COLLECTIVE));
+    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[0], &start, &_local_ext_new[0]));
+    NC_CHECK(nc_var_par_access(bbox_gid, cnt_vid[1], NC_COLLECTIVE));
+    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[1], &start, &_local_ext_new[1]));
     for (int idx = 0; idx < NNBRS; idx++) {
         NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[idx], &start, &num_neighbours[idx]));
