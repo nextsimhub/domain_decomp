@@ -89,24 +89,22 @@ void Partitioner::save_metadata(const std::string& filename) const
     get_neighbours(right_ids, right_halos, 1);
     get_neighbours(bottom_ids, bottom_halos, 2);
     get_neighbours(top_ids, top_halos, 3);
-    int top_num_neighbours = top_ids.size();
-    int bottom_num_neighbours = bottom_ids.size();
-    int left_num_neighbours = left_ids.size();
-    int right_num_neighbours = right_ids.size();
+    std::vector<int> num_neighbours = { (int)left_ids.size(), (int)right_ids.size(),
+        (int)bottom_ids.size(), (int)top_ids.size() };
 
     // Compute global dimensions
     int top_dim, bottom_dim, left_dim, right_dim;
-    CHECK_MPI(MPI_Allreduce(&top_num_neighbours, &top_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&bottom_num_neighbours, &bottom_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&left_num_neighbours, &left_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&right_num_neighbours, &right_dim, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&num_neighbours[0], &left_dim, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&num_neighbours[1], &right_dim, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&num_neighbours[2], &bottom_dim, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&num_neighbours[3], &top_dim, 1, MPI_INT, MPI_SUM, _comm));
 
     // Compute global offsets
     int top_offset = 0, bottom_offset = 0, left_offset = 0, right_offset = 0;
-    CHECK_MPI(MPI_Exscan(&top_num_neighbours, &top_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&bottom_num_neighbours, &bottom_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&left_num_neighbours, &left_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&right_num_neighbours, &right_offset, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&num_neighbours[0], &left_offset, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&num_neighbours[1], &right_offset, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&num_neighbours[2], &bottom_offset, 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Exscan(&num_neighbours[3], &top_offset, 1, MPI_INT, MPI_SUM, _comm));
 
     // Create 2 dimensions
     // The values to be written are associated with the netCDF variable by
@@ -181,40 +179,40 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_put_var1_int(bbox_gid, cnt_y_vid, &start, &_local_ext_1_new));
 
     NC_CHECK(nc_var_par_access(connectivity_gid, top_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, top_num_vid, &start, &top_num_neighbours));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, top_num_vid, &start, &num_neighbours[3]));
     NC_CHECK(nc_var_par_access(connectivity_gid, bottom_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, bottom_num_vid, &start, &bottom_num_neighbours));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, bottom_num_vid, &start, &num_neighbours[2]));
     NC_CHECK(nc_var_par_access(connectivity_gid, left_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, left_num_vid, &start, &left_num_neighbours));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, left_num_vid, &start, &num_neighbours[0]));
     NC_CHECK(nc_var_par_access(connectivity_gid, right_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, right_num_vid, &start, &right_num_neighbours));
+    NC_CHECK(nc_put_var1_int(connectivity_gid, right_num_vid, &start, &num_neighbours[1]));
 
-    start = top_offset;
-    count = top_num_neighbours;
-    NC_CHECK(nc_var_par_access(connectivity_gid, top_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, top_ids_vid, &start, &count, top_ids.data()));
-    NC_CHECK(nc_var_par_access(connectivity_gid, top_halos_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, top_halos_vid, &start, &count, top_halos.data()));
-    start = bottom_offset;
-    count = bottom_num_neighbours;
-    NC_CHECK(nc_var_par_access(connectivity_gid, bottom_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, bottom_ids_vid, &start, &count, bottom_ids.data()));
-    NC_CHECK(nc_var_par_access(connectivity_gid, bottom_halos_vid, NC_COLLECTIVE));
-    NC_CHECK(
-        nc_put_vara_int(connectivity_gid, bottom_halos_vid, &start, &count, bottom_halos.data()));
     start = left_offset;
-    count = left_num_neighbours;
+    count = num_neighbours[0];
     NC_CHECK(nc_var_par_access(connectivity_gid, left_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, left_ids_vid, &start, &count, left_ids.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, left_halos_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, left_halos_vid, &start, &count, left_halos.data()));
     start = right_offset;
-    count = right_num_neighbours;
+    count = num_neighbours[1];
     NC_CHECK(nc_var_par_access(connectivity_gid, right_ids_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_vara_int(connectivity_gid, right_ids_vid, &start, &count, right_ids.data()));
     NC_CHECK(nc_var_par_access(connectivity_gid, right_halos_vid, NC_COLLECTIVE));
     NC_CHECK(
         nc_put_vara_int(connectivity_gid, right_halos_vid, &start, &count, right_halos.data()));
+    start = bottom_offset;
+    count = num_neighbours[2];
+    NC_CHECK(nc_var_par_access(connectivity_gid, bottom_ids_vid, NC_COLLECTIVE));
+    NC_CHECK(nc_put_vara_int(connectivity_gid, bottom_ids_vid, &start, &count, bottom_ids.data()));
+    NC_CHECK(nc_var_par_access(connectivity_gid, bottom_halos_vid, NC_COLLECTIVE));
+    NC_CHECK(
+        nc_put_vara_int(connectivity_gid, bottom_halos_vid, &start, &count, bottom_halos.data()));
+    start = top_offset;
+    count = num_neighbours[3];
+    NC_CHECK(nc_var_par_access(connectivity_gid, top_ids_vid, NC_COLLECTIVE));
+    NC_CHECK(nc_put_vara_int(connectivity_gid, top_ids_vid, &start, &count, top_ids.data()));
+    NC_CHECK(nc_var_par_access(connectivity_gid, top_halos_vid, NC_COLLECTIVE));
+    NC_CHECK(nc_put_vara_int(connectivity_gid, top_halos_vid, &start, &count, top_halos.data()));
 
     NC_CHECK(nc_close(nc_id));
 }
