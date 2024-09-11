@@ -61,12 +61,9 @@ public:
      *
      * @param ids MPI ranks of the neighbours
      * @param halo_sizes Halo sizes of the neighbours
-     * @param dim Dimension to consider
-     * @param start If true, consider neighbours at the start of the dimension (left/bottom).
-     * Otherwise, consider those at the end (right/top).
+     * @param index 0=left, 1=right, 2=bottom, 3=top
      */
-    void get_neighbours(
-        std::vector<int>& ids, std::vector<int>& halo_sizes, int dim, bool start) const;
+    void get_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes, int index) const;
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -132,14 +129,8 @@ protected:
     int _global_1_new = -1; /* Global coordinate in 2nd dimension of upper left
                                corner (after partitioning) */
     std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
-    std::map<int, int> _top_neighbours
-        = {}; // Map of top neighbours to their halo sizes after partitioning
-    std::map<int, int> _bottom_neighbours
-        = {}; // Map of bottom neighbours to their halo sizes after partitioning
-    std::map<int, int> _right_neighbours
-        = {}; // Map of bottom neighbours to their halo sizes after partitioning
-    std::map<int, int> _left_neighbours
-        = {}; // Map of bottom neighbours to their halo sizes after partitioning
+    std::vector<std::map<int, int>> _neighbours
+        = { {}, {}, {}, {} }; // Vector of maps of neighbours to their halo sizes after partitioning
 
 public:
     struct LIB_EXPORT Factory {

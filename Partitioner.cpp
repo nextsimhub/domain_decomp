@@ -30,24 +30,9 @@ void Partitioner::get_bounding_box(
     local_ext_1 = _local_ext_1_new;
 }
 
-void Partitioner::get_neighbours(
-    std::vector<int>& ids, std::vector<int>& halo_sizes, int dim, bool start) const
+void Partitioner::get_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes, int idx) const
 {
-    std::map<int, int> neighbours;
-    if (dim == 0) {
-        if (start) {
-            neighbours = _bottom_neighbours;
-        } else {
-            neighbours = _top_neighbours;
-        }
-    } else if (dim == 1) {
-        if (start) {
-            neighbours = _left_neighbours;
-        } else {
-            neighbours = _right_neighbours;
-        }
-    }
-    for (auto it = neighbours.begin(); it != neighbours.end(); ++it) {
+    for (auto it = _neighbours[idx].begin(); it != _neighbours[idx].end(); ++it) {
         ids.push_back(it->first);
         halo_sizes.push_back(it->second);
     }
@@ -100,10 +85,10 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Prepare neighbour data
     std::vector<int> top_ids, bottom_ids, left_ids, right_ids;
     std::vector<int> top_halos, bottom_halos, left_halos, right_halos;
-    get_neighbours(left_ids, left_halos, 0, true);
-    get_neighbours(right_ids, right_halos, 0, false);
-    get_neighbours(bottom_ids, bottom_halos, 1, true);
-    get_neighbours(top_ids, top_halos, 1, false);
+    get_neighbours(left_ids, left_halos, 0);
+    get_neighbours(right_ids, right_halos, 1);
+    get_neighbours(bottom_ids, bottom_halos, 2);
+    get_neighbours(top_ids, top_halos, 3);
     int top_num_neighbours = top_ids.size();
     int bottom_num_neighbours = bottom_ids.size();
     int left_num_neighbours = left_ids.size();
@@ -280,13 +265,13 @@ void Partitioner::discover_neighbours()
                 && bottom_right_1[i] <= top_right_1[_rank]
                 && (top_left_0[_rank] - bottom_left_0[i] == 1)) {
                 int halo_size = bottom_right_1[i] - top_left_1[_rank] + 1;
-                _top_neighbours.insert(std::pair<int, int>(i, halo_size));
+                _neighbours[3].insert(std::pair<int, int>(i, halo_size));
             }
             if (top_right_1[_rank] >= bottom_left_1[i] && top_right_1[_rank] <= bottom_right_1[i]
                 && bottom_left_1[i] >= top_left_1[_rank]
                 && (top_right_0[_rank] - bottom_right_0[i] == 1)) {
                 int halo_size = top_right_1[_rank] - bottom_left_1[i] + 1;
-                _top_neighbours.insert(std::pair<int, int>(i, halo_size));
+                _neighbours[3].insert(std::pair<int, int>(i, halo_size));
             }
         }
     }
@@ -298,13 +283,13 @@ void Partitioner::discover_neighbours()
                 && top_right_1[i] <= bottom_right_1[_rank]
                 && (top_left_0[i] - bottom_left_0[_rank] == 1)) {
                 int halo_size = top_right_1[i] - bottom_left_1[_rank] + 1;
-                _bottom_neighbours.insert(std::pair<int, int>(i, halo_size));
+                _neighbours[2].insert(std::pair<int, int>(i, halo_size));
             }
             if (bottom_right_1[_rank] >= top_left_1[i] && bottom_right_1[_rank] <= top_right_1[i]
                 && top_left_1[i] >= bottom_left_1[_rank]
                 && (top_right_0[i] - bottom_right_0[_rank] == 1)) {
                 int halo_size = bottom_right_1[_rank] - top_left_1[i] + 1;
-                _bottom_neighbours.insert(std::pair<int, int>(i, halo_size));
+                _neighbours[2].insert(std::pair<int, int>(i, halo_size));
             }
         }
     }
@@ -316,13 +301,13 @@ void Partitioner::discover_neighbours()
                 && bottom_left_0[_rank] <= bottom_right_0[i]
                 && (top_left_1[_rank] - top_right_1[i] == 1)) {
                 int halo_size = bottom_right_0[i] - top_left_0[_rank] + 1;
-                _left_neighbours.insert(std::pair<int, int>(i, halo_size));
+                _neighbours[0].insert(std::pair<int, int>(i, halo_size));
             }
             if (bottom_left_0[_rank] >= top_right_0[i] && bottom_left_0[_rank] <= bottom_right_0[i]
                 && top_left_0[_rank] <= top_right_0[i]
                 && (bottom_left_1[_rank] - top_right_1[i] == 1)) {
                 int halo_size = bottom_left_0[_rank] - top_right_0[i] + 1;
-                _left_neighbours.insert(std::pair<int, int>(i, halo_size));
+                _neighbours[0].insert(std::pair<int, int>(i, halo_size));
             }
         }
     }
@@ -334,13 +319,13 @@ void Partitioner::discover_neighbours()
                 && bottom_right_0[_rank] >= bottom_left_0[i]
                 && (top_left_1[i] - top_right_1[_rank] == 1)) {
                 int halo_size = bottom_left_0[i] - top_right_0[_rank] + 1;
-                _right_neighbours.insert(std::pair<int, int>(i, halo_size));
+                _neighbours[1].insert(std::pair<int, int>(i, halo_size));
             }
             if (bottom_right_0[_rank] >= top_left_0[i] && bottom_right_0[_rank] <= bottom_left_0[i]
                 && top_right_0[_rank] <= top_left_0[i]
                 && (top_left_1[i] - top_right_1[_rank] == 1)) {
                 int halo_size = bottom_right_0[_rank] - top_left_0[i] + 1;
-                _right_neighbours.insert(std::pair<int, int>(i, halo_size));
+                _neighbours[1].insert(std::pair<int, int>(i, halo_size));
             }
         }
     }

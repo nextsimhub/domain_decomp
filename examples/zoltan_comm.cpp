@@ -63,10 +63,10 @@ int main(int argc, char* argv[])
     // Retrieve neighbours
     vector<int> top_ids, bottom_ids, left_ids, right_ids;
     vector<int> top_halos, bottom_halos, left_halos, right_halos;
-    partitioner->get_neighbours(left_ids, left_halos, 0, true);
-    partitioner->get_neighbours(right_ids, right_halos, 1, false);
-    partitioner->get_neighbours(bottom_ids, bottom_halos, 1, true);
-    partitioner->get_neighbours(top_ids, top_halos, 1, false);
+    partitioner->get_neighbours(left_ids, left_halos, 0);
+    partitioner->get_neighbours(right_ids, right_halos, 1);
+    partitioner->get_neighbours(bottom_ids, bottom_halos, 2);
+    partitioner->get_neighbours(top_ids, top_halos, 3);
 
     // MPI ranks of neighbours in order: top, bottom, left, right
     vector<int> ids(top_ids);
