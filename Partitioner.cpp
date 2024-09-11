@@ -30,11 +30,14 @@ void Partitioner::get_bounding_box(
     local_ext_1 = _local_ext_1_new;
 }
 
-void Partitioner::get_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes, int idx) const
+void Partitioner::get_neighbours(
+    std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const
 {
-    for (auto it = _neighbours[idx].begin(); it != _neighbours[idx].end(); ++it) {
-        ids.push_back(it->first);
-        halo_sizes.push_back(it->second);
+    for (int idx = 0; idx < 4; idx++) {
+        for (auto it = _neighbours[idx].begin(); it != _neighbours[idx].end(); ++it) {
+            ids[idx].push_back(it->first);
+            halo_sizes[idx].push_back(it->second);
+        }
     }
 }
 
@@ -85,10 +88,7 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Prepare neighbour data
     std::vector<std::vector<int>> ids = { {}, {}, {}, {} };
     std::vector<std::vector<int>> halos = { {}, {}, {}, {} };
-    get_neighbours(ids[0], halos[0], 0);
-    get_neighbours(ids[1], halos[1], 1);
-    get_neighbours(ids[2], halos[2], 2);
-    get_neighbours(ids[3], halos[3], 3);
+    get_neighbours(ids, halos);
     std::vector<int> num_neighbours
         = { (int)ids[0].size(), (int)ids[1].size(), (int)ids[2].size(), (int)ids[3].size() };
 
