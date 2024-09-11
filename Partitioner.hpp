@@ -116,18 +116,14 @@ protected:
     int _global_ext_1 = 0; // Global extent in 2nd extension (blocking)
     int _local_ext_0 = 0; // Local extent in 1st dimension (original, blocking)
     int _local_ext_1 = 0; // Local extent in 2nd dimension (original, blocking)
-    int _global_0 = -1; /* Global coordinate in 1st dimension of upper left corner
-                           (original, blocking) */
-    int _global_1 = -1; /* Global coordinate in 2nd dimension of upper left corner
-                           (original, blocking) */
+    std::vector<int> _global = { -1, -1 }; /* Global coordinates of upper left corner (original,
+                                              blocking) */
     int _local_ext_0_new = 0; /* Local extent in 1st dimension (after
                                  partitioning) */
     int _local_ext_1_new = 0; /* Local extent in 2nd dimension (after
                                  partitioning) */
-    int _global_0_new = -1; /* Global coordinate in 1st dimension of upper left
-                               corner (after partitioning) */
-    int _global_1_new = -1; /* Global coordinate in 2nd dimension of upper left
-                               corner (after partitioning) */
+    std::vector<int> _global_new = { -1, -1 }; /* Global coordinates of upper left corner (after
+                                                  partitioning) */
     std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
     std::vector<std::map<int, int>> _neighbours
         = { {}, {}, {}, {} }; // Vector of maps of neighbours to their halo sizes after partitioning

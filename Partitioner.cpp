@@ -24,8 +24,8 @@ Partitioner::Partitioner(MPI_Comm comm)
 void Partitioner::get_bounding_box(
     int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const
 {
-    global_0 = _global_0_new;
-    global_1 = _global_1_new;
+    global_0 = _global_new[0];
+    global_1 = _global_new[1];
     local_ext_0 = _local_ext_0_new;
     local_ext_1 = _local_ext_1_new;
 }
@@ -67,8 +67,8 @@ void Partitioner::save_mask(const std::string& filename) const
 
     // Set up slab for this process
     size_t start[NDIMS], count[NDIMS];
-    start[0] = _global_0;
-    start[1] = _global_1;
+    start[0] = _global[0];
+    start[1] = _global[1];
     count[0] = _local_ext_0;
     count[1] = _local_ext_1;
 
@@ -153,9 +153,9 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Store data
     start = _rank;
     NC_CHECK(nc_var_par_access(bbox_gid, top_x_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, top_x_vid, &start, &_global_0_new));
+    NC_CHECK(nc_put_var1_int(bbox_gid, top_x_vid, &start, &_global_new[0]));
     NC_CHECK(nc_var_par_access(bbox_gid, top_y_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, top_y_vid, &start, &_global_1_new));
+    NC_CHECK(nc_put_var1_int(bbox_gid, top_y_vid, &start, &_global_new[1]));
     NC_CHECK(nc_var_par_access(bbox_gid, cnt_x_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_var1_int(bbox_gid, cnt_x_vid, &start, &_local_ext_0_new));
     NC_CHECK(nc_var_par_access(bbox_gid, cnt_y_vid, NC_COLLECTIVE));
@@ -186,46 +186,47 @@ Partitioner* Partitioner::Factory::create(
 void Partitioner::discover_neighbours()
 {
     // Gather bounding boxes for all processes
-    std::vector<int> top_left_0(_num_procs, -1);
-    std::vector<int> top_left_1(_num_procs, -1);
-    std::vector<int> top_right_0(_num_procs, -1);
-    std::vector<int> top_right_1(_num_procs, -1);
-    std::vector<int> bottom_left_0(_num_procs, -1);
-    std::vector<int> bottom_left_1(_num_procs, -1);
-    std::vector<int> bottom_right_0(_num_procs, -1);
-    std::vector<int> bottom_right_1(_num_procs, -1);
-    CHECK_MPI(MPI_Allgather(&_global_0_new, 1, MPI_INT, top_left_0.data(), 1, MPI_INT, _comm));
-    CHECK_MPI(MPI_Allgather(&_global_1_new, 1, MPI_INT, top_left_1.data(), 1, MPI_INT, _comm));
+    std::vector<std::vector<int>> top_left
+        = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
+    std::vector<std::vector<int>> top_right
+        = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
+    std::vector<std::vector<int>> bottom_left
+        = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
+    std::vector<std::vector<int>> bottom_right
+        = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
+    CHECK_MPI(MPI_Allgather(&_global_new[0], 1, MPI_INT, top_left[0].data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_global_new[1], 1, MPI_INT, top_left[1].data(), 1, MPI_INT, _comm));
     CHECK_MPI(
-        MPI_Allgather(&_local_ext_0_new, 1, MPI_INT, bottom_right_0.data(), 1, MPI_INT, _comm));
+        MPI_Allgather(&_local_ext_0_new, 1, MPI_INT, bottom_right[0].data(), 1, MPI_INT, _comm));
     CHECK_MPI(
-        MPI_Allgather(&_local_ext_1_new, 1, MPI_INT, bottom_right_1.data(), 1, MPI_INT, _comm));
+        MPI_Allgather(&_local_ext_1_new, 1, MPI_INT, bottom_right[1].data(), 1, MPI_INT, _comm));
     for (int i = 0; i < _num_procs; i++)
-        top_right_0[i] = top_left_0[i];
+        top_right[0][i] = top_left[0][i];
     for (int i = 0; i < _num_procs; i++)
-        top_right_1[i] = top_left_1[i] + bottom_right_1[i] - 1;
+        top_right[1][i] = top_left[1][i] + bottom_right[1][i] - 1;
     for (int i = 0; i < _num_procs; i++)
-        bottom_left_0[i] = top_left_0[i] + bottom_right_0[i] - 1;
+        bottom_left[0][i] = top_left[0][i] + bottom_right[0][i] - 1;
     for (int i = 0; i < _num_procs; i++)
-        bottom_left_1[i] = top_left_1[i];
+        bottom_left[1][i] = top_left[1][i];
     for (int i = 0; i < _num_procs; i++)
-        bottom_right_0[i] += top_left_0[i] - 1;
+        bottom_right[0][i] += top_left[0][i] - 1;
     for (int i = 0; i < _num_procs; i++)
-        bottom_right_1[i] += top_left_1[i] - 1;
+        bottom_right[1][i] += top_left[1][i] - 1;
 
     // Find my top neighbours and their halo sizes
     for (int i = 0; i < _num_procs; i++) {
         if (i != _rank) {
-            if (top_left_1[_rank] >= bottom_left_1[i] && top_left_1[_rank] <= bottom_right_1[i]
-                && bottom_right_1[i] <= top_right_1[_rank]
-                && (top_left_0[_rank] - bottom_left_0[i] == 1)) {
-                int halo_size = bottom_right_1[i] - top_left_1[_rank] + 1;
+            if (top_left[1][_rank] >= bottom_left[1][i] && top_left[1][_rank] <= bottom_right[1][i]
+                && bottom_right[1][i] <= top_right[1][_rank]
+                && (top_left[0][_rank] - bottom_left[0][i] == 1)) {
+                int halo_size = bottom_right[1][i] - top_left[1][_rank] + 1;
                 _neighbours[3].insert(std::pair<int, int>(i, halo_size));
             }
-            if (top_right_1[_rank] >= bottom_left_1[i] && top_right_1[_rank] <= bottom_right_1[i]
-                && bottom_left_1[i] >= top_left_1[_rank]
-                && (top_right_0[_rank] - bottom_right_0[i] == 1)) {
-                int halo_size = top_right_1[_rank] - bottom_left_1[i] + 1;
+            if (top_right[1][_rank] >= bottom_left[1][i]
+                && top_right[1][_rank] <= bottom_right[1][i]
+                && bottom_left[1][i] >= top_left[1][_rank]
+                && (top_right[0][_rank] - bottom_right[0][i] == 1)) {
+                int halo_size = top_right[1][_rank] - bottom_left[1][i] + 1;
                 _neighbours[3].insert(std::pair<int, int>(i, halo_size));
             }
         }
@@ -234,16 +235,17 @@ void Partitioner::discover_neighbours()
     // Find my bottom neighbours
     for (int i = 0; i < _num_procs; i++) {
         if (i != _rank) {
-            if (bottom_left_1[_rank] >= top_left_1[i] && bottom_left_1[_rank] <= top_right_1[i]
-                && top_right_1[i] <= bottom_right_1[_rank]
-                && (top_left_0[i] - bottom_left_0[_rank] == 1)) {
-                int halo_size = top_right_1[i] - bottom_left_1[_rank] + 1;
+            if (bottom_left[1][_rank] >= top_left[1][i] && bottom_left[1][_rank] <= top_right[1][i]
+                && top_right[1][i] <= bottom_right[1][_rank]
+                && (top_left[0][i] - bottom_left[0][_rank] == 1)) {
+                int halo_size = top_right[1][i] - bottom_left[1][_rank] + 1;
                 _neighbours[2].insert(std::pair<int, int>(i, halo_size));
             }
-            if (bottom_right_1[_rank] >= top_left_1[i] && bottom_right_1[_rank] <= top_right_1[i]
-                && top_left_1[i] >= bottom_left_1[_rank]
-                && (top_right_0[i] - bottom_right_0[_rank] == 1)) {
-                int halo_size = bottom_right_1[_rank] - top_left_1[i] + 1;
+            if (bottom_right[1][_rank] >= top_left[1][i]
+                && bottom_right[1][_rank] <= top_right[1][i]
+                && top_left[1][i] >= bottom_left[1][_rank]
+                && (top_right[0][i] - bottom_right[0][_rank] == 1)) {
+                int halo_size = bottom_right[1][_rank] - top_left[1][i] + 1;
                 _neighbours[2].insert(std::pair<int, int>(i, halo_size));
             }
         }
@@ -252,16 +254,17 @@ void Partitioner::discover_neighbours()
     // Find my left neighbours
     for (int i = 0; i < _num_procs; i++) {
         if (i != _rank) {
-            if (top_left_0[_rank] >= top_right_0[i] && top_left_0[_rank] <= bottom_right_0[i]
-                && bottom_left_0[_rank] <= bottom_right_0[i]
-                && (top_left_1[_rank] - top_right_1[i] == 1)) {
-                int halo_size = bottom_right_0[i] - top_left_0[_rank] + 1;
+            if (top_left[0][_rank] >= top_right[0][i] && top_left[0][_rank] <= bottom_right[0][i]
+                && bottom_left[0][_rank] <= bottom_right[0][i]
+                && (top_left[1][_rank] - top_right[1][i] == 1)) {
+                int halo_size = bottom_right[0][i] - top_left[0][_rank] + 1;
                 _neighbours[0].insert(std::pair<int, int>(i, halo_size));
             }
-            if (bottom_left_0[_rank] >= top_right_0[i] && bottom_left_0[_rank] <= bottom_right_0[i]
-                && top_left_0[_rank] <= top_right_0[i]
-                && (bottom_left_1[_rank] - top_right_1[i] == 1)) {
-                int halo_size = bottom_left_0[_rank] - top_right_0[i] + 1;
+            if (bottom_left[0][_rank] >= top_right[0][i]
+                && bottom_left[0][_rank] <= bottom_right[0][i]
+                && top_left[0][_rank] <= top_right[0][i]
+                && (bottom_left[1][_rank] - top_right[1][i] == 1)) {
+                int halo_size = bottom_left[0][_rank] - top_right[0][i] + 1;
                 _neighbours[0].insert(std::pair<int, int>(i, halo_size));
             }
         }
@@ -270,16 +273,17 @@ void Partitioner::discover_neighbours()
     // Find my right neighbours
     for (int i = 0; i < _num_procs; i++) {
         if (i != _rank) {
-            if (top_right_0[_rank] >= top_left_0[i] && top_right_0[_rank] <= bottom_left_0[i]
-                && bottom_right_0[_rank] >= bottom_left_0[i]
-                && (top_left_1[i] - top_right_1[_rank] == 1)) {
-                int halo_size = bottom_left_0[i] - top_right_0[_rank] + 1;
+            if (top_right[0][_rank] >= top_left[0][i] && top_right[0][_rank] <= bottom_left[0][i]
+                && bottom_right[0][_rank] >= bottom_left[0][i]
+                && (top_left[1][i] - top_right[1][_rank] == 1)) {
+                int halo_size = bottom_left[0][i] - top_right[0][_rank] + 1;
                 _neighbours[1].insert(std::pair<int, int>(i, halo_size));
             }
-            if (bottom_right_0[_rank] >= top_left_0[i] && bottom_right_0[_rank] <= bottom_left_0[i]
-                && top_right_0[_rank] <= top_left_0[i]
-                && (top_left_1[i] - top_right_1[_rank] == 1)) {
-                int halo_size = bottom_right_0[_rank] - top_left_0[i] + 1;
+            if (bottom_right[0][_rank] >= top_left[0][i]
+                && bottom_right[0][_rank] <= bottom_left[0][i]
+                && top_right[0][_rank] <= top_left[0][i]
+                && (top_left[1][i] - top_right[1][_rank] == 1)) {
+                int halo_size = bottom_right[0][_rank] - top_left[0][i] + 1;
                 _neighbours[1].insert(std::pair<int, int>(i, halo_size));
             }
         }
