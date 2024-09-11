@@ -100,7 +100,7 @@ void Partitioner::save_metadata(const std::string& filename) const
     }
 
     // There are two neighbours for each dimension
-    const int NNBRS = NDIMS * 2;
+    const int NNBRS = NDIMS * 2; // TODO: Why redeclared?
 
     // Prepare neighbour data
     std::vector<std::vector<int>> ids(NNBRS);

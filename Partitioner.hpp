@@ -111,6 +111,7 @@ protected:
     int _rank = -1; // Process rank
     int _total_num_procs = -1; // Total number of processes in communicator
     const int NDIMS = 2; // Number of dimensions
+    const int NNBRS = 2 * NDIMS; // Number of neighbours (two per dimension)
 
     // Total number of processes in each dimension
     std::vector<int> _num_procs = std::vector<int>(NDIMS, -1);
@@ -134,7 +135,7 @@ protected:
     std::vector<int> _proc_id = {};
 
     // Vector of maps of neighbours to their halo sizes after partitioning
-    std::vector<std::map<int, int>> _neighbours = { {}, {}, {}, {} };
+    std::vector<std::map<int, int>> _neighbours = std::vector<std::map<int, int>>(NNBRS);
 
 public:
     struct LIB_EXPORT Factory {
