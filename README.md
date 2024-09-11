@@ -176,7 +176,7 @@ The netCDF variables `domain_x/y` are defined as the coordinates of the upper le
 The original version of `decomp` used a TBLR naming convention (top, down, left, right), but this was confusing in how it
 related to x and y co-ordinates.
 
-To remove disambiguity we renamed the outputs produced in the `partition_metadata_<num_mpi_processes>.nc` file.
+To remove ambiguity we renamed the outputs produced in the `partition_metadata_<num_mpi_processes>.nc` file.
 
 ```
 netcdf partition_metadata_3 {
