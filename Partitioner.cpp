@@ -102,17 +102,11 @@ void Partitioner::save_metadata(const std::string& filename) const
     const int NNBRS = NDIMS * 2; // TODO: Why redeclared?
 
     // Prepare neighbour data
-    std::vector<std::vector<int>> ids(NNBRS);
-    std::vector<std::vector<int>> halos(NNBRS);
+    std::vector<std::vector<int>> ids(NNBRS), halos(NNBRS);
     get_neighbours(ids, halos);
-    std::vector<int> num_neighbours(NNBRS);
+    std::vector<int> num_neighbours(NNBRS), dims(NNBRS, 0), offsets(NNBRS, 0);
     for (int idx = 0; idx < NNBRS; idx++) {
         num_neighbours[idx] = (int)ids[idx].size();
-    }
-
-    // Compute global dimensions and offsets
-    std::vector<int> dims(NNBRS, 0), offsets(NNBRS, 0);
-    for (int idx = 0; idx < NNBRS; idx++) {
         CHECK_MPI(MPI_Allreduce(&num_neighbours[idx], &dims[idx], 1, MPI_INT, MPI_SUM, _comm));
         CHECK_MPI(MPI_Exscan(&num_neighbours[idx], &offsets[idx], 1, MPI_INT, MPI_SUM, _comm));
     }
