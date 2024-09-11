@@ -99,18 +99,18 @@ void ZoltanPartitioner::partition(Grid& grid)
     _global_ext_1 = grid.get_global_ext_1();
     int blk_factor_0 = grid.get_blk_factor_0();
     int blk_factor_1 = grid.get_blk_factor_1();
-    grid.get_bounding_box(_global[0], _global[1], _local_ext_0, _local_ext_1);
+    grid.get_bounding_box(_global[0], _global[1], _local_ext[0], _local_ext[1]);
 
     if (_num_procs == 1) {
         _global_new[0] = _global[0];
         _global_new[1] = _global[1];
-        _local_ext_0_new = _local_ext_0;
-        _local_ext_1_new = _local_ext_1;
+        _local_ext_new[0] = _local_ext[0];
+        _local_ext_new[1] = _local_ext[1];
         // Adapt to blocking
         _global_new[0] *= blk_factor_0;
         _global_new[1] *= blk_factor_1;
-        _local_ext_0_new *= blk_factor_0;
-        _local_ext_1_new *= blk_factor_1;
+        _local_ext_new[0] *= blk_factor_0;
+        _local_ext_new[1] *= blk_factor_1;
 
         if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
             const int* land_mask = grid.get_land_mask();
@@ -186,25 +186,25 @@ void ZoltanPartitioner::partition(Grid& grid)
         int global_0_lower, global_1_lower;
         global_0_lower = (xmax == DBL_MAX) ? _global_ext_0 : std::ceil(xmax);
         global_1_lower = (ymax == DBL_MAX) ? _global_ext_1 : std::ceil(ymax);
-        _local_ext_0_new = global_0_lower - _global_new[0];
-        _local_ext_1_new = global_1_lower - _global_new[1];
+        _local_ext_new[0] = global_0_lower - _global_new[0];
+        _local_ext_new[1] = global_1_lower - _global_new[1];
     } else {
         _global_new[0] = _global[0];
         _global_new[1] = _global[1];
-        _local_ext_0_new = _local_ext_0;
-        _local_ext_1_new = _local_ext_1;
+        _local_ext_new[0] = _local_ext[0];
+        _local_ext_new[1] = _local_ext[1];
     }
 
     // Adapt to blocking
     _global_new[0] *= blk_factor_0;
     _global_new[1] *= blk_factor_1;
-    _local_ext_0_new *= blk_factor_0;
-    _local_ext_1_new *= blk_factor_1;
-    if (_global_new[0] + _local_ext_0_new > grid.get_global_ext_orig_0()) {
-        _local_ext_0_new = grid.get_global_ext_orig_0() - _global_new[0];
+    _local_ext_new[0] *= blk_factor_0;
+    _local_ext_new[1] *= blk_factor_1;
+    if (_global_new[0] + _local_ext_new[0] > grid.get_global_ext_orig_0()) {
+        _local_ext_new[0] = grid.get_global_ext_orig_0() - _global_new[0];
     }
-    if (_global_new[1] + _local_ext_1_new > grid.get_global_ext_orig_1()) {
-        _local_ext_1_new = grid.get_global_ext_orig_1() - _global_new[1];
+    if (_global_new[1] + _local_ext_new[1] > grid.get_global_ext_orig_1()) {
+        _local_ext_new[1] = grid.get_global_ext_orig_1() - _global_new[1];
     }
 
     // Find my neighbours

@@ -26,8 +26,8 @@ void Partitioner::get_bounding_box(
 {
     global_0 = _global_new[0];
     global_1 = _global_new[1];
-    local_ext_0 = _local_ext_0_new;
-    local_ext_1 = _local_ext_1_new;
+    local_ext_0 = _local_ext_new[0];
+    local_ext_1 = _local_ext_new[1];
 }
 
 void Partitioner::get_neighbours(
@@ -69,8 +69,8 @@ void Partitioner::save_mask(const std::string& filename) const
     size_t start[NDIMS], count[NDIMS];
     start[0] = _global[0];
     start[1] = _global[1];
-    count[0] = _local_ext_0;
-    count[1] = _local_ext_1;
+    count[0] = _local_ext[0];
+    count[1] = _local_ext[1];
 
     // Store data
     NC_CHECK(nc_var_par_access(nc_id, mask_nc_id, NC_COLLECTIVE));
@@ -157,9 +157,9 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_var_par_access(bbox_gid, top_y_vid, NC_COLLECTIVE));
     NC_CHECK(nc_put_var1_int(bbox_gid, top_y_vid, &start, &_global_new[1]));
     NC_CHECK(nc_var_par_access(bbox_gid, cnt_x_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_x_vid, &start, &_local_ext_0_new));
+    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_x_vid, &start, &_local_ext_new[0]));
     NC_CHECK(nc_var_par_access(bbox_gid, cnt_y_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_y_vid, &start, &_local_ext_1_new));
+    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_y_vid, &start, &_local_ext_new[1]));
     for (int idx = 0; idx < 4; idx++) {
         NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[idx], &start, &num_neighbours[idx]));
@@ -194,12 +194,12 @@ void Partitioner::discover_neighbours()
         = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
     std::vector<std::vector<int>> bottom_right
         = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
-    CHECK_MPI(MPI_Allgather(&_global_new[0], 1, MPI_INT, top_left[0].data(), 1, MPI_INT, _comm));
-    CHECK_MPI(MPI_Allgather(&_global_new[1], 1, MPI_INT, top_left[1].data(), 1, MPI_INT, _comm));
-    CHECK_MPI(
-        MPI_Allgather(&_local_ext_0_new, 1, MPI_INT, bottom_right[0].data(), 1, MPI_INT, _comm));
-    CHECK_MPI(
-        MPI_Allgather(&_local_ext_1_new, 1, MPI_INT, bottom_right[1].data(), 1, MPI_INT, _comm));
+    for (int idx = 0; idx < 1; idx++) {
+        CHECK_MPI(
+            MPI_Allgather(&_global_new[idx], 1, MPI_INT, top_left[idx].data(), 1, MPI_INT, _comm));
+        CHECK_MPI(MPI_Allgather(
+            &_local_ext_new[idx], 1, MPI_INT, bottom_right[idx].data(), 1, MPI_INT, _comm));
+    }
     for (int i = 0; i < _num_procs; i++)
         top_right[0][i] = top_left[0][i];
     for (int i = 0; i < _num_procs; i++)
