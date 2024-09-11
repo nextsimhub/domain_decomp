@@ -33,7 +33,7 @@ void Partitioner::get_bounding_box(
 void Partitioner::get_neighbours(
     std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const
 {
-    for (int idx = 0; idx < 4; idx++) {
+    for (int idx = 0; idx < NDIMS; idx++) {
         for (auto it = _neighbours[idx].begin(); it != _neighbours[idx].end(); ++it) {
             ids[idx].push_back(it->first);
             halo_sizes[idx].push_back(it->second);
@@ -53,7 +53,7 @@ void Partitioner::save_mask(const std::string& filename) const
     // The values to be written are associated with the netCDF variable by
     // assuming that the last dimension of the netCDF variable varies fastest in
     // the C interface
-    const int NDIMS = 2;
+    const int NDIMS = 2; // TODO: Why redeclared?
     int dimid[NDIMS];
     std::vector<std::string> dim_names = { "x", "y" };
     for (int idx = 0; idx < NDIMS; idx++) {
@@ -91,7 +91,7 @@ void Partitioner::save_metadata(const std::string& filename) const
     // The values to be written are associated with the netCDF variable by
     // assuming that the last dimension of the netCDF variable varies fastest in
     // the C interface
-    const int NDIMS = 2;
+    const int NDIMS = 2; // TODO: Why redeclared?
     int dimid_global[NDIMS];
     std::vector<std::string> global_dim_names = { "NX", "NY" };
     for (int idx = 0; idx < NDIMS; idx++) {
@@ -206,53 +206,13 @@ void Partitioner::discover_neighbours()
         CHECK_MPI(MPI_Allgather(
             &_local_ext_new[idx], 1, MPI_INT, bbox[1][0][idx].data(), 1, MPI_INT, _comm));
     }
-    for (int i = 0; i < _total_num_procs; i++)
-        bbox[1][1][0][i] = bbox[0][1][0][i];
-    for (int i = 0; i < _total_num_procs; i++)
-        bbox[1][1][1][i] = bbox[0][1][1][i] + bbox[1][0][1][i] - 1;
-    for (int i = 0; i < _total_num_procs; i++)
-        bbox[0][0][0][i] = bbox[0][1][0][i] + bbox[1][0][0][i] - 1;
-    for (int i = 0; i < _total_num_procs; i++)
-        bbox[0][0][1][i] = bbox[0][1][1][i];
-    for (int i = 0; i < _total_num_procs; i++)
-        bbox[1][0][0][i] += bbox[0][1][0][i] - 1;
-    for (int i = 0; i < _total_num_procs; i++)
-        bbox[1][0][1][i] += bbox[0][1][1][i] - 1;
-
-    // Find my top neighbours and their halo sizes
-    for (int i = 0; i < _total_num_procs; i++) {
-        if (i != _rank) {
-            if (bbox[0][1][1][_rank] >= bbox[0][0][1][i] && bbox[0][1][1][_rank] <= bbox[1][0][1][i]
-                && bbox[1][0][1][i] <= bbox[1][1][1][_rank]
-                && (bbox[0][1][0][_rank] - bbox[0][0][0][i] == 1)) {
-                int halo_size = bbox[1][0][1][i] - bbox[0][1][1][_rank] + 1;
-                _neighbours[3].insert(std::pair<int, int>(i, halo_size));
-            }
-            if (bbox[1][1][1][_rank] >= bbox[0][0][1][i] && bbox[1][1][1][_rank] <= bbox[1][0][1][i]
-                && bbox[0][0][1][i] >= bbox[0][1][1][_rank]
-                && (bbox[1][1][0][_rank] - bbox[1][0][0][i] == 1)) {
-                int halo_size = bbox[1][1][1][_rank] - bbox[0][0][1][i] + 1;
-                _neighbours[3].insert(std::pair<int, int>(i, halo_size));
-            }
-        }
-    }
-
-    // Find my bottom neighbours
-    for (int i = 0; i < _total_num_procs; i++) {
-        if (i != _rank) {
-            if (bbox[0][0][1][_rank] >= bbox[0][1][1][i] && bbox[0][0][1][_rank] <= bbox[1][1][1][i]
-                && bbox[1][1][1][i] <= bbox[1][0][1][_rank]
-                && (bbox[0][1][0][i] - bbox[0][0][0][_rank] == 1)) {
-                int halo_size = bbox[1][1][1][i] - bbox[0][0][1][_rank] + 1;
-                _neighbours[2].insert(std::pair<int, int>(i, halo_size));
-            }
-            if (bbox[1][0][1][_rank] >= bbox[0][1][1][i] && bbox[1][0][1][_rank] <= bbox[1][1][1][i]
-                && bbox[0][1][1][i] >= bbox[0][0][1][_rank]
-                && (bbox[1][1][0][i] - bbox[1][0][0][_rank] == 1)) {
-                int halo_size = bbox[1][0][1][_rank] - bbox[0][1][1][i] + 1;
-                _neighbours[2].insert(std::pair<int, int>(i, halo_size));
-            }
-        }
+    for (int p = 0; p < _total_num_procs; p++) {
+        bbox[0][0][0][p] = bbox[0][1][0][p] + bbox[1][0][0][p] - 1;
+        bbox[0][0][1][p] = bbox[0][1][1][p];
+        bbox[1][0][0][p] += bbox[0][1][0][p] - 1;
+        bbox[1][0][1][p] += bbox[0][1][1][p] - 1;
+        bbox[1][1][0][p] = bbox[0][1][0][p];
+        bbox[1][1][1][p] = bbox[0][1][1][p] + bbox[1][0][1][p] - 1;
     }
 
     // Find my left neighbours
@@ -287,6 +247,42 @@ void Partitioner::discover_neighbours()
                 && (bbox[0][1][1][i] - bbox[1][1][1][_rank] == 1)) {
                 int halo_size = bbox[1][0][0][_rank] - bbox[0][1][0][i] + 1;
                 _neighbours[1].insert(std::pair<int, int>(i, halo_size));
+            }
+        }
+    }
+
+    // Find my bottom neighbours
+    for (int i = 0; i < _total_num_procs; i++) {
+        if (i != _rank) {
+            if (bbox[0][0][1][_rank] >= bbox[0][1][1][i] && bbox[0][0][1][_rank] <= bbox[1][1][1][i]
+                && bbox[1][1][1][i] <= bbox[1][0][1][_rank]
+                && (bbox[0][1][0][i] - bbox[0][0][0][_rank] == 1)) {
+                int halo_size = bbox[1][1][1][i] - bbox[0][0][1][_rank] + 1;
+                _neighbours[2].insert(std::pair<int, int>(i, halo_size));
+            }
+            if (bbox[1][0][1][_rank] >= bbox[0][1][1][i] && bbox[1][0][1][_rank] <= bbox[1][1][1][i]
+                && bbox[0][1][1][i] >= bbox[0][0][1][_rank]
+                && (bbox[1][1][0][i] - bbox[1][0][0][_rank] == 1)) {
+                int halo_size = bbox[1][0][1][_rank] - bbox[0][1][1][i] + 1;
+                _neighbours[2].insert(std::pair<int, int>(i, halo_size));
+            }
+        }
+    }
+
+    // Find my top neighbours and their halo sizes
+    for (int i = 0; i < _total_num_procs; i++) {
+        if (i != _rank) {
+            if (bbox[0][1][1][_rank] >= bbox[0][0][1][i] && bbox[0][1][1][_rank] <= bbox[1][0][1][i]
+                && bbox[1][0][1][i] <= bbox[1][1][1][_rank]
+                && (bbox[0][1][0][_rank] - bbox[0][0][0][i] == 1)) {
+                int halo_size = bbox[1][0][1][i] - bbox[0][1][1][_rank] + 1;
+                _neighbours[3].insert(std::pair<int, int>(i, halo_size));
+            }
+            if (bbox[1][1][1][_rank] >= bbox[0][0][1][i] && bbox[1][1][1][_rank] <= bbox[1][0][1][i]
+                && bbox[0][0][1][i] >= bbox[0][1][1][_rank]
+                && (bbox[1][1][0][_rank] - bbox[1][0][0][i] == 1)) {
+                int halo_size = bbox[1][1][1][_rank] - bbox[0][0][1][i] + 1;
+                _neighbours[3].insert(std::pair<int, int>(i, halo_size));
             }
         }
     }
