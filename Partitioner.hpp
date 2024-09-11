@@ -109,9 +109,8 @@ protected:
 protected:
     MPI_Comm _comm; // MPI communicator
     int _rank = -1; // Process rank
-    int _num_procs = -1; // Total number of processes in communicator
-    int _num_procs_0 = -1; // Total number of processes in 1st dimension
-    int _num_procs_1 = -1; // Total number of processes in 2nd dimension
+    int _total_num_procs = -1; // Total number of processes in communicator
+    std::vector<int> _num_procs = { -1, -1 }; // Total number of processes in each dimension
     std::vector<int> _global_ext = { 0, 0 }; // Global extents in each extension (blocking)
     std::vector<int> _local_ext = { 0, 0 }; // Local extents in each dimension (original, blocking)
     std::vector<int> _global = { -1, -1 }; /* Global coordinates of upper left corner (original,

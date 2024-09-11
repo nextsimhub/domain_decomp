@@ -93,15 +93,15 @@ ZoltanPartitioner* ZoltanPartitioner::create(MPI_Comm comm, int argc, char** arg
 void ZoltanPartitioner::partition(Grid& grid)
 {
     // Load initial grid state
-    _num_procs_0 = grid.get_num_procs_0();
-    _num_procs_1 = grid.get_num_procs_1();
+    _num_procs[0] = grid.get_num_procs_0();
+    _num_procs[1] = grid.get_num_procs_1();
     _global_ext[0] = grid.get_global_ext_0();
     _global_ext[1] = grid.get_global_ext_1();
     int blk_factor_0 = grid.get_blk_factor_0();
     int blk_factor_1 = grid.get_blk_factor_1();
     grid.get_bounding_box(_global[0], _global[1], _local_ext[0], _local_ext[1]);
 
-    if (_num_procs == 1) {
+    if (_total_num_procs == 1) {
         _global_new[0] = _global[0];
         _global_new[1] = _global[1];
         _local_ext_new[0] = _local_ext[0];

@@ -17,7 +17,7 @@
 Partitioner::Partitioner(MPI_Comm comm)
 {
     _comm = comm;
-    CHECK_MPI(MPI_Comm_size(comm, &_num_procs));
+    CHECK_MPI(MPI_Comm_size(comm, &_total_num_procs));
     CHECK_MPI(MPI_Comm_rank(comm, &_rank));
 }
 
@@ -47,7 +47,7 @@ void Partitioner::save_mask(const std::string& filename) const
     int nc_id, nc_mode;
     nc_mode = NC_CLOBBER | NC_NETCDF4;
     NC_CHECK(nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
-    NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "num_processes", NC_INT, 1, &_num_procs));
+    NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "num_processes", NC_INT, 1, &_total_num_procs));
 
     // Create 2 dimensions
     // The values to be written are associated with the netCDF variable by
@@ -111,7 +111,7 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Define dimensions in netCDF file
     int dimid;
     std::vector<int> dimids(4);
-    NC_CHECK(nc_def_dim(nc_id, "P", _num_procs, &dimid));
+    NC_CHECK(nc_def_dim(nc_id, "P", _total_num_procs, &dimid));
     std::vector<std::string> dim_letters = { "L", "R", "B", "T" };
     for (int idx = 0; idx < 4; idx++) {
         NC_CHECK(nc_def_dim(nc_id, dim_letters[idx].c_str(), dims[idx], &dimids[idx]));
@@ -187,34 +187,34 @@ void Partitioner::discover_neighbours()
 {
     // Gather bounding boxes for all processes
     std::vector<std::vector<int>> top_left
-        = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
+        = { std::vector<int>(_total_num_procs, -1), std::vector<int>(_total_num_procs, -1) };
     std::vector<std::vector<int>> top_right
-        = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
+        = { std::vector<int>(_total_num_procs, -1), std::vector<int>(_total_num_procs, -1) };
     std::vector<std::vector<int>> bottom_left
-        = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
+        = { std::vector<int>(_total_num_procs, -1), std::vector<int>(_total_num_procs, -1) };
     std::vector<std::vector<int>> bottom_right
-        = { std::vector<int>(_num_procs, -1), std::vector<int>(_num_procs, -1) };
+        = { std::vector<int>(_total_num_procs, -1), std::vector<int>(_total_num_procs, -1) };
     for (int idx = 0; idx < 1; idx++) {
         CHECK_MPI(
             MPI_Allgather(&_global_new[idx], 1, MPI_INT, top_left[idx].data(), 1, MPI_INT, _comm));
         CHECK_MPI(MPI_Allgather(
             &_local_ext_new[idx], 1, MPI_INT, bottom_right[idx].data(), 1, MPI_INT, _comm));
     }
-    for (int i = 0; i < _num_procs; i++)
+    for (int i = 0; i < _total_num_procs; i++)
         top_right[0][i] = top_left[0][i];
-    for (int i = 0; i < _num_procs; i++)
+    for (int i = 0; i < _total_num_procs; i++)
         top_right[1][i] = top_left[1][i] + bottom_right[1][i] - 1;
-    for (int i = 0; i < _num_procs; i++)
+    for (int i = 0; i < _total_num_procs; i++)
         bottom_left[0][i] = top_left[0][i] + bottom_right[0][i] - 1;
-    for (int i = 0; i < _num_procs; i++)
+    for (int i = 0; i < _total_num_procs; i++)
         bottom_left[1][i] = top_left[1][i];
-    for (int i = 0; i < _num_procs; i++)
+    for (int i = 0; i < _total_num_procs; i++)
         bottom_right[0][i] += top_left[0][i] - 1;
-    for (int i = 0; i < _num_procs; i++)
+    for (int i = 0; i < _total_num_procs; i++)
         bottom_right[1][i] += top_left[1][i] - 1;
 
     // Find my top neighbours and their halo sizes
-    for (int i = 0; i < _num_procs; i++) {
+    for (int i = 0; i < _total_num_procs; i++) {
         if (i != _rank) {
             if (top_left[1][_rank] >= bottom_left[1][i] && top_left[1][_rank] <= bottom_right[1][i]
                 && bottom_right[1][i] <= top_right[1][_rank]
@@ -233,7 +233,7 @@ void Partitioner::discover_neighbours()
     }
 
     // Find my bottom neighbours
-    for (int i = 0; i < _num_procs; i++) {
+    for (int i = 0; i < _total_num_procs; i++) {
         if (i != _rank) {
             if (bottom_left[1][_rank] >= top_left[1][i] && bottom_left[1][_rank] <= top_right[1][i]
                 && top_right[1][i] <= bottom_right[1][_rank]
@@ -252,7 +252,7 @@ void Partitioner::discover_neighbours()
     }
 
     // Find my left neighbours
-    for (int i = 0; i < _num_procs; i++) {
+    for (int i = 0; i < _total_num_procs; i++) {
         if (i != _rank) {
             if (top_left[0][_rank] >= top_right[0][i] && top_left[0][_rank] <= bottom_right[0][i]
                 && bottom_left[0][_rank] <= bottom_right[0][i]
@@ -271,7 +271,7 @@ void Partitioner::discover_neighbours()
     }
 
     // Find my right neighbours
-    for (int i = 0; i < _num_procs; i++) {
+    for (int i = 0; i < _total_num_procs; i++) {
         if (i != _rank) {
             if (top_right[0][_rank] >= top_left[0][i] && top_right[0][_rank] <= bottom_left[0][i]
                 && bottom_right[0][_rank] >= bottom_left[0][i]
