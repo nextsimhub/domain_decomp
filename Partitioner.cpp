@@ -93,11 +93,11 @@ void Partitioner::save_metadata(const std::string& filename) const
         (int)bottom_ids.size(), (int)top_ids.size() };
 
     // Compute global dimensions
-    int top_dim, bottom_dim, left_dim, right_dim;
-    CHECK_MPI(MPI_Allreduce(&num_neighbours[0], &left_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&num_neighbours[1], &right_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&num_neighbours[2], &bottom_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&num_neighbours[3], &top_dim, 1, MPI_INT, MPI_SUM, _comm));
+    std::vector<int> dims = { 0, 0, 0, 0 };
+    CHECK_MPI(MPI_Allreduce(&num_neighbours[0], &dims[0], 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&num_neighbours[1], &dims[1], 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&num_neighbours[2], &dims[2], 1, MPI_INT, MPI_SUM, _comm));
+    CHECK_MPI(MPI_Allreduce(&num_neighbours[3], &dims[3], 1, MPI_INT, MPI_SUM, _comm));
 
     // Compute global offsets
     int top_offset = 0, bottom_offset = 0, left_offset = 0, right_offset = 0;
@@ -118,10 +118,10 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Define dimensions in netCDF file
     int dimid, top_dimid, bottom_dimid, left_dimid, right_dimid;
     NC_CHECK(nc_def_dim(nc_id, "P", _num_procs, &dimid));
-    NC_CHECK(nc_def_dim(nc_id, "T", top_dim, &top_dimid));
-    NC_CHECK(nc_def_dim(nc_id, "B", bottom_dim, &bottom_dimid));
-    NC_CHECK(nc_def_dim(nc_id, "L", left_dim, &left_dimid));
-    NC_CHECK(nc_def_dim(nc_id, "R", right_dim, &right_dimid));
+    NC_CHECK(nc_def_dim(nc_id, "T", dims[3], &top_dimid));
+    NC_CHECK(nc_def_dim(nc_id, "B", dims[2], &bottom_dimid));
+    NC_CHECK(nc_def_dim(nc_id, "L", dims[0], &left_dimid));
+    NC_CHECK(nc_def_dim(nc_id, "R", dims[1], &right_dimid));
 
     // Define groups in netCDF file
     int bbox_gid, connectivity_gid;
