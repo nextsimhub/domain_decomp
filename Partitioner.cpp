@@ -55,8 +55,8 @@ void Partitioner::save_mask(const std::string& filename) const
     // the C interface
     const int NDIMS = 2;
     int dimid[NDIMS];
-    NC_CHECK(nc_def_dim(nc_id, "x", _global_ext_0, &dimid[0]));
-    NC_CHECK(nc_def_dim(nc_id, "y", _global_ext_1, &dimid[1]));
+    NC_CHECK(nc_def_dim(nc_id, "x", _global_ext[0], &dimid[0]));
+    NC_CHECK(nc_def_dim(nc_id, "y", _global_ext[1], &dimid[1]));
 
     // Create variables
     int mask_nc_id;
@@ -105,8 +105,8 @@ void Partitioner::save_metadata(const std::string& filename) const
     // the C interface
     const int NDIMS = 2;
     int dimid_global[NDIMS];
-    NC_CHECK(nc_def_dim(nc_id, "NX", _global_ext_0, &dimid_global[0]));
-    NC_CHECK(nc_def_dim(nc_id, "NY", _global_ext_1, &dimid_global[1]));
+    NC_CHECK(nc_def_dim(nc_id, "NX", _global_ext[0], &dimid_global[0]));
+    NC_CHECK(nc_def_dim(nc_id, "NY", _global_ext[1], &dimid_global[1]));
 
     // Define dimensions in netCDF file
     int dimid;

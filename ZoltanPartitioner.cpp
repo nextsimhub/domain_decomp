@@ -95,8 +95,8 @@ void ZoltanPartitioner::partition(Grid& grid)
     // Load initial grid state
     _num_procs_0 = grid.get_num_procs_0();
     _num_procs_1 = grid.get_num_procs_1();
-    _global_ext_0 = grid.get_global_ext_0();
-    _global_ext_1 = grid.get_global_ext_1();
+    _global_ext[0] = grid.get_global_ext_0();
+    _global_ext[1] = grid.get_global_ext_1();
     int blk_factor_0 = grid.get_blk_factor_0();
     int blk_factor_1 = grid.get_blk_factor_1();
     grid.get_bounding_box(_global[0], _global[1], _local_ext[0], _local_ext[1]);
@@ -184,8 +184,8 @@ void ZoltanPartitioner::partition(Grid& grid)
         _global_new[0] = (xmin == -DBL_MAX) ? 0 : std::ceil(xmin);
         _global_new[1] = (ymin == -DBL_MAX) ? 0 : std::ceil(ymin);
         int global_0_lower, global_1_lower;
-        global_0_lower = (xmax == DBL_MAX) ? _global_ext_0 : std::ceil(xmax);
-        global_1_lower = (ymax == DBL_MAX) ? _global_ext_1 : std::ceil(ymax);
+        global_0_lower = (xmax == DBL_MAX) ? _global_ext[0] : std::ceil(xmax);
+        global_1_lower = (ymax == DBL_MAX) ? _global_ext[1] : std::ceil(ymax);
         _local_ext_new[0] = global_0_lower - _global_new[0];
         _local_ext_new[1] = global_1_lower - _global_new[1];
     } else {

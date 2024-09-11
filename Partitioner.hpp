@@ -112,8 +112,7 @@ protected:
     int _num_procs = -1; // Total number of processes in communicator
     int _num_procs_0 = -1; // Total number of processes in 1st dimension
     int _num_procs_1 = -1; // Total number of processes in 2nd dimension
-    int _global_ext_0 = 0; // Global extent in 1st extension (blocking)
-    int _global_ext_1 = 0; // Global extent in 2nd extension (blocking)
+    std::vector<int> _global_ext = { 0, 0 }; // Global extents in each extension (blocking)
     std::vector<int> _local_ext = { 0, 0 }; // Local extents in each dimension (original, blocking)
     std::vector<int> _global = { -1, -1 }; /* Global coordinates of upper left corner (original,
                                               blocking) */
