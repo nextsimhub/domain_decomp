@@ -194,87 +194,72 @@ void Partitioner::discover_neighbours()
         MPI_Allgather(&_local_ext_new[0], 1, MPI_INT, bottom_right_0.data(), 1, MPI_INT, _comm));
     CHECK_MPI(
         MPI_Allgather(&_local_ext_new[1], 1, MPI_INT, bottom_right_1.data(), 1, MPI_INT, _comm));
-    for (int i = 0; i < _total_num_procs; i++)
-        top_right_0[i] = top_left_0[i];
-    for (int i = 0; i < _total_num_procs; i++)
-        top_right_1[i] = top_left_1[i] + bottom_right_1[i] - 1;
-    for (int i = 0; i < _total_num_procs; i++)
-        bottom_left_0[i] = top_left_0[i] + bottom_right_0[i] - 1;
-    for (int i = 0; i < _total_num_procs; i++)
-        bottom_left_1[i] = top_left_1[i];
-    for (int i = 0; i < _total_num_procs; i++)
-        bottom_right_0[i] += top_left_0[i] - 1;
-    for (int i = 0; i < _total_num_procs; i++)
-        bottom_right_1[i] += top_left_1[i] - 1;
-
-    // Find my left neighbours
-    for (int i = 0; i < _total_num_procs; i++) {
-        if (i != _rank) {
-            if (top_left_0[_rank] >= top_right_0[i] && top_left_0[_rank] <= bottom_right_0[i]
-                && bottom_left_0[_rank] <= bottom_right_0[i]
-                && (top_left_1[_rank] - top_right_1[i] == 1)) {
-                int halo_size = bottom_right_0[i] - top_left_0[_rank] + 1;
-                _neighbours[0].insert(std::pair<int, int>(i, halo_size));
-            }
-            if (bottom_left_0[_rank] >= top_right_0[i] && bottom_left_0[_rank] <= bottom_right_0[i]
-                && top_left_0[_rank] <= top_right_0[i]
-                && (bottom_left_1[_rank] - top_right_1[i] == 1)) {
-                int halo_size = bottom_left_0[_rank] - top_right_0[i] + 1;
-                _neighbours[0].insert(std::pair<int, int>(i, halo_size));
-            }
-        }
+    for (int p = 0; p < _total_num_procs; p++) {
+        top_right_0[p] = top_left_0[p];
+        top_right_1[p] = top_left_1[p] + bottom_right_1[p] - 1;
+        bottom_left_0[p] = top_left_0[p] + bottom_right_0[p] - 1;
+        bottom_left_1[p] = top_left_1[p];
+        bottom_right_0[p] += top_left_0[p] - 1;
+        bottom_right_1[p] += top_left_1[p] - 1;
     }
 
-    // Find my right neighbours
-    for (int i = 0; i < _total_num_procs; i++) {
-        if (i != _rank) {
-            if (top_right_0[_rank] >= top_left_0[i] && top_right_0[_rank] <= bottom_left_0[i]
-                && bottom_right_0[_rank] >= bottom_left_0[i]
-                && (top_left_1[i] - top_right_1[_rank] == 1)) {
-                int halo_size = bottom_left_0[i] - top_right_0[_rank] + 1;
-                _neighbours[1].insert(std::pair<int, int>(i, halo_size));
-            }
-            if (bottom_right_0[_rank] >= top_left_0[i] && bottom_right_0[_rank] <= bottom_left_0[i]
-                && top_right_0[_rank] <= top_left_0[i]
-                && (top_left_1[i] - top_right_1[_rank] == 1)) {
-                int halo_size = bottom_right_0[_rank] - top_left_0[i] + 1;
-                _neighbours[1].insert(std::pair<int, int>(i, halo_size));
-            }
-        }
-    }
+    for (int p = 0; p < _total_num_procs; p++) {
+        if (p != _rank) {
 
-    // Find my bottom neighbours
-    for (int i = 0; i < _total_num_procs; i++) {
-        if (i != _rank) {
-            if (bottom_left_1[_rank] >= top_left_1[i] && bottom_left_1[_rank] <= top_right_1[i]
-                && top_right_1[i] <= bottom_right_1[_rank]
-                && (top_left_0[i] - bottom_left_0[_rank] == 1)) {
-                int halo_size = top_right_1[i] - bottom_left_1[_rank] + 1;
-                _neighbours[2].insert(std::pair<int, int>(i, halo_size));
+            // Find my left neighbours
+            if (top_left_0[_rank] >= top_right_0[p] && top_left_0[_rank] <= bottom_right_0[p]
+                && bottom_left_0[_rank] <= bottom_right_0[p]
+                && (top_left_1[_rank] - top_right_1[p] == 1)) {
+                int halo_size = bottom_right_0[p] - top_left_0[_rank] + 1;
+                _neighbours[0].insert(std::pair<int, int>(p, halo_size));
             }
-            if (bottom_right_1[_rank] >= top_left_1[i] && bottom_right_1[_rank] <= top_right_1[i]
-                && top_left_1[i] >= bottom_left_1[_rank]
-                && (top_right_0[i] - bottom_right_0[_rank] == 1)) {
-                int halo_size = bottom_right_1[_rank] - top_left_1[i] + 1;
-                _neighbours[2].insert(std::pair<int, int>(i, halo_size));
+            if (bottom_left_0[_rank] >= top_right_0[p] && bottom_left_0[_rank] <= bottom_right_0[p]
+                && top_left_0[_rank] <= top_right_0[p]
+                && (bottom_left_1[_rank] - top_right_1[p] == 1)) {
+                int halo_size = bottom_left_0[_rank] - top_right_0[p] + 1;
+                _neighbours[0].insert(std::pair<int, int>(p, halo_size));
             }
-        }
-    }
 
-    // Find my top neighbours and their halo sizes
-    for (int i = 0; i < _total_num_procs; i++) {
-        if (i != _rank) {
-            if (top_left_1[_rank] >= bottom_left_1[i] && top_left_1[_rank] <= bottom_right_1[i]
-                && bottom_right_1[i] <= top_right_1[_rank]
-                && (top_left_0[_rank] - bottom_left_0[i] == 1)) {
-                int halo_size = bottom_right_1[i] - top_left_1[_rank] + 1;
-                _neighbours[3].insert(std::pair<int, int>(i, halo_size));
+            // Find my right neighbours
+            if (top_right_0[_rank] >= top_left_0[p] && top_right_0[_rank] <= bottom_left_0[p]
+                && bottom_right_0[_rank] >= bottom_left_0[p]
+                && (top_left_1[p] - top_right_1[_rank] == 1)) {
+                int halo_size = bottom_left_0[p] - top_right_0[_rank] + 1;
+                _neighbours[1].insert(std::pair<int, int>(p, halo_size));
             }
-            if (top_right_1[_rank] >= bottom_left_1[i] && top_right_1[_rank] <= bottom_right_1[i]
-                && bottom_left_1[i] >= top_left_1[_rank]
-                && (top_right_0[_rank] - bottom_right_0[i] == 1)) {
-                int halo_size = top_right_1[_rank] - bottom_left_1[i] + 1;
-                _neighbours[3].insert(std::pair<int, int>(i, halo_size));
+            if (bottom_right_0[_rank] >= top_left_0[p] && bottom_right_0[_rank] <= bottom_left_0[p]
+                && top_right_0[_rank] <= top_left_0[p]
+                && (top_left_1[p] - top_right_1[_rank] == 1)) {
+                int halo_size = bottom_right_0[_rank] - top_left_0[p] + 1;
+                _neighbours[1].insert(std::pair<int, int>(p, halo_size));
+            }
+
+            // Find my bottom neighbours
+            if (bottom_left_1[_rank] >= top_left_1[p] && bottom_left_1[_rank] <= top_right_1[p]
+                && top_right_1[p] <= bottom_right_1[_rank]
+                && (top_left_0[p] - bottom_left_0[_rank] == 1)) {
+                int halo_size = top_right_1[p] - bottom_left_1[_rank] + 1;
+                _neighbours[2].insert(std::pair<int, int>(p, halo_size));
+            }
+            if (bottom_right_1[_rank] >= top_left_1[p] && bottom_right_1[_rank] <= top_right_1[p]
+                && top_left_1[p] >= bottom_left_1[_rank]
+                && (top_right_0[p] - bottom_right_0[_rank] == 1)) {
+                int halo_size = bottom_right_1[_rank] - top_left_1[p] + 1;
+                _neighbours[2].insert(std::pair<int, int>(p, halo_size));
+            }
+
+            // Find my top neighbours and their halo sizes
+            if (top_left_1[_rank] >= bottom_left_1[p] && top_left_1[_rank] <= bottom_right_1[p]
+                && bottom_right_1[p] <= top_right_1[_rank]
+                && (top_left_0[_rank] - bottom_left_0[p] == 1)) {
+                int halo_size = bottom_right_1[p] - top_left_1[_rank] + 1;
+                _neighbours[3].insert(std::pair<int, int>(p, halo_size));
+            }
+            if (top_right_1[_rank] >= bottom_left_1[p] && top_right_1[_rank] <= bottom_right_1[p]
+                && bottom_left_1[p] >= top_left_1[_rank]
+                && (top_right_0[_rank] - bottom_right_0[p] == 1)) {
+                int halo_size = top_right_1[_rank] - bottom_left_1[p] + 1;
+                _neighbours[3].insert(std::pair<int, int>(p, halo_size));
             }
         }
     }
