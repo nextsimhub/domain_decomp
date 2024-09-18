@@ -61,23 +61,20 @@ int main(int argc, char* argv[])
     partitioner->partition(*grid);
 
     // Retrieve neighbours
-    vector<int> top_ids, bottom_ids, left_ids, right_ids;
-    vector<int> top_halos, bottom_halos, left_halos, right_halos;
-    partitioner->get_top_neighbours(top_ids, top_halos);
-    partitioner->get_bottom_neighbours(bottom_ids, bottom_halos);
-    partitioner->get_left_neighbours(left_ids, left_halos);
-    partitioner->get_right_neighbours(right_ids, right_halos);
+    vector<vector<int>> ids = { {}, {}, {}, {} };
+    vector<vector<int>> halos = { {}, {}, {}, {} };
+    partitioner->get_neighbours(ids, halos);
 
     // MPI ranks of neighbours in order: top, bottom, left, right
-    vector<int> ids(top_ids);
-    ids.insert(ids.end(), bottom_ids.begin(), bottom_ids.end());
-    ids.insert(ids.end(), left_ids.begin(), left_ids.end());
-    ids.insert(ids.end(), right_ids.begin(), right_ids.end());
+    vector<int> ids_tblr(ids[3]);
+    ids_tblr.insert(ids_tblr.end(), ids[2].begin(), ids[2].end());
+    ids_tblr.insert(ids_tblr.end(), ids[0].begin(), ids[0].end());
+    ids_tblr.insert(ids_tblr.end(), ids[1].begin(), ids[1].end());
 
     // Create distributed neighbourhood communicator
     MPI_Comm comm_dist_graph;
-    int err = MPI_Dist_graph_create_adjacent(comm, ids.size(), ids.data(), MPI_UNWEIGHTED,
-        ids.size(), ids.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, 0, &comm_dist_graph);
+    int err = MPI_Dist_graph_create_adjacent(comm, ids_tblr.size(), ids_tblr.data(), MPI_UNWEIGHTED,
+        ids_tblr.size(), ids_tblr.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, 0, &comm_dist_graph);
     if (err != MPI_SUCCESS)
         std::cerr << "MPI error" << std::endl;
 
@@ -93,37 +90,37 @@ int main(int argc, char* argv[])
     vector<double> data((local_ext_0 + 2) * (local_ext_1 + 2), mpi_rank);
 
     // Define counts and displacements for MPI halo exchange
-    vector<int> scounts(ids.size());
-    vector<int> rcounts(ids.size());
-    vector<MPI_Aint> sdispls(ids.size());
-    vector<MPI_Aint> rdispls(ids.size());
+    vector<int> scounts(ids_tblr.size());
+    vector<int> rcounts(ids_tblr.size());
+    vector<MPI_Aint> sdispls(ids_tblr.size());
+    vector<MPI_Aint> rdispls(ids_tblr.size());
 
     // Define MPI derived datatypes
     const int ndims { 2 };
     int sizes[ndims] = { local_ext_0 + 2, local_ext_1 + 2 };
 
     // Send subarray types
-    vector<MPI_Datatype> subar_top(top_ids.size());
-    vector<MPI_Datatype> subar_bottom(bottom_ids.size());
-    vector<MPI_Datatype> subar_left(left_ids.size());
-    vector<MPI_Datatype> subar_right(right_ids.size());
+    vector<MPI_Datatype> subar_top(ids[3].size());
+    vector<MPI_Datatype> subar_bottom(ids[2].size());
+    vector<MPI_Datatype> subar_left(ids[0].size());
+    vector<MPI_Datatype> subar_right(ids[1].size());
 
     // Receive subarray types
-    vector<MPI_Datatype> ghost_top(top_ids.size());
-    vector<MPI_Datatype> ghost_bottom(bottom_ids.size());
-    vector<MPI_Datatype> ghost_left(left_ids.size());
-    vector<MPI_Datatype> ghost_right(right_ids.size());
+    vector<MPI_Datatype> ghost_top(ids[3].size());
+    vector<MPI_Datatype> ghost_bottom(ids[2].size());
+    vector<MPI_Datatype> ghost_left(ids[0].size());
+    vector<MPI_Datatype> ghost_right(ids[1].size());
 
     // Mixed subarray types
-    vector<MPI_Datatype> sendtypes(ids.size());
-    vector<MPI_Datatype> recvtypes(ids.size());
+    vector<MPI_Datatype> sendtypes(ids_tblr.size());
+    vector<MPI_Datatype> recvtypes(ids_tblr.size());
 
     int cnt = 0;
     int offset = 0;
 
     // Top neighbours
-    for (int i = 0; i < static_cast<int>(top_ids.size()); i++) {
-        int subsizes[ndims] = { 1, top_halos[i] };
+    for (int i = 0; i < static_cast<int>(ids[3].size()); i++) {
+        int subsizes[ndims] = { 1, halos[3][i] };
 
         int send_top_start[ndims] = { 1, offset + 1 };
         MPI_Type_create_subarray(
@@ -141,14 +138,14 @@ int main(int argc, char* argv[])
         rcounts[cnt] = 1;
         rdispls[cnt] = 0;
 
-        offset += top_halos[i];
+        offset += halos[3][i];
         cnt++;
     }
 
     // Bottom neighbours
     offset = 0;
-    for (int i = 0; i < static_cast<int>(bottom_ids.size()); i++) {
-        int subsizes[ndims] = { 1, bottom_halos[i] };
+    for (int i = 0; i < static_cast<int>(ids[2].size()); i++) {
+        int subsizes[ndims] = { 1, halos[2][i] };
 
         int send_bottom_start[ndims] = { local_ext_0, offset + 1 };
         MPI_Type_create_subarray(
@@ -166,14 +163,14 @@ int main(int argc, char* argv[])
         rcounts[cnt] = 1;
         rdispls[cnt] = 0;
 
-        offset += bottom_halos[i];
+        offset += halos[2][i];
         cnt++;
     }
 
     // Left neighbours
     offset = 0;
-    for (int i = 0; i < static_cast<int>(left_ids.size()); i++) {
-        int subsizes[ndims] = { left_halos[i], 1 };
+    for (int i = 0; i < static_cast<int>(ids[0].size()); i++) {
+        int subsizes[ndims] = { halos[0][i], 1 };
 
         int send_left_start[ndims] = { offset + 1, 1 };
         MPI_Type_create_subarray(
@@ -191,14 +188,14 @@ int main(int argc, char* argv[])
         rcounts[cnt] = 1;
         rdispls[cnt] = 0;
 
-        offset += left_halos[i];
+        offset += halos[0][i];
         cnt++;
     }
 
     // Right neighbours
     offset = 0;
-    for (int i = 0; i < static_cast<int>(right_ids.size()); i++) {
-        int subsizes[ndims] = { right_halos[i], 1 };
+    for (int i = 0; i < static_cast<int>(ids[1].size()); i++) {
+        int subsizes[ndims] = { halos[1][i], 1 };
 
         int send_right_start[ndims] = { offset + 1, local_ext_1 };
         MPI_Type_create_subarray(
@@ -216,7 +213,7 @@ int main(int argc, char* argv[])
         rcounts[cnt] = 1;
         rdispls[cnt] = 0;
 
-        offset += right_halos[i];
+        offset += halos[1][i];
         cnt++;
     }
 

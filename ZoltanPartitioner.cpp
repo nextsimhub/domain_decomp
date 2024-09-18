@@ -93,24 +93,21 @@ ZoltanPartitioner* ZoltanPartitioner::create(MPI_Comm comm, int argc, char** arg
 void ZoltanPartitioner::partition(Grid& grid)
 {
     // Load initial grid state
-    _num_procs_0 = grid.get_num_procs_0();
-    _num_procs_1 = grid.get_num_procs_1();
-    _global_ext_0 = grid.get_global_ext_0();
-    _global_ext_1 = grid.get_global_ext_1();
-    int blk_factor_0 = grid.get_blk_factor_0();
-    int blk_factor_1 = grid.get_blk_factor_1();
-    grid.get_bounding_box(_global_0, _global_1, _local_ext_0, _local_ext_1);
+    _num_procs[0] = grid.get_num_procs_0();
+    _num_procs[1] = grid.get_num_procs_1();
+    _global_ext[0] = grid.get_global_ext_0();
+    _global_ext[1] = grid.get_global_ext_1();
+    std::vector<int> blk_factors = { grid.get_blk_factor_0(), grid.get_blk_factor_1() };
+    grid.get_bounding_box(_global[0], _global[1], _local_ext[0], _local_ext[1]);
 
-    if (_num_procs == 1) {
-        _global_0_new = _global_0;
-        _global_1_new = _global_1;
-        _local_ext_0_new = _local_ext_0;
-        _local_ext_1_new = _local_ext_1;
-        // Adapt to blocking
-        _global_0_new *= blk_factor_0;
-        _global_1_new *= blk_factor_1;
-        _local_ext_0_new *= blk_factor_0;
-        _local_ext_1_new *= blk_factor_1;
+    if (_total_num_procs == 1) {
+        for (int idx = 0; idx < 2; idx++) {
+            _global_new[idx] = _global[idx];
+            _local_ext_new[idx] = _local_ext[idx];
+            // Adapt to blocking
+            _global_new[idx] *= blk_factors[idx];
+            _local_ext_new[idx] *= blk_factors[idx];
+        }
 
         if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
             const int* land_mask = grid.get_land_mask();
@@ -178,33 +175,30 @@ void ZoltanPartitioner::partition(Grid& grid)
     // Find new bounding boxes for each process
     if (changes == 1) {
         int ndim;
-        double xmin, ymin, zmin;
-        double xmax, ymax, zmax;
-        _zoltan->RCB_Box(_rank, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
-        _global_0_new = (xmin == -DBL_MAX) ? 0 : std::ceil(xmin);
-        _global_1_new = (ymin == -DBL_MAX) ? 0 : std::ceil(ymin);
-        int global_0_lower, global_1_lower;
-        global_0_lower = (xmax == DBL_MAX) ? _global_ext_0 : std::ceil(xmax);
-        global_1_lower = (ymax == DBL_MAX) ? _global_ext_1 : std::ceil(ymax);
-        _local_ext_0_new = global_0_lower - _global_0_new;
-        _local_ext_1_new = global_1_lower - _global_1_new;
+        double mins[3];
+        double maxs[3];
+        _zoltan->RCB_Box(_rank, ndim, mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2]);
+        for (int idx = 0; idx < 2; idx++) {
+            _global_new[idx] = (mins[idx] == -DBL_MAX) ? 0 : std::ceil(mins[idx]);
+            int global_lower = (maxs[idx] == DBL_MAX) ? _global_ext[idx] : std::ceil(maxs[idx]);
+            _local_ext_new[idx] = global_lower - _global_new[idx];
+        }
     } else {
-        _global_0_new = _global_0;
-        _global_1_new = _global_1;
-        _local_ext_0_new = _local_ext_0;
-        _local_ext_1_new = _local_ext_1;
+        for (int idx = 0; idx < 2; idx++) {
+            _global_new[idx] = _global[idx];
+            _local_ext_new[idx] = _local_ext[idx];
+        }
     }
 
     // Adapt to blocking
-    _global_0_new *= blk_factor_0;
-    _global_1_new *= blk_factor_1;
-    _local_ext_0_new *= blk_factor_0;
-    _local_ext_1_new *= blk_factor_1;
-    if (_global_0_new + _local_ext_0_new > grid.get_global_ext_orig_0()) {
-        _local_ext_0_new = grid.get_global_ext_orig_0() - _global_0_new;
-    }
-    if (_global_1_new + _local_ext_1_new > grid.get_global_ext_orig_1()) {
-        _local_ext_1_new = grid.get_global_ext_orig_1() - _global_1_new;
+    std::vector<int> global_ext_orig
+        = { grid.get_global_ext_orig_0(), grid.get_global_ext_orig_1() };
+    for (int idx = 0; idx < 2; idx++) {
+        _global_new[idx] *= blk_factors[idx];
+        _local_ext_new[idx] *= blk_factors[idx];
+        if (_global_new[idx] + _local_ext_new[idx] > global_ext_orig[idx]) {
+            _local_ext_new[idx] = global_ext_orig[idx] - _global_new[idx];
+        }
     }
 
     // Find my neighbours

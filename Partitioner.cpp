@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 11 Sep 2024
+ * @date 12 Sep 2024
  */
 
 #include "Partitioner.hpp"
@@ -17,48 +17,27 @@
 Partitioner::Partitioner(MPI_Comm comm)
 {
     _comm = comm;
-    CHECK_MPI(MPI_Comm_size(comm, &_num_procs));
+    CHECK_MPI(MPI_Comm_size(comm, &_total_num_procs));
     CHECK_MPI(MPI_Comm_rank(comm, &_rank));
 }
 
 void Partitioner::get_bounding_box(
     int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const
 {
-    global_0 = _global_0_new;
-    global_1 = _global_1_new;
-    local_ext_0 = _local_ext_0_new;
-    local_ext_1 = _local_ext_1_new;
+    global_0 = _global_new[0];
+    global_1 = _global_new[1];
+    local_ext_0 = _local_ext_new[0];
+    local_ext_1 = _local_ext_new[1];
 }
 
-void Partitioner::get_top_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
+void Partitioner::get_neighbours(
+    std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const
 {
-    for (auto it = _top_neighbours.begin(); it != _top_neighbours.end(); ++it) {
-        ids.push_back(it->first);
-        halo_sizes.push_back(it->second);
-    }
-}
-
-void Partitioner::get_bottom_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
-{
-    for (auto it = _bottom_neighbours.begin(); it != _bottom_neighbours.end(); ++it) {
-        ids.push_back(it->first);
-        halo_sizes.push_back(it->second);
-    }
-}
-
-void Partitioner::get_left_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
-{
-    for (auto it = _left_neighbours.begin(); it != _left_neighbours.end(); ++it) {
-        ids.push_back(it->first);
-        halo_sizes.push_back(it->second);
-    }
-}
-
-void Partitioner::get_right_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const
-{
-    for (auto it = _right_neighbours.begin(); it != _right_neighbours.end(); ++it) {
-        ids.push_back(it->first);
-        halo_sizes.push_back(it->second);
+    for (int idx = 0; idx < NDIMS; idx++) {
+        for (auto it = _neighbours[idx].begin(); it != _neighbours[idx].end(); ++it) {
+            ids[idx].push_back(it->first);
+            halo_sizes[idx].push_back(it->second);
+        }
     }
 }
 
@@ -68,16 +47,18 @@ void Partitioner::save_mask(const std::string& filename) const
     int nc_id, nc_mode;
     nc_mode = NC_CLOBBER | NC_NETCDF4;
     NC_CHECK(nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
-    NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "num_processes", NC_INT, 1, &_num_procs));
+    NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "num_processes", NC_INT, 1, &_total_num_procs));
 
     // Create 2 dimensions
     // The values to be written are associated with the netCDF variable by
     // assuming that the last dimension of the netCDF variable varies fastest in
     // the C interface
-    const int NDIMS = 2;
+    const int NDIMS = 2; // TODO: Why redeclared?
     int dimid[NDIMS];
-    NC_CHECK(nc_def_dim(nc_id, "x", _global_ext_0, &dimid[0]));
-    NC_CHECK(nc_def_dim(nc_id, "y", _global_ext_1, &dimid[1]));
+    std::vector<std::string> dim_chars = { "x", "y" };
+    for (int idx = 0; idx < NDIMS; idx++) {
+        NC_CHECK(nc_def_dim(nc_id, dim_chars[idx].c_str(), _global_ext[idx], &dimid[idx]));
+    }
 
     // Create variables
     int mask_nc_id;
@@ -88,10 +69,10 @@ void Partitioner::save_mask(const std::string& filename) const
 
     // Set up slab for this process
     size_t start[NDIMS], count[NDIMS];
-    start[0] = _global_0;
-    start[1] = _global_1;
-    count[0] = _local_ext_0;
-    count[1] = _local_ext_1;
+    for (int idx = 0; idx < NDIMS; idx++) {
+        start[idx] = _global[idx];
+        count[idx] = _local_ext[idx];
+    }
 
     // Store data
     NC_CHECK(nc_var_par_access(nc_id, mask_nc_id, NC_COLLECTIVE));
@@ -106,48 +87,37 @@ void Partitioner::save_metadata(const std::string& filename) const
     nc_mode = NC_MPIIO | NC_NETCDF4;
     NC_CHECK(nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
 
-    // Prepare neighbour data
-    std::vector<int> top_ids, bottom_ids, left_ids, right_ids;
-    std::vector<int> top_halos, bottom_halos, left_halos, right_halos;
-    get_top_neighbours(top_ids, top_halos);
-    get_bottom_neighbours(bottom_ids, bottom_halos);
-    get_left_neighbours(left_ids, left_halos);
-    get_right_neighbours(right_ids, right_halos);
-    int top_num_neighbours = top_ids.size();
-    int bottom_num_neighbours = bottom_ids.size();
-    int left_num_neighbours = left_ids.size();
-    int right_num_neighbours = right_ids.size();
-
-    // Compute global dimensions
-    int top_dim, bottom_dim, left_dim, right_dim;
-    CHECK_MPI(MPI_Allreduce(&top_num_neighbours, &top_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&bottom_num_neighbours, &bottom_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&left_num_neighbours, &left_dim, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Allreduce(&right_num_neighbours, &right_dim, 1, MPI_INT, MPI_SUM, _comm));
-
-    // Compute global offsets
-    int top_offset = 0, bottom_offset = 0, left_offset = 0, right_offset = 0;
-    CHECK_MPI(MPI_Exscan(&top_num_neighbours, &top_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&bottom_num_neighbours, &bottom_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&left_num_neighbours, &left_offset, 1, MPI_INT, MPI_SUM, _comm));
-    CHECK_MPI(MPI_Exscan(&right_num_neighbours, &right_offset, 1, MPI_INT, MPI_SUM, _comm));
-
     // Create 2 dimensions
     // The values to be written are associated with the netCDF variable by
     // assuming that the last dimension of the netCDF variable varies fastest in
     // the C interface
-    const int NDIMS = 2;
+    const int NDIMS = 2; // TODO: Why redeclared?
     int dimid_global[NDIMS];
-    NC_CHECK(nc_def_dim(nc_id, "NX", _global_ext_0, &dimid_global[0]));
-    NC_CHECK(nc_def_dim(nc_id, "NY", _global_ext_1, &dimid_global[1]));
+    for (int idx = 0; idx < NDIMS; idx++) {
+        NC_CHECK(nc_def_dim(
+            nc_id, global_extent_names[idx].c_str(), _global_ext[idx], &dimid_global[idx]));
+    }
+
+    // There are two neighbours for each dimension
+    const int NNBRS = NDIMS * 2; // TODO: Why redeclared?
+
+    // Prepare neighbour data
+    std::vector<std::vector<int>> ids(NNBRS), halos(NNBRS);
+    get_neighbours(ids, halos);
+    std::vector<int> num_neighbours(NNBRS), dims(NNBRS, 0), offsets(NNBRS, 0);
+    for (int idx = 0; idx < NNBRS; idx++) {
+        num_neighbours[idx] = (int)ids[idx].size();
+        CHECK_MPI(MPI_Allreduce(&num_neighbours[idx], &dims[idx], 1, MPI_INT, MPI_SUM, _comm));
+        CHECK_MPI(MPI_Exscan(&num_neighbours[idx], &offsets[idx], 1, MPI_INT, MPI_SUM, _comm));
+    }
 
     // Define dimensions in netCDF file
-    int dimid, top_dimid, bottom_dimid, left_dimid, right_dimid;
-    NC_CHECK(nc_def_dim(nc_id, "P", _num_procs, &dimid));
-    NC_CHECK(nc_def_dim(nc_id, "T", top_dim, &top_dimid));
-    NC_CHECK(nc_def_dim(nc_id, "B", bottom_dim, &bottom_dimid));
-    NC_CHECK(nc_def_dim(nc_id, "L", left_dim, &left_dimid));
-    NC_CHECK(nc_def_dim(nc_id, "R", right_dim, &right_dimid));
+    int dimid;
+    std::vector<int> dimids(NNBRS);
+    NC_CHECK(nc_def_dim(nc_id, "P", _total_num_procs, &dimid));
+    for (int idx = 0; idx < NNBRS; idx++) {
+        NC_CHECK(nc_def_dim(nc_id, dir_chars[idx].c_str(), dims[idx], &dimids[idx]));
+    }
 
     // Define groups in netCDF file
     int bbox_gid, connectivity_gid;
@@ -155,91 +125,46 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_def_grp(nc_id, "connectivity", &connectivity_gid));
 
     // Define variables in netCDF file
-    int top_x_vid, top_y_vid;
-    int cnt_x_vid, cnt_y_vid;
-    int top_num_vid, bottom_num_vid, left_num_vid, right_num_vid;
-    int top_ids_vid, bottom_ids_vid, left_ids_vid, right_ids_vid;
-    int top_halos_vid, bottom_halos_vid, left_halos_vid, right_halos_vid;
-    // Bounding boxes group
-    NC_CHECK(nc_def_var(bbox_gid, "domain_x", NC_INT, 1, &dimid, &top_x_vid));
-    NC_CHECK(nc_def_var(bbox_gid, "domain_y", NC_INT, 1, &dimid, &top_y_vid));
-    NC_CHECK(nc_def_var(bbox_gid, "domain_extent_x", NC_INT, 1, &dimid, &cnt_x_vid));
-    NC_CHECK(nc_def_var(bbox_gid, "domain_extent_y", NC_INT, 1, &dimid, &cnt_y_vid));
-    // Connectivity group
-    NC_CHECK(nc_def_var(connectivity_gid, "top_neighbours", NC_INT, 1, &dimid, &top_num_vid));
-    NC_CHECK(
-        nc_def_var(connectivity_gid, "top_neighbour_ids", NC_INT, 1, &top_dimid, &top_ids_vid));
-    NC_CHECK(
-        nc_def_var(connectivity_gid, "top_neighbour_halos", NC_INT, 1, &top_dimid, &top_halos_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "bottom_neighbours", NC_INT, 1, &dimid, &bottom_num_vid));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "bottom_neighbour_ids", NC_INT, 1, &bottom_dimid, &bottom_ids_vid));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "bottom_neighbour_halos", NC_INT, 1, &bottom_dimid, &bottom_halos_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "left_neighbours", NC_INT, 1, &dimid, &left_num_vid));
-    NC_CHECK(
-        nc_def_var(connectivity_gid, "left_neighbour_ids", NC_INT, 1, &left_dimid, &left_ids_vid));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "left_neighbour_halos", NC_INT, 1, &left_dimid, &left_halos_vid));
-    NC_CHECK(nc_def_var(connectivity_gid, "right_neighbours", NC_INT, 1, &dimid, &right_num_vid));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "right_neighbour_ids", NC_INT, 1, &right_dimid, &right_ids_vid));
-    NC_CHECK(nc_def_var(
-        connectivity_gid, "right_neighbour_halos", NC_INT, 1, &right_dimid, &right_halos_vid));
+    int top_vid[NDIMS];
+    int cnt_vid[NDIMS];
+    int num_vid[NNBRS];
+    int ids_vid[NNBRS];
+    int halos_vid[NNBRS];
+    for (int idx = 0; idx < NNBRS; idx++) {
+        // Bounding boxes group
+        NC_CHECK(nc_def_var(
+            bbox_gid, ("domain_" + dim_chars[idx]).c_str(), NC_INT, 1, &dimid, &top_vid[idx]));
+        NC_CHECK(nc_def_var(bbox_gid, ("domain_extent_" + dim_chars[idx]).c_str(), NC_INT, 1,
+            &dimid, &cnt_vid[idx]));
+        // Connectivity group
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbours").c_str(), NC_INT, 1,
+            &dimid, &num_vid[idx]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_ids").c_str(), NC_INT,
+            1, &dimids[idx], &ids_vid[idx]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_halos").c_str(), NC_INT,
+            1, &dimids[idx], &halos_vid[idx]));
+    }
 
     // Write metadata to file
     NC_CHECK(nc_enddef(nc_id));
 
-    // Set up slab for this process
-    size_t start, count;
-
     // Store data
-    start = _rank;
-    NC_CHECK(nc_var_par_access(bbox_gid, top_x_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, top_x_vid, &start, &_global_0_new));
-    NC_CHECK(nc_var_par_access(bbox_gid, top_y_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, top_y_vid, &start, &_global_1_new));
-    NC_CHECK(nc_var_par_access(bbox_gid, cnt_x_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_x_vid, &start, &_local_ext_0_new));
-    NC_CHECK(nc_var_par_access(bbox_gid, cnt_y_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(bbox_gid, cnt_y_vid, &start, &_local_ext_1_new));
-
-    NC_CHECK(nc_var_par_access(connectivity_gid, top_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, top_num_vid, &start, &top_num_neighbours));
-    NC_CHECK(nc_var_par_access(connectivity_gid, bottom_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, bottom_num_vid, &start, &bottom_num_neighbours));
-    NC_CHECK(nc_var_par_access(connectivity_gid, left_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, left_num_vid, &start, &left_num_neighbours));
-    NC_CHECK(nc_var_par_access(connectivity_gid, right_num_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_var1_int(connectivity_gid, right_num_vid, &start, &right_num_neighbours));
-
-    start = top_offset;
-    count = top_num_neighbours;
-    NC_CHECK(nc_var_par_access(connectivity_gid, top_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, top_ids_vid, &start, &count, top_ids.data()));
-    NC_CHECK(nc_var_par_access(connectivity_gid, top_halos_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, top_halos_vid, &start, &count, top_halos.data()));
-    start = bottom_offset;
-    count = bottom_num_neighbours;
-    NC_CHECK(nc_var_par_access(connectivity_gid, bottom_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, bottom_ids_vid, &start, &count, bottom_ids.data()));
-    NC_CHECK(nc_var_par_access(connectivity_gid, bottom_halos_vid, NC_COLLECTIVE));
-    NC_CHECK(
-        nc_put_vara_int(connectivity_gid, bottom_halos_vid, &start, &count, bottom_halos.data()));
-    start = left_offset;
-    count = left_num_neighbours;
-    NC_CHECK(nc_var_par_access(connectivity_gid, left_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, left_ids_vid, &start, &count, left_ids.data()));
-    NC_CHECK(nc_var_par_access(connectivity_gid, left_halos_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, left_halos_vid, &start, &count, left_halos.data()));
-    start = right_offset;
-    count = right_num_neighbours;
-    NC_CHECK(nc_var_par_access(connectivity_gid, right_ids_vid, NC_COLLECTIVE));
-    NC_CHECK(nc_put_vara_int(connectivity_gid, right_ids_vid, &start, &count, right_ids.data()));
-    NC_CHECK(nc_var_par_access(connectivity_gid, right_halos_vid, NC_COLLECTIVE));
-    NC_CHECK(
-        nc_put_vara_int(connectivity_gid, right_halos_vid, &start, &count, right_halos.data()));
-
+    for (int idx = 0; idx < NDIMS; idx++) {
+        size_t start = _rank;
+        NC_CHECK(nc_var_par_access(bbox_gid, top_vid[idx], NC_COLLECTIVE));
+        NC_CHECK(nc_put_var1_int(bbox_gid, top_vid[idx], &start, &_global_new[idx]));
+        NC_CHECK(nc_var_par_access(bbox_gid, cnt_vid[idx], NC_COLLECTIVE));
+        NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[idx], &start, &_local_ext_new[idx]));
+        NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[idx], NC_COLLECTIVE));
+        NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[idx], &start, &num_neighbours[idx]));
+        start = offsets[idx];
+        size_t count = num_neighbours[idx];
+        NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid[idx], NC_COLLECTIVE));
+        NC_CHECK(nc_put_vara_int(connectivity_gid, ids_vid[idx], &start, &count, ids[idx].data()));
+        NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid[idx], NC_COLLECTIVE));
+        NC_CHECK(
+            nc_put_vara_int(connectivity_gid, halos_vid[idx], &start, &count, halos[idx].data()));
+    }
     NC_CHECK(nc_close(nc_id));
 }
 
@@ -255,101 +180,86 @@ Partitioner* Partitioner::Factory::create(
 void Partitioner::discover_neighbours()
 {
     // Gather bounding boxes for all processes
-    std::vector<int> top_left_0(_num_procs, -1);
-    std::vector<int> top_left_1(_num_procs, -1);
-    std::vector<int> top_right_0(_num_procs, -1);
-    std::vector<int> top_right_1(_num_procs, -1);
-    std::vector<int> bottom_left_0(_num_procs, -1);
-    std::vector<int> bottom_left_1(_num_procs, -1);
-    std::vector<int> bottom_right_0(_num_procs, -1);
-    std::vector<int> bottom_right_1(_num_procs, -1);
-    CHECK_MPI(MPI_Allgather(&_global_0_new, 1, MPI_INT, top_left_0.data(), 1, MPI_INT, _comm));
-    CHECK_MPI(MPI_Allgather(&_global_1_new, 1, MPI_INT, top_left_1.data(), 1, MPI_INT, _comm));
+    std::vector<int> top_left_0(_total_num_procs, -1);
+    std::vector<int> top_left_1(_total_num_procs, -1);
+    std::vector<int> top_right_0(_total_num_procs, -1);
+    std::vector<int> top_right_1(_total_num_procs, -1);
+    std::vector<int> bottom_left_0(_total_num_procs, -1);
+    std::vector<int> bottom_left_1(_total_num_procs, -1);
+    std::vector<int> bottom_right_0(_total_num_procs, -1);
+    std::vector<int> bottom_right_1(_total_num_procs, -1);
+    CHECK_MPI(MPI_Allgather(&_global_new[0], 1, MPI_INT, top_left_0.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_global_new[1], 1, MPI_INT, top_left_1.data(), 1, MPI_INT, _comm));
     CHECK_MPI(
-        MPI_Allgather(&_local_ext_0_new, 1, MPI_INT, bottom_right_0.data(), 1, MPI_INT, _comm));
+        MPI_Allgather(&_local_ext_new[0], 1, MPI_INT, bottom_right_0.data(), 1, MPI_INT, _comm));
     CHECK_MPI(
-        MPI_Allgather(&_local_ext_1_new, 1, MPI_INT, bottom_right_1.data(), 1, MPI_INT, _comm));
-    for (int i = 0; i < _num_procs; i++)
-        top_right_0[i] = top_left_0[i];
-    for (int i = 0; i < _num_procs; i++)
-        top_right_1[i] = top_left_1[i] + bottom_right_1[i] - 1;
-    for (int i = 0; i < _num_procs; i++)
-        bottom_left_0[i] = top_left_0[i] + bottom_right_0[i] - 1;
-    for (int i = 0; i < _num_procs; i++)
-        bottom_left_1[i] = top_left_1[i];
-    for (int i = 0; i < _num_procs; i++)
-        bottom_right_0[i] += top_left_0[i] - 1;
-    for (int i = 0; i < _num_procs; i++)
-        bottom_right_1[i] += top_left_1[i] - 1;
-
-    // Find my top neighbours and their halo sizes
-    for (int i = 0; i < _num_procs; i++) {
-        if (i != _rank) {
-            if (top_left_1[_rank] >= bottom_left_1[i] && top_left_1[_rank] <= bottom_right_1[i]
-                && bottom_right_1[i] <= top_right_1[_rank]
-                && (top_left_0[_rank] - bottom_left_0[i] == 1)) {
-                int halo_size = bottom_right_1[i] - top_left_1[_rank] + 1;
-                _top_neighbours.insert(std::pair<int, int>(i, halo_size));
-            }
-            if (top_right_1[_rank] >= bottom_left_1[i] && top_right_1[_rank] <= bottom_right_1[i]
-                && bottom_left_1[i] >= top_left_1[_rank]
-                && (top_right_0[_rank] - bottom_right_0[i] == 1)) {
-                int halo_size = top_right_1[_rank] - bottom_left_1[i] + 1;
-                _top_neighbours.insert(std::pair<int, int>(i, halo_size));
-            }
-        }
+        MPI_Allgather(&_local_ext_new[1], 1, MPI_INT, bottom_right_1.data(), 1, MPI_INT, _comm));
+    for (int p = 0; p < _total_num_procs; p++) {
+        top_right_0[p] = top_left_0[p];
+        top_right_1[p] = top_left_1[p] + bottom_right_1[p] - 1;
+        bottom_left_0[p] = top_left_0[p] + bottom_right_0[p] - 1;
+        bottom_left_1[p] = top_left_1[p];
+        bottom_right_0[p] += top_left_0[p] - 1;
+        bottom_right_1[p] += top_left_1[p] - 1;
     }
 
-    // Find my bottom neighbours
-    for (int i = 0; i < _num_procs; i++) {
-        if (i != _rank) {
-            if (bottom_left_1[_rank] >= top_left_1[i] && bottom_left_1[_rank] <= top_right_1[i]
-                && top_right_1[i] <= bottom_right_1[_rank]
-                && (top_left_0[i] - bottom_left_0[_rank] == 1)) {
-                int halo_size = top_right_1[i] - bottom_left_1[_rank] + 1;
-                _bottom_neighbours.insert(std::pair<int, int>(i, halo_size));
-            }
-            if (bottom_right_1[_rank] >= top_left_1[i] && bottom_right_1[_rank] <= top_right_1[i]
-                && top_left_1[i] >= bottom_left_1[_rank]
-                && (top_right_0[i] - bottom_right_0[_rank] == 1)) {
-                int halo_size = bottom_right_1[_rank] - top_left_1[i] + 1;
-                _bottom_neighbours.insert(std::pair<int, int>(i, halo_size));
-            }
-        }
-    }
+    for (int p = 0; p < _total_num_procs; p++) {
+        if (p != _rank) {
 
-    // Find my left neighbours
-    for (int i = 0; i < _num_procs; i++) {
-        if (i != _rank) {
-            if (top_left_0[_rank] >= top_right_0[i] && top_left_0[_rank] <= bottom_right_0[i]
-                && bottom_left_0[_rank] <= bottom_right_0[i]
-                && (top_left_1[_rank] - top_right_1[i] == 1)) {
-                int halo_size = bottom_right_0[i] - top_left_0[_rank] + 1;
-                _left_neighbours.insert(std::pair<int, int>(i, halo_size));
+            // Find my left neighbours
+            if (top_left_0[_rank] >= top_right_0[p] && top_left_0[_rank] <= bottom_right_0[p]
+                && bottom_left_0[_rank] <= bottom_right_0[p]
+                && (top_left_1[_rank] - top_right_1[p] == 1)) {
+                int halo_size = bottom_right_0[p] - top_left_0[_rank] + 1;
+                _neighbours[0].insert(std::pair<int, int>(p, halo_size));
             }
-            if (bottom_left_0[_rank] >= top_right_0[i] && bottom_left_0[_rank] <= bottom_right_0[i]
-                && top_left_0[_rank] <= top_right_0[i]
-                && (bottom_left_1[_rank] - top_right_1[i] == 1)) {
-                int halo_size = bottom_left_0[_rank] - top_right_0[i] + 1;
-                _left_neighbours.insert(std::pair<int, int>(i, halo_size));
+            if (bottom_left_0[_rank] >= top_right_0[p] && bottom_left_0[_rank] <= bottom_right_0[p]
+                && top_left_0[_rank] <= top_right_0[p]
+                && (bottom_left_1[_rank] - top_right_1[p] == 1)) {
+                int halo_size = bottom_left_0[_rank] - top_right_0[p] + 1;
+                _neighbours[0].insert(std::pair<int, int>(p, halo_size));
             }
-        }
-    }
 
-    // Find my right neighbours
-    for (int i = 0; i < _num_procs; i++) {
-        if (i != _rank) {
-            if (top_right_0[_rank] >= top_left_0[i] && top_right_0[_rank] <= bottom_left_0[i]
-                && bottom_right_0[_rank] >= bottom_left_0[i]
-                && (top_left_1[i] - top_right_1[_rank] == 1)) {
-                int halo_size = bottom_left_0[i] - top_right_0[_rank] + 1;
-                _right_neighbours.insert(std::pair<int, int>(i, halo_size));
+            // Find my right neighbours
+            if (top_right_0[_rank] >= top_left_0[p] && top_right_0[_rank] <= bottom_left_0[p]
+                && bottom_right_0[_rank] >= bottom_left_0[p]
+                && (top_left_1[p] - top_right_1[_rank] == 1)) {
+                int halo_size = bottom_left_0[p] - top_right_0[_rank] + 1;
+                _neighbours[1].insert(std::pair<int, int>(p, halo_size));
             }
-            if (bottom_right_0[_rank] >= top_left_0[i] && bottom_right_0[_rank] <= bottom_left_0[i]
-                && top_right_0[_rank] <= top_left_0[i]
-                && (top_left_1[i] - top_right_1[_rank] == 1)) {
-                int halo_size = bottom_right_0[_rank] - top_left_0[i] + 1;
-                _right_neighbours.insert(std::pair<int, int>(i, halo_size));
+            if (bottom_right_0[_rank] >= top_left_0[p] && bottom_right_0[_rank] <= bottom_left_0[p]
+                && top_right_0[_rank] <= top_left_0[p]
+                && (top_left_1[p] - top_right_1[_rank] == 1)) {
+                int halo_size = bottom_right_0[_rank] - top_left_0[p] + 1;
+                _neighbours[1].insert(std::pair<int, int>(p, halo_size));
+            }
+
+            // Find my bottom neighbours
+            if (bottom_left_1[_rank] >= top_left_1[p] && bottom_left_1[_rank] <= top_right_1[p]
+                && top_right_1[p] <= bottom_right_1[_rank]
+                && (top_left_0[p] - bottom_left_0[_rank] == 1)) {
+                int halo_size = top_right_1[p] - bottom_left_1[_rank] + 1;
+                _neighbours[2].insert(std::pair<int, int>(p, halo_size));
+            }
+            if (bottom_right_1[_rank] >= top_left_1[p] && bottom_right_1[_rank] <= top_right_1[p]
+                && top_left_1[p] >= bottom_left_1[_rank]
+                && (top_right_0[p] - bottom_right_0[_rank] == 1)) {
+                int halo_size = bottom_right_1[_rank] - top_left_1[p] + 1;
+                _neighbours[2].insert(std::pair<int, int>(p, halo_size));
+            }
+
+            // Find my top neighbours and their halo sizes
+            if (top_left_1[_rank] >= bottom_left_1[p] && top_left_1[_rank] <= bottom_right_1[p]
+                && bottom_right_1[p] <= top_right_1[_rank]
+                && (top_left_0[_rank] - bottom_left_0[p] == 1)) {
+                int halo_size = bottom_right_1[p] - top_left_1[_rank] + 1;
+                _neighbours[3].insert(std::pair<int, int>(p, halo_size));
+            }
+            if (top_right_1[_rank] >= bottom_left_1[p] && top_right_1[_rank] <= bottom_right_1[p]
+                && bottom_left_1[p] >= top_left_1[_rank]
+                && (top_right_0[_rank] - bottom_right_0[p] == 1)) {
+                int halo_size = top_right_1[_rank] - bottom_left_1[p] + 1;
+                _neighbours[3].insert(std::pair<int, int>(p, halo_size));
             }
         }
     }

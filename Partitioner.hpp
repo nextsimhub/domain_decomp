@@ -56,28 +56,14 @@ public:
     void get_bounding_box(int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const;
 
     /*!
-     * @brief Returns the MPI ranks and halo sizes of the top neighbours for this
-     * process after partitioning.
+     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours for this
+     * process after partitioning. The neighbours are ordered left, right, bottom, top.
+     *
+     * @param ids MPI ranks of the neighbours for each direction
+     * @param halo_sizes Halo sizes of the neighbours for each direction
      */
-    void get_top_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
-
-    /*!
-     * @brief Returns the MPI ranks and halo sizes of the bottom neighbours for
-     * this process after partitioning.
-     */
-    void get_bottom_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
-
-    /*!
-     * @brief Returns the MPI ranks and halo sizes of the left neighbours for this
-     * process after partitioning.
-     */
-    void get_left_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
-
-    /*!
-     * @brief Returns the MPI ranks and halo sizes of the right neighbours for this
-     * process after partitioning.
-     */
-    void get_right_neighbours(std::vector<int>& ids, std::vector<int>& halo_sizes) const;
+    void get_neighbours(
+        std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const;
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -123,34 +109,45 @@ protected:
 protected:
     MPI_Comm _comm; // MPI communicator
     int _rank = -1; // Process rank
-    int _num_procs = -1; // Total number of processes in communicator
-    int _num_procs_0 = -1; // Total number of processes in 1st dimension
-    int _num_procs_1 = -1; // Total number of processes in 2nd dimension
-    int _global_ext_0 = 0; // Global extent in 1st extension (blocking)
-    int _global_ext_1 = 0; // Global extent in 2nd extension (blocking)
-    int _local_ext_0 = 0; // Local extent in 1st dimension (original, blocking)
-    int _local_ext_1 = 0; // Local extent in 2nd dimension (original, blocking)
-    int _global_0 = -1; /* Global coordinate in 1st dimension of upper left corner
-                           (original, blocking) */
-    int _global_1 = -1; /* Global coordinate in 2nd dimension of upper left corner
-                           (original, blocking) */
-    int _local_ext_0_new = 0; /* Local extent in 1st dimension (after
-                                 partitioning) */
-    int _local_ext_1_new = 0; /* Local extent in 2nd dimension (after
-                                 partitioning) */
-    int _global_0_new = -1; /* Global coordinate in 1st dimension of upper left
-                               corner (after partitioning) */
-    int _global_1_new = -1; /* Global coordinate in 2nd dimension of upper left
-                               corner (after partitioning) */
-    std::vector<int> _proc_id = {}; // Process ids of partition (dense form)
-    std::map<int, int> _top_neighbours
-        = {}; // Map of top neighbours to their halo sizes after partitioning
-    std::map<int, int> _bottom_neighbours
-        = {}; // Map of bottom neighbours to their halo sizes after partitioning
-    std::map<int, int> _right_neighbours
-        = {}; // Map of bottom neighbours to their halo sizes after partitioning
-    std::map<int, int> _left_neighbours
-        = {}; // Map of bottom neighbours to their halo sizes after partitioning
+    int _total_num_procs = -1; // Total number of processes in communicator
+    const int NDIMS = 2; // Number of dimensions
+    const int NNBRS = 2 * NDIMS; // Number of neighbours (two per dimension)
+
+    // Letters used for each dimension
+    std::vector<std::string> dim_chars = { "x", "y" };
+
+    // Letters used for each direction
+    std::vector<std::string> dir_chars = { "L", "R", "B", "T" };
+
+    // Names used for each direction
+    std::vector<std::string> dir_names = { "left", "right", "bottom", "top" };
+
+    // Names used for global dimension extents
+    std::vector<std::string> global_extent_names = { "NX", "NY" };
+
+    // Total number of processes in each dimension
+    std::vector<int> _num_procs = std::vector<int>(NDIMS, -1);
+
+    // Global extents in each extension (blocking)
+    std::vector<int> _global_ext = std::vector<int>(NDIMS, 0);
+
+    // Local extents in each dimension (original, blocking)
+    std::vector<int> _local_ext = std::vector<int>(NDIMS, 0);
+
+    // Global coordinates of upper left corner (original, blocking)
+    std::vector<int> _global = std::vector<int>(NDIMS, -1);
+
+    // Local extents in each dimension (after partitioning)
+    std::vector<int> _local_ext_new = std::vector<int>(NDIMS, 0);
+
+    // Global coordinates of upper left corner (after partitioning)
+    std::vector<int> _global_new = std::vector<int>(NDIMS, -1);
+
+    // Process ids of partition (dense form)
+    std::vector<int> _proc_id = {};
+
+    // Vector of maps of neighbours to their halo sizes after partitioning
+    std::vector<std::map<int, int>> _neighbours = std::vector<std::map<int, int>>(NNBRS);
 
 public:
     struct LIB_EXPORT Factory {
