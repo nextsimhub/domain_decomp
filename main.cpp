@@ -46,15 +46,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // remove block options from command line. Currently, nextsimdg does not use
-    // the concept of blocks. (See issue
-    // https://github.com/nextsimhub/domain_decomp/issues/39)
-    int blk0 = 1;
-    int blk1 = 1;
-
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["dim0"].as<string>(),
-        vm["dim1"].as<string>(), vm["mask"].as<string>(), blk0, blk1, vm["ignore-mask"].as<bool>());
+        vm["dim1"].as<string>(), vm["mask"].as<string>(), vm["ignore-mask"].as<bool>());
 
     // Create a Zoltan partitioner
     Partitioner* partitioner
