@@ -4,8 +4,8 @@
  * @date 11 Sep 2024
  */
 
-#include "ZoltanPartitioner.hpp"
 #include "Utils.hpp"
+#include "ZoltanPartitioner.hpp"
 
 #include <algorithm>
 #include <cfloat>
@@ -97,16 +97,12 @@ void ZoltanPartitioner::partition(Grid& grid)
     _num_procs[1] = grid.get_num_procs_1();
     _global_ext[0] = grid.get_global_ext_0();
     _global_ext[1] = grid.get_global_ext_1();
-    std::vector<int> blk_factors = { grid.get_blk_factor_0(), grid.get_blk_factor_1() };
     grid.get_bounding_box(_global[0], _global[1], _local_ext[0], _local_ext[1]);
 
     if (_total_num_procs == 1) {
         for (int idx = 0; idx < 2; idx++) {
             _global_new[idx] = _global[idx];
             _local_ext_new[idx] = _local_ext[idx];
-            // Adapt to blocking
-            _global_new[idx] *= blk_factors[idx];
-            _local_ext_new[idx] *= blk_factors[idx];
         }
 
         if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
@@ -191,11 +187,8 @@ void ZoltanPartitioner::partition(Grid& grid)
     }
 
     // Adapt to blocking
-    std::vector<int> global_ext_orig
-        = { grid.get_global_ext_orig_0(), grid.get_global_ext_orig_1() };
+    std::vector<int> global_ext_orig = { grid.get_global_ext_0(), grid.get_global_ext_1() };
     for (int idx = 0; idx < 2; idx++) {
-        _global_new[idx] *= blk_factors[idx];
-        _local_ext_new[idx] *= blk_factors[idx];
         if (_global_new[idx] + _local_ext_new[idx] > global_ext_orig[idx]) {
             _local_ext_new[idx] = global_ext_orig[idx] - _global_new[idx];
         }
@@ -223,6 +216,11 @@ void ZoltanPartitioner::partition(Grid& grid)
         for (int i = 0; i < num_export; i++) {
             _proc_id[export_local_ids[i]] = export_procs[i];
         }
+    }
+
+    for (int idx = 0; idx < 2; idx++) {
+        _global[idx] = _global_new[idx];
+        _local_ext[idx] = _local_ext_new[idx];
     }
 
     // Free the arrays allocated by Zoltan

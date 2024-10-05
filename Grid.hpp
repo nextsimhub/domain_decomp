@@ -70,83 +70,76 @@ public:
      * @param dim0_name Name of 1st grid dimension in netCDF file (optional)
      * @param dim1_name Name of 2nd grid dimension in netCDF file (optional)
      * @param mask_name Name of land mask variable in netCDF file (optional)
-     * @param blk_dim0 Blocking factor in 1st grid dimension (optional)
-     * @param blk_dim1 Blocking factor in 2nd grid dimension (optional)
      * @return A distributed 2D grid object partitioned evenly in terms of grid
      * points.
      */
     // We are using the named constructor idiom so that objects can only be
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
     static Grid* create(MPI_Comm comm, const std::string& filename, bool ignore_mask = false);
-    static Grid* create(MPI_Comm comm, const std::string& filename, int blk_dim0, int blk_dim1,
-        bool ignore_mask = false);
     static Grid* create(MPI_Comm comm, const std::string& filename, const std::string dim0_name,
         const std::string dim1_name, const std::string mask_name, bool ignore_mask = false);
-    static Grid* create(MPI_Comm comm, const std::string& filename, const std::string dim0_name,
-        const std::string dim1_name, const std::string mask_name, int blk_dim0, int blk_dim1,
-        bool ignore_mask = false);
 
     /*!
-     * @brief Returns the global extent in the 1st dimension of the grid. If
-     * blocking is used, then the information returned is at the block level.
-     *
-     * @return Global extent in 1st dimension.
-     */
-    int get_global_ext_0() const;
-
-    /*!
-     * @brief Returns the global extent in the 2nd dimension of the grid. If
-     * blocking is used, then the information returned is at the block level.
-     *
-     * @return Global extent in 2nd dimension.
-     */
-    int get_global_ext_1() const;
-
-    /*!
-     * @brief Returns the global extent in the 1st dimension of the grid ignoring
-     * blocking.
-     *
-     * @return Global extent in 1st dimension.
-     */
-    int get_global_ext_orig_0() const;
-
-    /*!
-     * @brief Returns the global extent in the 2nd dimension of the grid ignoring
-     * blocking.
-     *
-     * @return Global extent in 2nd dimension.
-     */
-    int get_global_ext_orig_1() const;
-
-    /*!
-     * @brief Returns the blocking factor in the 1st dimension of the grid.
-     *
-     * @return Blocking factor in 1st dimension.
-     */
-    int get_blk_factor_0() const;
-
-    /*!
-     * @brief Returns the blocking factor in the 2nd dimension of the grid.
-     *
-     * @return Blocking factor in 2nd dimension.
-     */
-    int get_blk_factor_1() const;
-
-    /*!
-     * @brief Returns the total number of objects in the local domain. If blocking
-     * is used, then the information returned is at the block level.
+     * @brief Returns the total number of objects in the local domain.
      *
      * @return Total number of objects in the local domain.
      */
     int get_num_objects() const;
 
     /*!
-     * @brief Returns the number of non-land objects in the local domain. If
-     * blocking is used, then the information returned is at the block level.
+     * @brief Returns the number of non-land objects in the local domain.
      *
      * @return Number of non-land objects in the local domain.
      */
     int get_num_nonzero_objects() const;
+
+    /*!
+     * @brief Returns the global extent in the 1st dimension of the grid.
+     *
+     * @return Global extent in 1st dimension.
+     */
+    int get_global_ext_0() const;
+
+    /*!
+     * @brief Returns the global extent in the 2nd dimension of the grid.
+     *
+     * @return Global extent in 2nd dimension.
+     */
+    int get_global_ext_1() const;
+
+    /*!
+     * @brief Returns the local extent in the first dimension of the grid of this
+     * process's partition.
+     *
+     * @return Local extent in first dimension.
+     */
+    int get_local_ext_0() const;
+
+    /*!
+     * @brief Returns the local extent in the second dimension of the grid of this
+     * process's partition.
+     *
+     * @return Local extent in second dimension.
+     */
+    int get_local_ext_1() const;
+
+    /*!
+     * @brief Returns the global coordinate in the first dimension of the upper
+     * left corner in this process's partition.
+     *
+     * @return Global coordinate in the first dimension of the upper left corner
+     * in this process's partition.
+     */
+    int get_global_0() const;
+
+    /*!
+     * @brief Returns the global coordinate in the second dimension of the upper
+     * left corner in this process's partition.
+     *
+     * @return Global coordinate in the second dimension of the upper left corner
+     * in this process's partition.
+     */
+    int get_global_1() const;
 
     /*!
      * @brief Returns the number of processes in the 1st dimension of the grid.
@@ -165,8 +158,7 @@ public:
     /*!
      * @brief Returns the global land mask dimensioned (dim0, dim1), where dim0 is
      * the 1st dimension and dim1 is the 2nd, with dim1 varying the fastest in
-     * terms of storage. If blocking is used, then the information returned is at
-     * the block level.
+     * terms of storage.
      *
      * @return Global land mask.
      */
@@ -175,8 +167,7 @@ public:
     /*!
      * @brief Returns the index mapping of sparse to dense representation, where
      * dim0 is the 1st dimension and dim1 is the 2nd, with dim1 varying the
-     * fastest in terms of storage. If blocking is used, then the information
-     * returned is at the block level.
+     * fastest in terms of storage.
      *
      * @return Index mapping of sparse to dense representation.
      */
@@ -185,21 +176,17 @@ public:
     /*!
      * @brief Returns the IDs of the non-land objects in the local domain, where
      * dim0 is the 1st dimension and dim1 is the 2nd, with dim1 varying the
-     * fastest in terms of storage. If blocking is used, then the information
-     * returned is at the block level.
+     * fastest in terms of storage.
      *
      * @return IDs of the non-land objects in the local domain.
      */
     const int* get_nonzero_object_ids() const;
 
     /*!
-     * @brief Returns the bounding box for this process. If blocking is used, then
-     * the information returned is at the block level.
+     * @brief Returns the bounding box for this process.
      *
-     * @param global_0 Global coordinate in the 1st dimension of the upper left
-     * corner.
-     * @param global_1 Global coordinate in the 2nd dimension of the upper left
-     * corner.
+     * @param global_0 Global coordinate in the 1st dimension of the upper left corner.
+     * @param global_1 Global coordinate in the 2nd dimension of the upper left corner.
      * @param local_ext_0 Local extent in the 1st dimension of the grid.
      * @param local_ext_1 Local extent in the 2nd dimension of the grid.
      */
@@ -208,8 +195,8 @@ public:
 private:
     // Construct a ditributed grid from a NetCDF file describing the global domain
     Grid(MPI_Comm comm, const std::string& filename, const std::string& dim0_id = "x",
-        const std::string& dim1_id = "y", const std::string& mask_id = "mask", int blk0 = 1,
-        int blk1 = 1, bool ignore_mask = false);
+        const std::string& dim1_id = "y", const std::string& mask_id = "mask",
+        bool ignore_mask = false);
 
 private:
     MPI_Comm _comm; // MPI communicator
@@ -217,30 +204,17 @@ private:
     int _num_procs = -1; // Total number of processes in communicator
     int _num_procs_0 = -1; // Total number of processes in 1st dimension
     int _num_procs_1 = -1; // Total number of processes in 2nd dimension
-    int _blk_factor_0 = 1; // Blocking factor in 1st dimension
-    int _blk_factor_1 = 1; // Blocking factor in 2nd dimension
     int _global_ext_0 = 0; // Global extent in 1st dimension
     int _global_ext_1 = 0; // Global extent in 2nd dimension
-    int _global_ext_blk_0 = 0; // Global extent in 1st dimension (blocking)
-    int _global_ext_blk_1 = 0; // Global extent in 2nd dimension (blocking)
     int _local_ext_0 = 0; // Local extent in 1st dimension
     int _local_ext_1 = 0; // Local extent in 2nd dimension
-    int _local_ext_blk_0 = 0; // Local extent in 1st dimension (blocking)
-    int _local_ext_blk_1 = 0; // Local extent in 2nd dimension (blocking)
     int _global_0 = -1; // Upper left corner global coordinate in 1st dimension
     int _global_1 = -1; // Upper left corner global coordinate in 2nd dimension
-    int _global_blk_0 = -1; /* Upper left corner global coordinate in 1st
-                               dimension (blocking) */
-    int _global_blk_1 = -1; /* Upper left corner global coordinate in 2nd
-                               dimension (blocking) */
     int _num_objects = 0; // Number of grid points ignoring land mask
-    int _num_blks = 0; // Number of grid blocks ignoring land mask
     int _num_nonzero_objects = 0; // Number of non-land grid points
-    int _num_nonzero_blks = 0; // Number of non-land grid blocks
-    std::vector<int> _land_mask = {}; // Land mask values of grid bGpoints
-    std::vector<int> _land_mask_blk = {}; // Land mask values of grid blocks
-    std::vector<int> _sparse_to_dense = {}; // Map from sparse to dense index of blocks
-    std::vector<int> _object_id = {}; // Unique non-land grid block IDs
+    std::vector<int> _land_mask = {}; // Land mask values
+    std::vector<int> _sparse_to_dense = {}; // Map from sparse to dense index
+    std::vector<int> _object_id = {}; // Unique non-land grid point IDs
 };
 
 #define NC_CHECK(func)                                                                             \

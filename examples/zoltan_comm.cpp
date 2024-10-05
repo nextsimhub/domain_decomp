@@ -50,8 +50,7 @@ int main(int argc, char* argv[])
 
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["dim0"].as<string>(),
-        vm["dim1"].as<string>(), vm["mask"].as<string>(), vm["blk0"].as<int>(),
-        vm["blk1"].as<int>(), vm["ignore-mask"].as<bool>());
+        vm["dim1"].as<string>(), vm["mask"].as<string>(), vm["ignore-mask"].as<bool>());
 
     // Create a Zoltan partitioner
     Partitioner* partitioner
