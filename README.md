@@ -1,5 +1,11 @@
 # Domain Decomposition for neXtSIM_DG
 
+## Coding conventions
+
+We follow the same [criteria](https://github.com/nextsimhub/nextsimdg?tab=readme-ov-file#coding-conventions) as those used in the `neXtSIM_DG` project.
+
+A [dedicated clang format file](https://github.com/nextsimhub/nextsimdg/blob/main/.clang-format) has been designed for the code. You may run it locally and manually with the command ```clang-format -i $yourfile``` or have a plugin with your favorite code editor or implement a git pre-commit hook locally by putting this pre-commit file in your .git/hooks/. An example pre-commit file can be found at [.pre-commit](https://github.com/nextsimhub/nextsimdg/blob/658_pre-commit-date/.pre-commit). This clang formatting will also be run each time a pull request is done as part of the continuous integration.
+
 ## Problem Statement
 
 We address the problem of domain decomposition of numerical ocean and sea-ice models. Such models typically use a sea-land mask to omit unnecessary computations on land. A typical approach is to use a cartesian (or rectilinear or general block distribution) domain decomposition among processors, where the domain is divided in equally sized sub-domains, ignoring the sea-land mask. This, however, may lead to significant load imbalance which impedes scalability.
