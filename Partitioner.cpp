@@ -130,12 +130,14 @@ void Partitioner::save_metadata(const std::string& filename) const
     int num_vid[NNBRS];
     int ids_vid[NNBRS];
     int halos_vid[NNBRS];
-    for (int idx = 0; idx < NNBRS; idx++) {
+    for (int idx = 0; idx < NDIMS; idx++) {
         // Bounding boxes group
         NC_CHECK(nc_def_var(
             bbox_gid, ("domain_" + dim_chars[idx]).c_str(), NC_INT, 1, &dimid, &top_vid[idx]));
         NC_CHECK(nc_def_var(bbox_gid, ("domain_extent_" + dim_chars[idx]).c_str(), NC_INT, 1,
             &dimid, &cnt_vid[idx]));
+    }
+    for (int idx = 0; idx < NNBRS; idx++) {
         // Connectivity group
         NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbours").c_str(), NC_INT, 1,
             &dimid, &num_vid[idx]));
