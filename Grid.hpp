@@ -198,6 +198,21 @@ private:
         const std::string& dim1_id = "y", const std::string& mask_id = "mask",
         bool ignore_mask = false);
 
+    /*!
+     * @brief Read dims from netcdf grid file.
+     *
+     * @param filename filename of the input netcdf grid file.
+     */
+    void ReadGridDims(const std::string& filename);
+
+    /*!
+     * @brief Read data from netcdf grid file.
+     *
+     * @param filename filename of the input netcdf grid file.
+     * @param mask_name name of the land mask in the grid file.
+     */
+    void ReadGridMask(const std::string& filename, const std::string& mask_name);
+
 private:
     MPI_Comm _comm; // MPI communicator
     int _rank = -1; // Process rank
@@ -212,6 +227,8 @@ private:
     int _global_1 = -1; // Upper left corner global coordinate in 2nd dimension
     int _num_objects = 0; // Number of grid points ignoring land mask
     int _num_nonzero_objects = 0; // Number of non-land grid points
+    const std::string& _dim0_name; // dim0 name
+    const std::string& _dim1_name; // dim1 name
     std::vector<int> _land_mask = {}; // Land mask values
     std::vector<int> _sparse_to_dense = {}; // Map from sparse to dense index
     std::vector<int> _object_id = {}; // Unique non-land grid point IDs
