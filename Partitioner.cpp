@@ -4,6 +4,7 @@
  * @date 12 Sep 2024
  */
 
+#include "DomainUtils.hpp"
 #include "Partitioner.hpp"
 #include "Utils.hpp"
 #include "ZoltanPartitioner.hpp"
@@ -184,87 +185,115 @@ Partitioner* Partitioner::Factory::create(
 
 void Partitioner::discover_neighbours()
 {
+    /*
+
+       In the netcdf file data are stored in this order
+     O┌───►X
+      │                             20           30
+      │  0 ┌─────────────────────────┬────────────┐
+     Y▼    │                         │            │
+           │                         │            │
+           │            0            │            │
+           │                         │            │
+           │                         │            │
+        12 ├─────────────────────────┤      2     │
+           │                         │            │
+           │                         │            │
+           │            1            │            │
+           │                         │            │
+           │                         │            │
+        24 └─────────────────────────┴────────────┘
+
+
+        But in the calculation of TLBR neighbours we need to flip the Y-axis
+
+                                    20           30
+        24 ┌─────────────────────────┬────────────┐
+           │                         │            │
+           │                         │            │
+           │            1            │            │
+           │                         │            │
+           │                         │            │
+        12 ├─────────────────────────┤      2     │
+           │                         │            │
+           │                         │            │
+           │            0            │            │
+           │                         │            │
+     Y▲    │                         │            │
+      │  0 └─────────────────────────┴────────────┘
+      │
+     0└───►X
+     */
+
     // Gather bounding boxes for all processes
-    std::vector<int> top_left_0(_total_num_procs, -1);
-    std::vector<int> top_left_1(_total_num_procs, -1);
-    std::vector<int> top_right_0(_total_num_procs, -1);
-    std::vector<int> top_right_1(_total_num_procs, -1);
-    std::vector<int> bottom_left_0(_total_num_procs, -1);
-    std::vector<int> bottom_left_1(_total_num_procs, -1);
-    std::vector<int> bottom_right_0(_total_num_procs, -1);
-    std::vector<int> bottom_right_1(_total_num_procs, -1);
-    CHECK_MPI(MPI_Allgather(&_global_new[0], 1, MPI_INT, top_left_0.data(), 1, MPI_INT, _comm));
-    CHECK_MPI(MPI_Allgather(&_global_new[1], 1, MPI_INT, top_left_1.data(), 1, MPI_INT, _comm));
-    CHECK_MPI(
-        MPI_Allgather(&_local_ext_new[0], 1, MPI_INT, bottom_right_0.data(), 1, MPI_INT, _comm));
-    CHECK_MPI(
-        MPI_Allgather(&_local_ext_new[1], 1, MPI_INT, bottom_right_1.data(), 1, MPI_INT, _comm));
+    std::vector<Point> origins(_total_num_procs);
+    std::vector<Point> extents(_total_num_procs);
+    std::vector<Domain> domains(_total_num_procs);
+    std::vector<int> tmp0(_total_num_procs);
+    std::vector<int> tmp1(_total_num_procs);
+
+    CHECK_MPI(MPI_Allgather(&_global_new[0], 1, MPI_INT, tmp0.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_global_new[1], 1, MPI_INT, tmp1.data(), 1, MPI_INT, _comm));
+
+    // origin points mark the bottom-left corner of each domain
     for (int p = 0; p < _total_num_procs; p++) {
-        top_right_0[p] = top_left_0[p];
-        top_right_1[p] = top_left_1[p] + bottom_right_1[p] - 1;
-        bottom_left_0[p] = top_left_0[p] + bottom_right_0[p] - 1;
-        bottom_left_1[p] = top_left_1[p];
-        bottom_right_0[p] += top_left_0[p] - 1;
-        bottom_right_1[p] += top_left_1[p] - 1;
+        origins[p].x = tmp0[p];
+        origins[p].y = tmp1[p];
+    }
+
+    CHECK_MPI(MPI_Allgather(&_local_ext_new[0], 1, MPI_INT, tmp0.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_local_ext_new[1], 1, MPI_INT, tmp1.data(), 1, MPI_INT, _comm));
+
+    // extents can be used to find the top-right corner of each domain
+    for (int p = 0; p < _total_num_procs; p++) {
+        extents[p].x = tmp0[p];
+        extents[p].y = tmp1[p];
+    }
+
+    // generate domains
+    for (int p = 0; p < _total_num_procs; p++) {
+        domains[p].p1.x = origins[p].x;
+        domains[p].p1.y = origins[p].y;
+        domains[p].p2.x = origins[p].x + extents[p].x;
+        domains[p].p2.y = origins[p].y + extents[p].y;
     }
 
     for (int p = 0; p < _total_num_procs; p++) {
         if (p != _rank) {
 
             // Find my left neighbours
-            if (top_left_0[_rank] >= top_right_0[p] && top_left_0[_rank] <= bottom_right_0[p]
-                && bottom_left_0[_rank] <= bottom_right_0[p]
-                && (top_left_1[_rank] - top_right_1[p] == 1)) {
-                int halo_size = bottom_right_0[p] - top_left_0[_rank] + 1;
-                _neighbours[0].insert(std::pair<int, int>(p, halo_size));
-            }
-            if (bottom_left_0[_rank] >= top_right_0[p] && bottom_left_0[_rank] <= bottom_right_0[p]
-                && top_left_0[_rank] <= top_right_0[p]
-                && (bottom_left_1[_rank] - top_right_1[p] == 1)) {
-                int halo_size = bottom_left_0[_rank] - top_right_0[p] + 1;
-                _neighbours[0].insert(std::pair<int, int>(p, halo_size));
+            // i.e., the left edge of domain[_rank] has to match the right edge of domain[p]
+            if (domains[_rank].p1.x == domains[p].p2.x) {
+                // next compute overlap (if overlap is zero then they are not neighbours)
+                // domain overlap is equivalent to the amount of data transfered in halo exchnage.
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
+                if (halo_size) {
+                    _neighbours[0].insert(std::pair<int, int>(p, halo_size));
+                }
             }
 
             // Find my right neighbours
-            if (top_right_0[_rank] >= top_left_0[p] && top_right_0[_rank] <= bottom_left_0[p]
-                && bottom_right_0[_rank] >= bottom_left_0[p]
-                && (top_left_1[p] - top_right_1[_rank] == 1)) {
-                int halo_size = bottom_left_0[p] - top_right_0[_rank] + 1;
-                _neighbours[1].insert(std::pair<int, int>(p, halo_size));
+            if (domains[_rank].p2.x == domains[p].p1.x) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
+                if (halo_size) {
+                    _neighbours[1].insert(std::pair<int, int>(p, halo_size));
+                }
             }
-            if (bottom_right_0[_rank] >= top_left_0[p] && bottom_right_0[_rank] <= bottom_left_0[p]
-                && top_right_0[_rank] <= top_left_0[p]
-                && (top_left_1[p] - top_right_1[_rank] == 1)) {
-                int halo_size = bottom_right_0[_rank] - top_left_0[p] + 1;
-                _neighbours[1].insert(std::pair<int, int>(p, halo_size));
+
+            // Find my top neighbours
+            if (domains[_rank].p2.y == domains[p].p1.y) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
+                if (halo_size) {
+                    _neighbours[2].insert(std::pair<int, int>(p, halo_size));
+                }
             }
 
             // Find my bottom neighbours
-            if (bottom_left_1[_rank] >= top_left_1[p] && bottom_left_1[_rank] <= top_right_1[p]
-                && top_right_1[p] <= bottom_right_1[_rank]
-                && (top_left_0[p] - bottom_left_0[_rank] == 1)) {
-                int halo_size = top_right_1[p] - bottom_left_1[_rank] + 1;
-                _neighbours[2].insert(std::pair<int, int>(p, halo_size));
-            }
-            if (bottom_right_1[_rank] >= top_left_1[p] && bottom_right_1[_rank] <= top_right_1[p]
-                && top_left_1[p] >= bottom_left_1[_rank]
-                && (top_right_0[p] - bottom_right_0[_rank] == 1)) {
-                int halo_size = bottom_right_1[_rank] - top_left_1[p] + 1;
-                _neighbours[2].insert(std::pair<int, int>(p, halo_size));
-            }
-
-            // Find my top neighbours and their halo sizes
-            if (top_left_1[_rank] >= bottom_left_1[p] && top_left_1[_rank] <= bottom_right_1[p]
-                && bottom_right_1[p] <= top_right_1[_rank]
-                && (top_left_0[_rank] - bottom_left_0[p] == 1)) {
-                int halo_size = bottom_right_1[p] - top_left_1[_rank] + 1;
-                _neighbours[3].insert(std::pair<int, int>(p, halo_size));
-            }
-            if (top_right_1[_rank] >= bottom_left_1[p] && top_right_1[_rank] <= bottom_right_1[p]
-                && bottom_left_1[p] >= top_left_1[_rank]
-                && (top_right_0[_rank] - bottom_right_0[p] == 1)) {
-                int halo_size = top_right_1[_rank] - bottom_left_1[p] + 1;
-                _neighbours[3].insert(std::pair<int, int>(p, halo_size));
+            if (domains[_rank].p1.y == domains[p].p2.y) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
+                if (halo_size) {
+                    _neighbours[3].insert(std::pair<int, int>(p, halo_size));
+                }
             }
         }
     }

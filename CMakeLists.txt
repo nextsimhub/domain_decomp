@@ -58,6 +58,7 @@ add_compile_options(-Wall -Wextra -pedantic -fPIC)
 # Library
 add_library(${LIB_NAME} SHARED
   ${PROJECT_SOURCE_DIR}/Grid.cpp
+  ${PROJECT_SOURCE_DIR}/DomainUtils.cpp
   ${PROJECT_SOURCE_DIR}/Partitioner.cpp
   ${PROJECT_SOURCE_DIR}/ZoltanPartitioner.cpp
   )
@@ -87,7 +88,7 @@ target_include_directories(${LIB_NAME}
   )
 # Set the header files that need to be installed
 set_target_properties(${LIB_NAME} PROPERTIES
-  PUBLIC_HEADER "Grid.hpp;Partitioner.hpp"
+  PUBLIC_HEADER "Grid.hpp;Partitioner.hpp;DomainUtils.hpp"
   )
 # Create import targets
 install(TARGETS ${LIB_NAME}
@@ -104,6 +105,7 @@ install(EXPORT ${PROJECT_NAME}
 
 # Executable
 add_executable(${EXEC_NAME}
+  ${PROJECT_SOURCE_DIR}/DomainUtils.cpp
   ${PROJECT_SOURCE_DIR}/Grid.cpp
   ${PROJECT_SOURCE_DIR}/Partitioner.cpp
   ${PROJECT_SOURCE_DIR}/ZoltanPartitioner.cpp
