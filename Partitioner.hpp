@@ -128,13 +128,13 @@ protected:
     // Total number of processes in each dimension
     std::vector<int> _num_procs = std::vector<int>(NDIMS, -1);
 
-    // Global extents in each extension (blocking)
+    // Global extents in each dimension
     std::vector<int> _global_ext = std::vector<int>(NDIMS, 0);
 
-    // Local extents in each dimension (original, blocking)
+    // Local extents in each dimension
     std::vector<int> _local_ext = std::vector<int>(NDIMS, 0);
 
-    // Global coordinates of upper left corner (original, blocking)
+    // Global coordinates of upper left corner
     std::vector<int> _global = std::vector<int>(NDIMS, -1);
 
     // Local extents in each dimension (after partitioning)

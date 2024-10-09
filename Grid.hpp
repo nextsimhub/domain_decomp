@@ -76,8 +76,9 @@ public:
     // We are using the named constructor idiom so that objects can only be
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
     static Grid* create(MPI_Comm comm, const std::string& filename, bool ignore_mask = false);
-    static Grid* create(MPI_Comm comm, const std::string& filename, const std::string dim0_name,
-        const std::string dim1_name, const std::string mask_name, bool ignore_mask = false);
+    static Grid* create(MPI_Comm comm, const std::string& filename, const std::string xdim_name,
+        const std::string ydim_name, const std::vector<int> dim_order, const std::string mask_name,
+        bool ignore_mask = false);
 
     /*!
      * @brief Returns the total number of objects in the local domain.
@@ -195,15 +196,16 @@ public:
 private:
     // Construct a ditributed grid from a NetCDF file describing the global domain
     Grid(MPI_Comm comm, const std::string& filename, const std::string& dim0_id = "x",
-        const std::string& dim1_id = "y", const std::string& mask_id = "mask",
-        bool ignore_mask = false);
+        const std::string& dim1_id = "y",
+        const std::vector<int>& dim_order = std::vector<int>({ 1, 0 }),
+        const std::string& mask_id = "mask", bool ignore_mask = false);
 
     /*!
      * @brief Read dims from netcdf grid file.
      *
      * @param filename filename of the input netcdf grid file.
      */
-    void ReadGridDims(const std::string& filename);
+    void ReadGridExtents(const std::string& filename);
 
     /*!
      * @brief Read data from netcdf grid file.
@@ -213,25 +215,43 @@ private:
      */
     void ReadGridMask(const std::string& filename, const std::string& mask_name);
 
+public:
+    static const int NDIMS = 2;
+
 private:
     MPI_Comm _comm; // MPI communicator
     int _rank = -1; // Process rank
-    int _num_procs = -1; // Total number of processes in communicator
-    int _num_procs_0 = -1; // Total number of processes in 1st dimension
-    int _num_procs_1 = -1; // Total number of processes in 2nd dimension
-    int _global_ext_0 = 0; // Global extent in 1st dimension
-    int _global_ext_1 = 0; // Global extent in 2nd dimension
-    int _local_ext_0 = 0; // Local extent in 1st dimension
-    int _local_ext_1 = 0; // Local extent in 2nd dimension
-    int _global_0 = -1; // Upper left corner global coordinate in 1st dimension
-    int _global_1 = -1; // Upper left corner global coordinate in 2nd dimension
+    int _total_num_procs = -1; // Total number of processes in communicator
+
+    // Total number of processes in each dimension
+    std::vector<int> _num_procs = std::vector<int>(NDIMS, -1);
+
+    // Global extents in each dimension
+    std::vector<int> _global_ext = std::vector<int>(NDIMS, 0);
+
+    // Local extents in each dimension
+    std::vector<int> _local_ext = std::vector<int>(NDIMS, 0);
+
+    // Global coordinates of upper left corner
+    std::vector<int> _global = std::vector<int>(NDIMS, -1);
+
+    // Local extents in each dimension (after partitioning)
+    std::vector<int> _local_ext_new = std::vector<int>(NDIMS, 0);
+
+    // Global coordinates of upper left corner (after partitioning)
+    std::vector<int> _global_new = std::vector<int>(NDIMS, -1);
+
+    // dimension names
+    const std::vector<std::string> _dim_names;
+
+    // order of dimensions
+    const std::vector<int> _dim_order;
+
     int _num_objects = 0; // Number of grid points ignoring land mask
     int _num_nonzero_objects = 0; // Number of non-land grid points
-    const std::string& _dim0_name; // dim0 name
-    const std::string& _dim1_name; // dim1 name
     std::vector<int> _land_mask = {}; // Land mask values
-    std::vector<int> _sparse_to_dense = {}; // Map from sparse to dense index
-    std::vector<int> _object_id = {}; // Unique non-land grid point IDs
+    std::vector<int> _local_id = {}; // Map from sparse to dense index
+    std::vector<int> _global_id = {}; // Unique non-land grid point IDs
 };
 
 #define NC_CHECK(func)                                                                             \
