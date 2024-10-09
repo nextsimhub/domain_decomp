@@ -95,66 +95,32 @@ public:
     int get_num_nonzero_objects() const;
 
     /*!
-     * @brief Returns the global extent in the 1st dimension of the grid.
+     * @brief Returns the number of processes.
      *
-     * @return Global extent in 1st dimension.
+     * @return vector containing number of processes in each dimension of the grid
      */
-    int get_global_ext_0() const;
+    std::vector<int> get_num_procs() const;
 
     /*!
-     * @brief Returns the global extent in the 2nd dimension of the grid.
+     * @brief Returns the local extent
      *
-     * @return Global extent in 2nd dimension.
+     * @return vector containing local extent in each dimension of the grid
      */
-    int get_global_ext_1() const;
+    std::vector<int> get_local_ext() const;
 
     /*!
-     * @brief Returns the local extent in the first dimension of the grid of this
-     * process's partition.
+     * @brief Returns the global position of the domain in the grid (bottom left corner of domain)
      *
-     * @return Local extent in first dimension.
+     * @return vector containing the global position
      */
-    int get_local_ext_0() const;
+    std::vector<int> get_global() const;
 
     /*!
-     * @brief Returns the local extent in the second dimension of the grid of this
-     * process's partition.
+     * @brief Returns the global extent
      *
-     * @return Local extent in second dimension.
+     * @return vector containing global extent in each dimension of the grid
      */
-    int get_local_ext_1() const;
-
-    /*!
-     * @brief Returns the global coordinate in the first dimension of the upper
-     * left corner in this process's partition.
-     *
-     * @return Global coordinate in the first dimension of the upper left corner
-     * in this process's partition.
-     */
-    int get_global_0() const;
-
-    /*!
-     * @brief Returns the global coordinate in the second dimension of the upper
-     * left corner in this process's partition.
-     *
-     * @return Global coordinate in the second dimension of the upper left corner
-     * in this process's partition.
-     */
-    int get_global_1() const;
-
-    /*!
-     * @brief Returns the number of processes in the 1st dimension of the grid.
-     *
-     * @return Number of processes in 1st dimension.
-     */
-    int get_num_procs_0() const;
-
-    /*!
-     * @brief Returns the number of processes in the 2nd dimension of the grid.
-     *
-     * @return Number of processes in 2nd dimension.
-     */
-    int get_num_procs_1() const;
+    std::vector<int> get_global_ext() const;
 
     /*!
      * @brief Returns the global land mask dimensioned (dim0, dim1), where dim0 is
