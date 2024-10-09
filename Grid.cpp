@@ -25,7 +25,13 @@ static std::vector<int> find_factors(const int n)
             factor_b = n / factor_a;
         }
     }
-    return { factor_a, factor_b };
+    if (factor_a == -1 || factor_b == -1) {
+        // if factor is not found then use 1D splitting
+        return { n, 1 };
+    } else {
+        // if factor is found then use the 2D factor split
+        return { factor_a, factor_b };
+    }
 }
 
 Grid* Grid::create(MPI_Comm comm, const std::string& filename, bool ignore_mask)
@@ -136,13 +142,8 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_n
     CHECK_MPI(MPI_Comm_size(comm, &_total_num_procs));
 
     // Initially we partition assuming there is no land mask
-
-    // Start from a 2D decomposition (if 4 or more procs, otherwise use 1D)
-    if (_total_num_procs < 4) {
-        _num_procs = { _total_num_procs, 1 };
-    } else {
-        _num_procs = find_factors(_total_num_procs);
-    }
+    // Start from a naive 2D decomposition
+    _num_procs = find_factors(_total_num_procs);
 
     // split into chunks
     for (size_t i = 0; i < NDIMS; i++) {
