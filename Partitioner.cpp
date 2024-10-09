@@ -54,11 +54,12 @@ void Partitioner::save_mask(const std::string& filename) const
     // The values to be written are associated with the netCDF variable by
     // assuming that the last dimension of the netCDF variable varies fastest in
     // the C interface
-    const int NDIMS = 2; // TODO: Why redeclared?
     int dimid[NDIMS];
-    std::vector<std::string> dim_chars = { "x", "y" };
+    // for nextsimdg code we always want the output in the order of yx
+    std::vector<std::string> dim_chars = { "y", "x" };
     for (int idx = 0; idx < NDIMS; idx++) {
-        NC_CHECK(nc_def_dim(nc_id, dim_chars[idx].c_str(), _global_ext[idx], &dimid[idx]));
+        NC_CHECK(
+            nc_def_dim(nc_id, dim_chars[idx].c_str(), _global_ext[NDIMS - 1 - idx], &dimid[idx]));
     }
 
     // Create variables
@@ -71,8 +72,8 @@ void Partitioner::save_mask(const std::string& filename) const
     // Set up slab for this process
     size_t start[NDIMS], count[NDIMS];
     for (int idx = 0; idx < NDIMS; idx++) {
-        start[idx] = _global[idx];
-        count[idx] = _local_ext[idx];
+        start[idx] = _global[NDIMS - 1 - idx];
+        count[idx] = _local_ext[NDIMS - 1 - idx];
     }
 
     // Store data
