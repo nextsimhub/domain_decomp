@@ -110,8 +110,8 @@ protected:
     MPI_Comm _comm; // MPI communicator
     int _rank = -1; // Process rank
     int _total_num_procs = -1; // Total number of processes in communicator
-    const int NDIMS = 2; // Number of dimensions
-    const int NNBRS = 2 * NDIMS; // Number of neighbours (two per dimension)
+    static const int NDIMS = 2; // Number of dimensions
+    static const int NNBRS = 2 * NDIMS; // Number of neighbours (two per dimension)
 
     // Letters used for each dimension
     std::vector<std::string> dim_chars = { "x", "y" };
