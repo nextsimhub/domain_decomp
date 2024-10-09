@@ -173,9 +173,9 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_n
             // and land points a zero value
             if (_land_mask[i] > 0) {
                 // find index position in the global grid
-                int temp_i = i % _local_ext[0];
-                int temp_j = i / _local_ext[0];
-                _global_id.push_back(temp_j * _global_ext[0] + _global[0] + temp_i);
+                int temp_i = i % _local_ext[0] + _global[0];
+                int temp_j = i / _local_ext[0] + _global[1];
+                _global_id.push_back(temp_j * _global_ext[0] + temp_i);
                 // store local id for mapping
                 _local_id.push_back(i);
                 _num_nonzero_objects++;
@@ -196,21 +196,13 @@ int Grid::get_num_objects() const { return _num_objects; }
 
 int Grid::get_num_nonzero_objects() const { return _num_nonzero_objects; }
 
-int Grid::get_global_ext_0() const { return _global_ext[0]; }
+std::vector<int> Grid::get_num_procs() const { return _num_procs; }
 
-int Grid::get_global_ext_1() const { return _global_ext[1]; }
+std::vector<int> Grid::get_global_ext() const { return _global_ext; }
 
-int Grid::get_local_ext_0() const { return _local_ext[0]; }
+std::vector<int> Grid::get_local_ext() const { return _local_ext; }
 
-int Grid::get_local_ext_1() const { return _local_ext[1]; }
-
-int Grid::get_global_0() const { return _global[0]; }
-
-int Grid::get_global_1() const { return _global[1]; }
-
-int Grid::get_num_procs_0() const { return _num_procs[0]; }
-
-int Grid::get_num_procs_1() const { return _num_procs[1]; }
+std::vector<int> Grid::get_global() const { return _global; }
 
 const int* Grid::get_land_mask() const { return _land_mask.data(); }
 

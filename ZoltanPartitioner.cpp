@@ -59,8 +59,8 @@ static void get_geometry_list(void* data, int num_gid_entries, int num_lid_entri
 
     // Use grid coordinates
     for (int i = 0; i < num_obj; i++) {
-        geom_vec[2 * i] = grid->get_nonzero_object_ids()[i] / grid->get_global_ext_1();
-        geom_vec[2 * i + 1] = grid->get_nonzero_object_ids()[i] % grid->get_global_ext_1();
+        geom_vec[2 * i] = grid->get_nonzero_object_ids()[i] % grid->get_global_ext()[0];
+        geom_vec[2 * i + 1] = grid->get_nonzero_object_ids()[i] / grid->get_global_ext()[0];
     }
 
     return;
@@ -93,10 +93,8 @@ ZoltanPartitioner* ZoltanPartitioner::create(MPI_Comm comm, int argc, char** arg
 void ZoltanPartitioner::partition(Grid& grid)
 {
     // Load initial grid state
-    _num_procs[0] = grid.get_num_procs_0();
-    _num_procs[1] = grid.get_num_procs_1();
-    _global_ext[0] = grid.get_global_ext_0();
-    _global_ext[1] = grid.get_global_ext_1();
+    _num_procs = grid.get_num_procs();
+    _global_ext = grid.get_global_ext();
     grid.get_bounding_box(_global[0], _global[1], _local_ext[0], _local_ext[1]);
 
     if (_total_num_procs == 1) {
@@ -187,7 +185,7 @@ void ZoltanPartitioner::partition(Grid& grid)
     }
 
     // Adapt to blocking
-    std::vector<int> global_ext_orig = { grid.get_global_ext_0(), grid.get_global_ext_1() };
+    std::vector<int> global_ext_orig = grid.get_global_ext();
     for (int idx = 0; idx < 2; idx++) {
         if (_global_new[idx] + _local_ext_new[idx] > global_ext_orig[idx]) {
             _local_ext_new[idx] = global_ext_orig[idx] - _global_new[idx];
@@ -216,11 +214,6 @@ void ZoltanPartitioner::partition(Grid& grid)
         for (int i = 0; i < num_export; i++) {
             _proc_id[export_local_ids[i]] = export_procs[i];
         }
-    }
-
-    for (int idx = 0; idx < 2; idx++) {
-        _global[idx] = _global_new[idx];
-        _local_ext[idx] = _local_ext_new[idx];
     }
 
     // Free the arrays allocated by Zoltan
