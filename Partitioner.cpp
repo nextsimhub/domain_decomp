@@ -281,16 +281,16 @@ void Partitioner::discover_neighbours()
                 }
             }
 
-            // Find my top neighbours
-            if (domains[_rank].p2.y == domains[p].p1.y) {
+            // Find my bottom neighbours
+            if (domains[_rank].p1.y == domains[p].p2.y) {
                 int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
                 if (halo_size) {
                     _neighbours[2].insert(std::pair<int, int>(p, halo_size));
                 }
             }
 
-            // Find my bottom neighbours
-            if (domains[_rank].p1.y == domains[p].p2.y) {
+            // Find my top neighbours
+            if (domains[_rank].p2.y == domains[p].p1.y) {
                 int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
                 if (halo_size) {
                     _neighbours[3].insert(std::pair<int, int>(p, halo_size));
