@@ -13,9 +13,15 @@ int domainOverlap(const Domain d1, const Domain d2, const char dir)
 {
     int overlap = 0;
     if (dir == 'x') {
-        overlap = std::min(d1.p2.x, d2.p2.x) - std::max(d1.p1.x, d2.p1.x);
+        // check that domains overlap
+        if (d1.p2.x >= d2.p1.x && d1.p1.x <= d2.p2.x) {
+            overlap = std::min(d1.p2.x, d2.p2.x) - std::max(d1.p1.x, d2.p1.x);
+        }
     } else if (dir == 'y') {
-        overlap = std::min(d1.p2.y, d2.p2.y) - std::max(d1.p1.y, d2.p1.y);
+        // check that domains overlap
+        if (d1.p2.y >= d2.p1.y && d1.p1.y <= d2.p2.y) {
+            overlap = std::min(d1.p2.y, d2.p2.y) - std::max(d1.p1.y, d2.p1.y);
+        }
     } else {
         std::cerr << "ERROR: Unrecognised direction. Please use 'x' or 'y'." << std::endl;
         return 1;
