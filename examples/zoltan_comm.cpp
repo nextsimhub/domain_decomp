@@ -16,6 +16,23 @@
 using namespace std;
 namespace po = boost::program_options;
 
+void validate_order(const std::string DimOrderStr)
+{
+    if (DimOrderStr != "xy" && DimOrderStr != "yx") {
+        cerr << "ERROR: invalid option. [order] must be either 'xy' or 'yx'." << endl;
+    }
+    return;
+}
+
+std::vector<int> dimOrderFromStr(const std::string& DimOrderStr)
+{
+    if (DimOrderStr[0] == 'x') {
+        return std::vector<int>({ 0, 1 });
+    } else {
+        return std::vector<int>({ 1, 0 });
+    }
+}
+
 int main(int argc, char* argv[])
 {
     // Initialize MPI
@@ -24,15 +41,16 @@ int main(int argc, char* argv[])
 
     // Configure command line options for dimension names and mask variable name
     po::options_description desc("Options");
-    desc.add_options()("help,h", "Display this help message")(
-        "grid,g", po::value<string>()->required(), "NetCDF grid file")("dim0",
-        po::value<string>()->default_value("x"),
-        "First spatial dimension in netCDF grid file")("dim1",
-        po::value<string>()->default_value("y"), "Second spatial dimension in netCDF grid file")(
-        "blk0", po::value<int>()->default_value(1), "Blocking factor in first dimension")(
-        "blk1", po::value<int>()->default_value(1), "Blocking factor in second dimension")("mask,m",
-        po::value<string>()->default_value("mask"), "Mask variable name in netCDF grid file")(
-        "ignore-mask", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file");
+    // clang-format off
+    desc.add_options()
+        ("help,h", "Display this help message")
+        ("grid,g", po::value<string>()->required(), "NetCDF grid file")
+        ("xdim,x", po::value<string>()->default_value("x"), "Name of x dimension in netCDF grid file")
+        ("ydim,y", po::value<string>()->default_value("y"), "Name of y dimension in netCDF grid file")
+        ("order,o", po::value<string>()->default_value("yx"), "Order of dimensions in netCDF grid file, e.g., 'yx' or 'xy'")
+        ("mask,m", po::value<string>()->default_value("mask"), "Mask variable name in netCDF grid file")
+        ("ignore-mask,i", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file");
+    // clang-format on
 
     // Parse optional command line options
     po::variables_map vm;
@@ -48,9 +66,12 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    validate_order(vm["order"].as<string>());
+    std::vector<int> order = dimOrderFromStr(vm["order"].as<string>());
+
     // Build grid from netCDF file
-    Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["dim0"].as<string>(),
-        vm["dim1"].as<string>(), vm["mask"].as<string>(), vm["ignore-mask"].as<bool>());
+    Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["xdim"].as<string>(),
+        vm["ydim"].as<string>(), order, vm["mask"].as<string>(), vm["ignore-mask"].as<bool>());
 
     // Create a Zoltan partitioner
     Partitioner* partitioner
