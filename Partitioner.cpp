@@ -151,12 +151,15 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_enddef(nc_id));
 
     // Store data
-    for (int idx = 0; idx < NNBRS; idx++) {
+    for (int idx = 0; idx < NDIMS; idx++) {
         size_t start = _rank;
         NC_CHECK(nc_var_par_access(bbox_gid, top_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(bbox_gid, top_vid[idx], &start, &_global_new[idx]));
         NC_CHECK(nc_var_par_access(bbox_gid, cnt_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[idx], &start, &_local_ext_new[idx]));
+    }
+    for (int idx = 0; idx < NNBRS; idx++) {
+        size_t start = _rank;
         NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[idx], &start, &num_neighbours[idx]));
         start = offsets[idx];
