@@ -16,7 +16,7 @@ extern char** global_argv;
 TEST_CASE("ZoltanPartitioner: non-default dimension naming", "[zoltan]")
 {
     // Build grid from netCDF file
-    Grid* grid = Grid::create(MPI_COMM_WORLD, "./test_2.nc", "m", "n", "land_mask");
+    Grid* grid = Grid::create(MPI_COMM_WORLD, "./test_2.nc", "m", "n", { 1, 0 }, "land_mask");
 
     // Create a Zoltan partitioner
     Partitioner* partitioner = Partitioner::Factory::create(
