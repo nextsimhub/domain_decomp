@@ -19,8 +19,8 @@ TEST_CASE("Grid: no land", "[grid]")
     assert(mpi_size <= 2);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
-    REQUIRE(grid->get_global_ext_0() == 6);
-    REQUIRE(grid->get_global_ext_1() == 4);
+    REQUIRE(grid->get_global_ext()[0] == 6);
+    REQUIRE(grid->get_global_ext()[1] == 4);
     if (mpi_size == 1) {
         REQUIRE(grid->get_num_objects() == 24);
         REQUIRE(grid->get_num_nonzero_objects() == 24);
