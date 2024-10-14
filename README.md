@@ -97,122 +97,192 @@ It is recommended to build the code in a separate directory from the source dire
 5. Run `make test` to run tests.
 6. Run `make install` to install.
 
-The project installs a shared library that can be imported by other CMake projects as neXtSIMutils::domain_decomp, as well as a binary `decomp` that be used to partition grids directly.
+The project installs a shared library that can be imported by other CMake projects as `neXtSIMutils::domain_decomp,` as well as a binary `decomp` that be used to partition grids directly.
 
 ### How to run
-The binary `decomp` can be used to partition a 2D grid with an optional land mask represented as a netCDF file. By default, the name of the dimensions in the netCDF file are `x` and `y` with the `y` dimension increasing the fastest, and the name of the variable representing the land mask is `mask`. For netCDF files using the enhanced model, we assume the group that contains the information of interest is named `data`. These can be overridden using command-line options. For example:
+
+Running the help of the `domain` tool gives the following:
+
 ```
-mpirun -n 2 ./decomp --grid grid.nc --dim0 y --dim1 x --mask land_mask
+$ ./build/decomp -h
+Usage: ./build/decomp [options]
+Options:
+  -h [ --help ]             Display this help message
+  -g [ --grid ] arg         NetCDF grid file
+  -x [ --xdim ] arg (=x)    Name of x dimension in netCDF grid file
+  -y [ --ydim ] arg (=y)    Name of y dimension in netCDF grid file
+  -o [ --order ] arg (=yx)  Order of dimensions in netCDF grid file, e.g., 'yx'
+                            or 'xy'
+  -m [ --mask ] arg (=mask) Mask variable name in netCDF grid file
+  -i [ --ignore-mask ]      Ignore mask in netCDF grid file
+
+```
+
+We can see that the most of the options have defaults (show in parentheses) e.g., if you do not specify the name of the land
+mask `-m/--mask`, it will default to `"mask"`. To explain the other options it is instructive to first look at an example grid
+file.
+
+```
+$ ncdump test_2.nc
+netcdf test_2 {
+dimensions:
+        m = 6 ;
+        n = 4 ;
+variables:
+        int land_mask(n, m) ;
+
+// global attributes:
+                :title = "Non-default dimension naming and ordering" ;
+data:
+
+ land_mask =
+  0, 0, 0, 0, 0, 0,
+  1, 1, 1, 1, 1, 1,
+  0, 0, 0, 0, 0, 0,
+  1, 1, 1, 1, 1, 1 ;
+}
+```
+
+This is from a grid file `test_2.nc` where the `x` and `y` dimensions are called `m` and `n` respectively. Looking at the
+`variables` sections we can see that the land mask `land_mask` is stored in the order `land_mask(n, m)`, where `n` is the first
+dimension. No matter what the dimensions are called inside of the grid file, neXtSIM_DG will expect the metadata files (produced
+by `decomp`) to have a specific output format. By default, the ordering of `decomp` assumes `'yx'` which (due to the names of our
+dimensions) corresponds to `n` being the first dimension and `m` being the second. This can be changed to `'xy'` for example, if
+the land mask was stored transposed i.e., `land_mask(m, n)`.
+
+To run `decomp` on the `test_2.nc` file we can use the following command:
+```
+$ mpirun -n 2 ../decomp -g test_2.nc -x m -y n -o 'yx' -m "land_mask"
+```
+
+This should produce the following output (stdout) as well as two files, `partition_mask_2.nc` and `partition_metadata_2.nc`.
+
+```
+$ mpirun -n 2 ../decomp -g test_2.nc -x m -y n -o 'yx' -m "land_mask"
+Partitioning total time: 9.2725e-05 (secs)
+Partitioning Statistics:
+ Total weight of dots = 12
+ Weight on each proc: ave = 6, max = 6, min = 6
+ Maximum weight of single dot = 1
+ Send count: ave = 0, min = 0, max = 0
+ Recv count: ave = 0, min = 0, max = 0
+ Max dots: ave = 6, min = 6, max = 6
+ Max memory: ave = 8, min = 8, max = 8
+ # of OverAlloc: ave = 0, min = 0, max = 0
+ Median find iteration counts:
+   Serial iterations per process: avg 0.000000 min 0 max 0
+   Parallel iterations:
+     Per process: avg 1.000000 min 1 max 1
+     Total for all parallel cuts: 1
+     Detail of first cuts:
+       Level 1 cut count: avg 1.000000 variance 0.000000 actual: 1
+ Start-up time (secs): ave = 2.70065e-05, min = 2.6947e-05, max = 2.7066e-05
+ Start-up time (%): ave = 29.1254, min = 29.0612, max = 29.1895
+ Pre-median time (secs): ave = 4.311e-06, min = 4.034e-06, max = 4.588e-06
+ Pre-median time (%): ave = 4.64923, min = 4.3505, max = 4.94796
+ Median time (secs): ave = 8.2655e-06, min = 8.066e-06, max = 8.465e-06
+ Median time (%): ave = 8.91399, min = 8.69884, max = 9.12915
+ Comm time (secs): ave = 5.0859e-05, min = 5.0418e-05, max = 5.13e-05
+ Comm time (%): ave = 54.8493, min = 54.3737, max = 55.3249
+ STATS Runs 1  bal  CURRENT 1.000000  MAX 1.000000  MIN 1.000000  AVG 1.000000
+ STATS Runs 1  moveCnt CURRENT 0.000000  MAX 0.000000  MIN 0.000000  AVG 0.000000
+ STATS DETAIL count:  min 6  max 6  avg 6.000000  imbal 1.000000
+ STATS DETAIL wdim = 0; no detail available
 ```
 
 The `decomp` tool produces two netCDF-4 files (using the classic data model) named `partition_mask_<num_mpi_processes>.nc` and `partition_metadata_<num_mpi_processes>.nc` with the following layout:
 
+- `partition_mask_<num_mpi_processes>.nc` - can be used to check the partitioning
+- `partition_metadata_<num_mpi_processes>.nc` - is used by neXtSIM_DG to read in the domain decomposition information, such as
+  domain sizes, neighbours, halos etc.
+
+The following is an example of the partition mask file generated by running the command above.
+
 ```
 netcdf partition_mask_2 {
 dimensions:
-	x = 30 ;
-	y = 30 ;
+y = 4 ;
+x = 6 ;
 variables:
-	short pid(x, y) ;
-
+int pid(y, x) ;
 // global attributes:
-		:num_processes = 2s ;
+:num_processes = 2 ;
 data:
-
- pid = ...
+ pid =
+  -1, -1, -1, -1, -1, -1,
+  0, 0, 0, 1, 1, 1,
+  -1, -1, -1, -1, -1, -1,
+  0, 0, 0, 1, 1, 1 ;
 }
 ```
 
-The netCDF variable `pid` is defined as the process ID of each point in the grid.
+The netCDF variable `pid` is defined as the process ID of each point in the grid. `pid=-1` notes regions where the land mask is
+zero. Given an example partition mask (`pid`) layout below, the "domain" layout would be as follows:
+
+```
+        partition_mask_2                         domain layout
+                                             ┌──────────────────┐
+O┌───►X -1, -1, -1, -1, -1, -1               │         2        │
+ │       0,  0,  0,  1,  1,  1               ├─────────┬────────┤
+ │      -1, -1, -1, -1, -1, -1     Y▲        │         │        │
+Y▼       0,  0,  0,  1,  1,  1      │        │    0    │    1   │
+        -1, -1, -1, -1, -1, -1      │        │         │        │
+         2,  2,  2,  2,  2,  2     0└───►X   └─────────┴────────┘
+```
+
+The following is an example of the partition metadata file generated by running the command above.
 
 ```
 netcdf partition_metadata_2 {
 dimensions:
-	P = 2 ;
-	T = 1 ;
-	B = 1 ;
-	L = UNLIMITED ; // (0 currently)
-	R = UNLIMITED ; // (0 currently)
-
+NX = 6 ;
+NY = 4 ;
+P = 2 ;
+L = 1 ;
+R = 1 ;
+B = UNLIMITED ; // (0 currently)
+T = UNLIMITED ; // (0 currently)
 group: bounding_boxes {
   variables:
-	int domain_x(P) ;
-	int domain_y(P) ;
-	int domain_extent_x(P) ;
-	int domain_extent_y(P) ;
+  int domain_x(P) ;
+  int domain_extent_x(P) ;
+  int domain_y(P) ;
+  int domain_extent_y(P) ;
   data:
-	domain_x = 0, 16 ;
-	domain_y = 0, 0 ;
-	domain_extent_x = 16, 14 ;
-	domain_extent_y = 30, 30 ;
+   domain_x = 0, 3 ;
+   domain_extent_x = 3, 3 ;
+   domain_y = 0, 0 ;
+   domain_extent_y = 4, 4 ;
   } // group bounding_boxes
-
 group: connectivity {
   variables:
-	int top_neighbours(P) ;
-	int top_neighbour_ids(T) ;
-	int top_neighbour_halos(T) ;
-	int bottom_neighbours(P) ;
-	int bottom_neighbour_ids(B) ;
-	int bottom_neighbour_halos(B) ;
-	int left_neighbours(P) ;
-	int left_neighbour_ids(L) ;
-	int left_neighbour_halos(L) ;
-	int right_neighbours(P) ;
-	int right_neighbour_ids(R) ;
-	int right_neighbour_halos(R) ;
+  int left_neighbours(P) ;
+  int left_neighbour_ids(L) ;
+  int left_neighbour_halos(L) ;
+  int right_neighbours(P) ;
+  int right_neighbour_ids(R) ;
+  int right_neighbour_halos(R) ;
+  int bottom_neighbours(P) ;
+  int bottom_neighbour_ids(B) ;
+  int bottom_neighbour_halos(B) ;
+  int top_neighbours(P) ;
+  int top_neighbour_ids(T) ;
+  int top_neighbour_halos(T) ;
   data:
-	top_neighbours = 0, 1 ;
-	top_neighbour_ids = 0 ;
-	top_neighbour_halos = 30 ;
-	bottom_neighbours = 1, 0 ;
-	bottom_neighbour_ids = 1 ;
-	bottom_neighbour_halos = 30 ;
-	left_neighbours = 0, 0 ;
-	right_neighbours = 0, 0 ;
-  } // group connectivity
-}
-
-```
-
-The netCDF variables `domain_x/y` are defined as the coordinates of the upper left corner of the bounding box for each MPI process using zero-based indexing and `domain_extent_x/y` are the extents in the corresponding dimensions of the bounding box for each MPI process. The file also defines the variables `X_neighbours(P)`, `X_neighbour_ids(X_dim)` and `X_neighbour_halos(X_dim)`, where `X` is `top/bottom/left/right`, which correspond to the number of neighbours per process, the neighbour IDs and halo sizes of each process sorted from lower to higher MPI rank.
-
-## Layout
-
-The original version of `decomp` used a TBLR naming convention (top, down, left, right), but this was confusing in how it
-related to x and y co-ordinates.
-
-To remove ambiguity we renamed the outputs produced in the `partition_metadata_<num_mpi_processes>.nc` file.
-
-```
-netcdf partition_metadata_3 {
-dimensions:
- NX = 30 ;
- NY = 24 ;
- P = 3 ;
- T = 2 ;                                              0            12        24
- B = 2 ;                                               ┌──────────────────────►  y
- L = 1 ;                                               │
- R = 1 ;                                               │  ┌─────────┬─────────┐
-group: bounding_boxes {                                │  │         │         │
-   domain_x = 0, 0, 20 ;                               │  │         │         │
-   domain_y = 0, 12, 0 ;                               │  │         │         │
-   domain_extent_x = 20, 20, 10 ;                      │  │    0    │    1    │
-   domain_extent_y = 12, 12, 24 ;                      │  │         │         │
-  } // group bounding_boxes                            │  │         │         │
-group: connectivity {                                  │  │         │         │
-   top_neighbours = 0, 0, 2 ;                       20 │  ├─────────┴─────────┤
-   top_neighbour_ids = 0, 1 ;                          │  │                   │
-   top_neighbour_halos = 12, 12 ;                      │  │                   │
-   bottom_neighbours = 1, 1, 0 ;                       │  │         2         │
-   bottom_neighbour_ids = 2, 2 ;                       │  │                   │
-   bottom_neighbour_halos = 12, 12 ;                   │  │                   │
-   left_neighbours = 0, 1, 0 ;                      30 ▼  └───────────────────┘
+   left_neighbours = 0, 1 ;
    left_neighbour_ids = 0 ;
-   left_neighbour_halos = 20 ;                         x
-   right_neighbours = 1, 0, 0 ;
+   left_neighbour_halos = 4 ;
+   right_neighbours = 1, 0 ;
    right_neighbour_ids = 1 ;
-   right_neighbour_halos = 20 ;
+   right_neighbour_halos = 4 ;
+   bottom_neighbours = 0, 0 ;
+   top_neighbours = 0, 0 ;
   } // group connectivity
 }
 ```
+
+The netCDF variables `domain_x/y` are defined as the coordinates of the bottom left corner of the bounding box for each MPI
+process using zero-based indexing and `domain_extent_x/y` are the extents in the corresponding dimensions of the bounding box
+for each MPI process. The file also defines the variables `X_neighbours(P)`, `X_neighbour_ids(X_dim)` and
+`X_neighbour_halos(X_dim)`, where `X` is `top/bottom/left/right`, which correspond to the number of neighbours per process, the
+neighbour IDs and halo sizes of each process sorted from lower to higher MPI rank.
