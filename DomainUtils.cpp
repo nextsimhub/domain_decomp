@@ -7,7 +7,6 @@
 
 #include "DomainUtils.hpp"
 #include <algorithm>
-#include <cstdio>
 #include <iostream>
 
 int domainOverlap(const Domain d1, const Domain d2, const char dir)
