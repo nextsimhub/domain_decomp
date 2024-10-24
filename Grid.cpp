@@ -161,10 +161,10 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& dim0_n
     _global_1 = (_rank % _num_procs_1) * _local_ext_1;
 
     if ((_rank / _num_procs_1) == _num_procs_0 - 1) {
-        _local_ext_0 = _global_ext_0 - (_rank / _num_procs_1) * _local_ext_0;
+        _local_ext_0 = _global_ext_0 - _global_0;
     }
     if ((_rank % _num_procs_1) == _num_procs_1 - 1) {
-        _local_ext_1 = _global_ext_1 - (_rank % _num_procs_1) * _local_ext_1;
+        _local_ext_1 = _global_ext_1 - _global_1;
     }
 
     _num_objects = _local_ext_0 * _local_ext_1;
