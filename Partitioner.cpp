@@ -4,8 +4,8 @@
  * @date 12 Sep 2024
  */
 
-#include "DomainUtils.hpp"
 #include "Partitioner.hpp"
+#include "DomainUtils.hpp"
 #include "Utils.hpp"
 #include "ZoltanPartitioner.hpp"
 
