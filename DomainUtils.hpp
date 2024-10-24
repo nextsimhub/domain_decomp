@@ -41,6 +41,7 @@ struct Domain {
  *
  * @param d1 First Domain
  * @param d2 Second Domain
+ * @param dir direction to find overlap ('x' or 'y')
  */
 int domainOverlap(const Domain d1, const Domain d2, const char dir);
 
