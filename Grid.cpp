@@ -82,8 +82,6 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& dim0_n
     _global_0 = (_rank / _num_procs_1) * _local_ext_0;
     _global_1 = (_rank % _num_procs_1) * _local_ext_1;
 
-    // _local_ext_0 = _local_ext_blk_0 * _blk_factor_0;
-    // _local_ext_1 = _local_ext_blk_1 * _blk_factor_1;
     if ((_rank / _num_procs_1) == _num_procs_0 - 1) {
         _local_ext_0 = _global_ext_0 - (_rank / _num_procs_1) * _local_ext_0;
     }
