@@ -152,13 +152,13 @@ the land mask was stored transposed i.e., `land_mask(m, n)`.
 
 To run `decomp` on the `test_2.nc` file we can use the following command:
 ```
-$ mpirun -n 2 ../decomp -g test_2.nc -x m -y n -o 'yx' -m "land_mask"
+$ mpirun -n 2 /path/to/decomp -g test_2.nc -x m -y n -o 'yx' -m "land_mask"
 ```
 
 This should produce the following output (stdout) as well as two files, `partition_mask_2.nc` and `partition_metadata_2.nc`.
 
 ```
-$ mpirun -n 2 ../decomp -g test_2.nc -x m -y n -o 'yx' -m "land_mask"
+$ mpirun -n 2 /path/to/decomp -g test_2.nc -x m -y n -o 'yx' -m "land_mask"
 Partitioning total time: 9.2725e-05 (secs)
 Partitioning Statistics:
  Total weight of dots = 12
@@ -190,7 +190,7 @@ Partitioning Statistics:
  STATS DETAIL wdim = 0; no detail available
 ```
 
-The `decomp` tool produces two netCDF-4 files (using the classic data model) named `partition_mask_<num_mpi_processes>.nc` and `partition_metadata_<num_mpi_processes>.nc` with the following layout:
+The `decomp` tool produces two netCDF-4 files (using the classic data model):
 
 - `partition_mask_<num_mpi_processes>.nc` - can be used to check the partitioning
 - `partition_metadata_<num_mpi_processes>.nc` - is used by nextSIM_DG to read in the domain decomposition information, such as
