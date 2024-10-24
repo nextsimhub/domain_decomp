@@ -17,7 +17,7 @@
 using namespace std;
 namespace po = boost::program_options;
 
-void validate_order(const std::string DimOrderStr)
+void validateOrder(const std::string DimOrderStr)
 {
     if (DimOrderStr != "xy" && DimOrderStr != "yx") {
         cerr << "ERROR: invalid option. [order] must be either 'xy' or 'yx'." << endl;
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    validate_order(vm["order"].as<string>());
+    validateOrder(vm["order"].as<string>());
     std::vector<int> order = dimOrderFromStr(vm["order"].as<string>());
 
     // Build grid from netCDF file
