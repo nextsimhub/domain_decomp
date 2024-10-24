@@ -1,6 +1,6 @@
 /*!
  * @file Grid.cpp
- * @date 23 Aug 2024
+ * @date 24 Oct 2024
  * @author Athena Elafrou <ae488@cam.ac.uk>
  */
 
@@ -34,16 +34,18 @@ static std::vector<int> find_factors(const int n)
     }
 }
 
-Grid* Grid::create(MPI_Comm comm, const std::string& filename, bool ignore_mask)
+Grid* Grid::create(MPI_Comm comm, const std::string& filename, bool ignore_mask, bool p0, bool p1)
 {
-    return new Grid(comm, filename, "x", "y", std::vector<int>({ 1, 0 }), "mask", ignore_mask);
+    return new Grid(
+        comm, filename, "x", "y", std::vector<int>({ 1, 0 }), "mask", ignore_mask, p0, p1);
 }
 
 Grid* Grid::create(MPI_Comm comm, const std::string& filename, const std::string xdim_name,
     const std::string ydim_name, const std::vector<int> dim_order, const std::string mask_name,
-    bool ignore_mask)
+    bool ignore_mask, bool p0, bool p1)
 {
-    return new Grid(comm, filename, xdim_name, ydim_name, dim_order, mask_name, ignore_mask);
+    return new Grid(
+        comm, filename, xdim_name, ydim_name, dim_order, mask_name, ignore_mask, p0, p1);
 }
 
 void Grid::ReadGridExtents(const std::string& filename)
@@ -129,10 +131,12 @@ void Grid::ReadGridMask(const std::string& filename, const std::string& mask_nam
 
 Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_name,
     const std::string& ydim_name, const std::vector<int>& dim_order, const std::string& mask_name,
-    bool ignore_mask)
+    bool ignore_mask, bool p0, bool p1)
     : _comm(comm)
     , _dim_names({ xdim_name, ydim_name })
     , _dim_order(dim_order)
+    , _p0(p0)
+    , _p1(p1)
 {
 
     CHECK_MPI(MPI_Comm_rank(comm, &_rank));
@@ -196,6 +200,10 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_n
 int Grid::get_num_objects() const { return _num_objects; }
 
 int Grid::get_num_nonzero_objects() const { return _num_nonzero_objects; }
+
+bool Grid::get_p0() const { return _p0; }
+
+bool Grid::get_p1() const { return _p1; }
 
 std::vector<int> Grid::get_num_procs() const { return _num_procs; }
 
