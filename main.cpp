@@ -1,7 +1,7 @@
 /*!
  * @file main.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 23 Aug 2024
+ * @date 25 Oct 2024
  */
 
 #include <cstdio>
@@ -50,7 +50,9 @@ int main(int argc, char* argv[])
         ("ydim,y", po::value<string>()->default_value("y"), "Name of y dimension in netCDF grid file")
         ("order,o", po::value<string>()->default_value("yx"), "Order of dimensions in netCDF grid file, e.g., 'yx' or 'xy'")
         ("mask,m", po::value<string>()->default_value("mask"), "Mask variable name in netCDF grid file")
-        ("ignore-mask,i", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file");
+        ("ignore-mask,i", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file")
+        ("periodic0,p0", po::bool_switch()->default_value(false), "Periodicity in 1st dimension")
+        ("periodic1,p1", po::bool_switch()->default_value(false), "Periodicity in 2nd dimension");
     // clang-format on
 
     // Parse optional command line options
@@ -72,7 +74,8 @@ int main(int argc, char* argv[])
 
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["xdim"].as<string>(),
-        vm["ydim"].as<string>(), order, vm["mask"].as<string>(), vm["ignore-mask"].as<bool>());
+        vm["ydim"].as<string>(), order, vm["mask"].as<string>(), vm["ignore-mask"].as<bool>(),
+        vm["periodic0"].as<bool>(), vm["periodic1"].as<bool>());
 
     // Create a Zoltan partitioner
     Partitioner* partitioner
