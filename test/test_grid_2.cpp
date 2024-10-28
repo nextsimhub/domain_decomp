@@ -1,7 +1,7 @@
 /*!
- * @file test_grid_0.cpp
+ * @file test_grid_2.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 23 Aug 2024
+ * @date 28 Oct 2024
  */
 
 #include "Grid.hpp"
