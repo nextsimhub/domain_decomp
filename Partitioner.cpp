@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 25 Oct 2024
+ * @date 28 Oct 2024
  */
 
 #include "Partitioner.hpp"
@@ -321,6 +321,9 @@ void Partitioner::discover_neighbours()
     }
 
     for (int p = 0; p < _total_num_procs; p++) {
+
+        // When finding neighbours *within* the domain, we don't check against the current rank
+        // because a subdomain can't be a neighbour of itself.
         if (p != _rank) {
 
             // Find my left neighbours
@@ -357,40 +360,42 @@ void Partitioner::discover_neighbours()
                     _neighbours[3].insert(std::pair<int, int>(p, halo_size));
                 }
             }
+        }
 
-            if (_p0) {
-                // Find my left periodic neighbours
-                if ((domains[_rank].p1.x == 0) && (domains[p].p2.x == _global_ext[0])) {
-                    int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
-                    if (halo_size) {
-                        _neighbours_p[0].insert(std::pair<int, int>(p, halo_size));
-                    }
-                }
-
-                // Find my right periodic neighbours
-                if ((domains[_rank].p2.x == _global_ext[0]) && (domains[p].p1.x == 0)) {
-                    int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
-                    if (halo_size) {
-                        _neighbours_p[1].insert(std::pair<int, int>(p, halo_size));
-                    }
+        // When finding neighours *across periodic boundaries*, we need to check against the current
+        // rank, too, because a subdomain can be a periodic neighbour of itself.
+        if (_p0) {
+            // Find my left periodic neighbours
+            if ((domains[_rank].p1.x == 0) && (domains[p].p2.x == _global_ext[0])) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
+                if (halo_size) {
+                    _neighbours_p[0].insert(std::pair<int, int>(p, halo_size));
                 }
             }
 
-            if (_p1) {
-                // Find my bottom periodic neighbours
-                if ((domains[_rank].p1.y == 0) && (domains[p].p2.y == _global_ext[1])) {
-                    int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
-                    if (halo_size) {
-                        _neighbours_p[2].insert(std::pair<int, int>(p, halo_size));
-                    }
+            // Find my right periodic neighbours
+            if ((domains[_rank].p2.x == _global_ext[0]) && (domains[p].p1.x == 0)) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
+                if (halo_size) {
+                    _neighbours_p[1].insert(std::pair<int, int>(p, halo_size));
                 }
+            }
+        }
 
-                // Find my top periodic neighbours
-                if ((domains[_rank].p2.y == _global_ext[1]) && (domains[p].p1.y == 0)) {
-                    int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
-                    if (halo_size) {
-                        _neighbours_p[3].insert(std::pair<int, int>(p, halo_size));
-                    }
+        if (_p1) {
+            // Find my bottom periodic neighbours
+            if ((domains[_rank].p1.y == 0) && (domains[p].p2.y == _global_ext[1])) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
+                if (halo_size) {
+                    _neighbours_p[2].insert(std::pair<int, int>(p, halo_size));
+                }
+            }
+
+            // Find my top periodic neighbours
+            if ((domains[_rank].p2.y == _global_ext[1]) && (domains[p].p1.y == 0)) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
+                if (halo_size) {
+                    _neighbours_p[3].insert(std::pair<int, int>(p, halo_size));
                 }
             }
         }
