@@ -44,7 +44,7 @@ jobs:
           -Bbuild -S.
           sudo cmake --build build --config Release --target install
           cd ..
-          git clone -b checkpoint.1.12.3 https://github.com/Parallel-NetCDF/PnetCDF.git
+          git clone https://github.com/Parallel-NetCDF/PnetCDF.git
           cd PnetCDF
           autoreconf -i
           CXX=mpicxx CC=mpicc ./configure --disable-fortran --enable-shared
