@@ -51,7 +51,7 @@ jobs:
           make
           sudo make install
           cd ..
-          git clone -b v4.8.1 https://github.com/Unidata/netcdf-c.git
+          git clone -b v4.9.2 https://github.com/Unidata/netcdf-c.git
           cd netcdf-c
           cmake \
           -DENABLE_PNETCDF=ON \
