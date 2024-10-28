@@ -60,3 +60,18 @@ add_custom_target(
     ALL
     DEPENDS test_0.nc test_1.nc test_2.nc
 )
+
+# integration test
+add_test(
+  NAME integration
+  COMMAND
+  bash ${CMAKE_CURRENT_SOURCE_DIR}/integration-test.sh
+)
+set_property(
+  TEST integration
+  PROPERTY ENVIRONMENT
+  MPIEXEC=${MPIEXEC}
+  MPIEXEC_NUMPROC_FLAG=${MPIEXEC_NUMPROC_FLAG}
+  MPIEXEC_PREFLAGS=${MPIEXEC_PREFLAGS}
+  CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+)
