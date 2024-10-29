@@ -1,7 +1,7 @@
 /*!
  * @file main.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 25 Oct 2024
+ * @date 29 Oct 2024
  */
 
 #include <cstdio>
@@ -17,12 +17,13 @@
 using namespace std;
 namespace po = boost::program_options;
 
-void validateOrder(const std::string DimOrderStr)
+bool validateOrder(const std::string DimOrderStr)
 {
     if (DimOrderStr != "xy" && DimOrderStr != "yx") {
         cerr << "ERROR: invalid option. [order] must be either 'xy' or 'yx'." << endl;
+        return false;
     }
-    return;
+    return true;
 }
 
 std::vector<int> dimOrderFromStr(const std::string& DimOrderStr)
@@ -69,7 +70,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    validateOrder(vm["order"].as<string>());
+    if (!validateOrder(vm["order"].as<string>())) {
+        return 1;
+    }
     std::vector<int> order = dimOrderFromStr(vm["order"].as<string>());
 
     // Build grid from netCDF file
