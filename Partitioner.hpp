@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.hpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 25 Oct 2024
+ * @date 29 Oct 2024
  */
 
 #pragma once
@@ -56,8 +56,9 @@ public:
     void get_bounding_box(int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const;
 
     /*!
-     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours for this
-     * process after partitioning. The neighbours are ordered left, right, bottom, top.
+     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours of this
+     * process in the domain interior after partitioning. The neighbours are ordered left, right,
+     * bottom, top.
      *
      * @param ids MPI ranks of the neighbours for each direction
      * @param halo_sizes Halo sizes of the neighbours for each direction
@@ -66,13 +67,13 @@ public:
         std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const;
 
     /*!
-     * @brief Returns vectors containing the MPI ranks and halo sizes of the periodic neighbours
-     * for this process after partitioning. The neighbours are ordered left, right, bottom, top.
+     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours of this
+     * process across periodic boundaries after partitioning. The neighbours are ordered left,
+     * right, bottom, top.
      *
      * @param ids MPI ranks of the neighbours for each direction
      * @param halo_sizes Halo sizes of the neighbours for each direction
      */
-    // TODO: Consider merging with the method above and providing a boolean flag to specify periodic
     void get_neighbours_periodic(
         std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const;
 
