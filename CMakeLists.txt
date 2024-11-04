@@ -14,6 +14,9 @@ set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 project(${PROJECT_NAME} VERSION ${VERSION_MAJOR}.${VERSION_MINOR} LANGUAGES CXX)
 
+# User definable build options
+option(BUILD_TESTS "Build the tests" ON)
+
 # Set RPATH behaviour
 set(CMAKE_SKIP_RPATH FALSE)
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
@@ -34,7 +37,14 @@ file(RELATIVE_PATH relDir2
 set(CMAKE_INSTALL_RPATH $ORIGIN/${relDir1}:$ORIGIN/${relDir2})
 
 # Dependencies
-find_package(Catch2 REQUIRED)
+if (BUILD_TESTS)
+  set(DOCTEST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+  add_library(doctest::doctest IMPORTED INTERFACE)
+  set_property(
+    TARGET doctest::doctest
+    PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${DOCTEST_INCLUDE_DIR}"
+  )
+endif()
 find_package(MPI REQUIRED COMPONENTS CXX)
 find_package(PkgConfig)
 pkg_search_module(NETCDF netcdf)
@@ -126,8 +136,10 @@ target_link_directories(${EXEC_NAME}
 install(TARGETS ${EXEC_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Unit tests
-enable_testing()
-add_subdirectory(test)
+if(BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(test)
+endif()
 
 # Examples
 add_subdirectory(examples)

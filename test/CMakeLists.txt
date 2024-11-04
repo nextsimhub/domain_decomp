@@ -15,13 +15,13 @@ function(create_test)
 
   add_executable(${ARG_TARGET}
     ${ARG_SOURCES}
-    main.cpp
+    MainMPI.cpp
     )
   target_link_libraries(${ARG_TARGET}
-    PRIVATE Catch2::Catch2 ${PROJECT_NAME}::${LIB_NAME}
+    PRIVATE doctest::doctest ${PROJECT_NAME}::${LIB_NAME}
     )
   target_include_directories(${ARG_TARGET}
-    PRIVATE ${CMAKE_SOURCE_DIR}
+    PRIVATE ${CMAKE_SOURCE_DIR} ${DOCTEST_INCLUDE_DIR}
     )
   foreach(numProcs RANGE 1 ${ARG_MAX_NUM_PROCS})
     add_test(NAME ${ARG_TARGET}_n${numProcs} COMMAND ${MPIEXEC} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} ${numProcs} ${MPIEXEC_PREFLAGS} ./${ARG_TARGET})
