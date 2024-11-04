@@ -7,15 +7,10 @@
 
 #include "Grid.hpp"
 
-MPI_TEST_CASE("Grid: all land, 1 rank", 1)
+MPI_TEST_CASE("Grid: all land, 1 MPI rank", 1)
 {
     // Build grid from netCDF file
     Grid* grid = Grid::create(MPI_COMM_WORLD, "./test_0.nc");
-
-    int mpi_size, mpi_rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    assert(mpi_size == 1);
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     REQUIRE(grid->get_global_ext()[0] == 6);
     REQUIRE(grid->get_global_ext()[1] == 4);

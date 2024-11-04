@@ -2,7 +2,7 @@ function(create_test)
   # Define the supported set of keywords
   set(prefix ARG)
   set(noValueKeywords "")
-  set(oneValueKeywords TARGET MAX_NUM_PROCS)
+  set(oneValueKeywords TARGET)
   set(multiValueKeywords SOURCES)
 
   # Process the arguments passed in
@@ -23,20 +23,20 @@ function(create_test)
 endfunction()
 
 # Add tests
-create_test(TARGET test_grid_0_1 SOURCES test_grid_0_1.cpp)
-create_test(TARGET test_grid_0_2 SOURCES test_grid_0_2.cpp)
-create_test(TARGET test_grid_1_1 SOURCES test_grid_1_1.cpp)
-create_test(TARGET test_grid_1_2 SOURCES test_grid_1_2.cpp)
-create_test(TARGET test_grid_2_1 SOURCES test_grid_2_1.cpp)
-create_test(TARGET test_grid_2_2 SOURCES test_grid_2_2.cpp)
-create_test(TARGET test_zoltan_0_1 SOURCES test_zoltan_partitioner_0_1.cpp)
-create_test(TARGET test_zoltan_0_2 SOURCES test_zoltan_partitioner_0_2.cpp)
-create_test(TARGET test_zoltan_1_1 SOURCES test_zoltan_partitioner_1_1.cpp)
-create_test(TARGET test_zoltan_1_2 SOURCES test_zoltan_partitioner_1_2.cpp)
-create_test(TARGET test_zoltan_2_1 SOURCES test_zoltan_partitioner_2_1.cpp)
-create_test(TARGET test_zoltan_2_2 SOURCES test_zoltan_partitioner_2_2.cpp)
-create_test(TARGET test_zoltan_2_3 SOURCES test_zoltan_partitioner_2_3.cpp)
-create_test(TARGET test_zoltan_2_4 SOURCES test_zoltan_partitioner_2_4.cpp)
+create_test(TARGET test_grid_0_MPI1 SOURCES test_grid_0_MPI1.cpp)
+create_test(TARGET test_grid_0_MPI2 SOURCES test_grid_0_MPI2.cpp)
+create_test(TARGET test_grid_1_MPI1 SOURCES test_grid_1_MPI1.cpp)
+create_test(TARGET test_grid_1_MPI2 SOURCES test_grid_1_MPI2.cpp)
+create_test(TARGET test_grid_2_MPI1 SOURCES test_grid_2_MPI1.cpp)
+create_test(TARGET test_grid_2_MPI2 SOURCES test_grid_2_MPI2.cpp)
+create_test(TARGET test_zoltan_0_MPI1 SOURCES test_zoltan_partitioner_0_MPI1.cpp)
+create_test(TARGET test_zoltan_0_MPI2 SOURCES test_zoltan_partitioner_0_MPI2.cpp)
+create_test(TARGET test_zoltan_1_MPI1 SOURCES test_zoltan_partitioner_1_MPI1.cpp)
+create_test(TARGET test_zoltan_1_MPI2 SOURCES test_zoltan_partitioner_1_MPI2.cpp)
+create_test(TARGET test_zoltan_2_MPI1 SOURCES test_zoltan_partitioner_2_MPI1.cpp)
+create_test(TARGET test_zoltan_2_MPI2 SOURCES test_zoltan_partitioner_2_MPI2.cpp)
+create_test(TARGET test_zoltan_2_MPI3 SOURCES test_zoltan_partitioner_2_MPI3.cpp)
+create_test(TARGET test_zoltan_2_MPI4 SOURCES test_zoltan_partitioner_2_MPI4.cpp)
 
 # Generate input files from respective cdl files
 add_custom_command(

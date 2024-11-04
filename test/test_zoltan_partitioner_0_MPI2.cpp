@@ -1,5 +1,5 @@
 /*!
- * @file test_zoltan_partitioner_2_4.cpp
+ * @file test_zoltan_partitioner_0_2.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
  * @date 04 Nov 2024
  */
@@ -13,10 +13,10 @@
 extern int global_argc;
 extern char** global_argv;
 
-MPI_TEST_CASE("ZoltanPartitioner: non-default dimension naming", 4)
+MPI_TEST_CASE("ZoltanPartitioner: all land, 2 MPI ranks", 2)
 {
     // Build grid from netCDF file
-    Grid* grid = Grid::create(MPI_COMM_WORLD, "./test_2.nc", "m", "n", { 1, 0 }, "land_mask");
+    Grid* grid = Grid::create(MPI_COMM_WORLD, "./test_0.nc");
 
     // Create a Zoltan partitioner
     Partitioner* partitioner = Partitioner::Factory::create(
@@ -25,32 +25,18 @@ MPI_TEST_CASE("ZoltanPartitioner: non-default dimension naming", 4)
     // Partition grid
     partitioner->partition(*grid);
 
-    int mpi_size, mpi_rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    assert(mpi_size == 4);
+    int mpi_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     int global_0, global_1, local_ext_0, local_ext_1;
     partitioner->get_bounding_box(global_0, global_1, local_ext_0, local_ext_1);
+    REQUIRE(local_ext_0 == 3);
+    REQUIRE(local_ext_1 == 4);
     if (mpi_rank == 0) {
-        REQUIRE(local_ext_0 == 1);
-        REQUIRE(local_ext_1 == 4);
         REQUIRE(global_0 == 0);
         REQUIRE(global_1 == 0);
-    } else if (mpi_rank == 1) {
-        REQUIRE(local_ext_0 == 2);
-        REQUIRE(local_ext_1 == 4);
-        REQUIRE(global_0 == 1);
-        REQUIRE(global_1 == 0);
-    } else if (mpi_rank == 2) {
-        REQUIRE(local_ext_0 == 1);
-        REQUIRE(local_ext_1 == 4);
-        REQUIRE(global_0 == 3);
-        REQUIRE(global_1 == 0);
     } else {
-        REQUIRE(local_ext_0 == 2);
-        REQUIRE(local_ext_1 == 4);
-        REQUIRE(global_0 == 4);
+        REQUIRE(global_0 == 3);
         REQUIRE(global_1 == 0);
     }
 
