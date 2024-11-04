@@ -137,7 +137,6 @@ install(TARGETS ${EXEC_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Unit tests
 if(BUILD_TESTS)
-  enable_testing()
   add_subdirectory(test)
 endif()
 
