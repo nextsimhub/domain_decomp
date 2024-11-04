@@ -38,8 +38,12 @@ jobs:
         shell: bash
         run: |
           . /opt/spack-environment/activate.sh
-          cd build
-          ctest -V
+          cd build/test
+          for FILE in $(find test* -maxdepth 0 -type f ! -name "*.nc"); do
+            echo ${FILE}
+            NP=$(echo ${FILE} | sed -r "s/.*MPI([0-9]+)/\1/")
+            mpirun --allow-run-as-root --oversubscribe -n ${NP} ./${FILE}
+          done
 
   build-on-macos:
     runs-on: macos-latest
@@ -48,7 +52,6 @@ jobs:
       - name: Install dependencies
         run: |
           brew install cmake
-          brew install catch2
           brew install boost
           brew install hdf5-mpi
           brew install pnetcdf
@@ -85,5 +88,9 @@ jobs:
           cmake --build build --config Release
       - name: Run unit tests
         run: |
-          cd build
-          ctest -V
+          cd build/test
+          for FILE in $(find test* -maxdepth 0 -type f ! -name "*.nc"); do
+            echo ${FILE}
+            NP=$(echo ${FILE} | sed -r "s/.*MPI([0-9]+)/\1/")
+            mpirun --allow-run-as-root --oversubscribe -n ${NP} ./${FILE}
+          done
