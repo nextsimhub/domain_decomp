@@ -137,14 +137,14 @@ public:
     const int* get_land_mask() const;
 
     /*!
-     * @brief Returns `true` if the grid is periodic in the 1st dimension, otherwise `false`.
-     * @return Periodicity in 1st dimension
+     * @brief Returns `true` if the grid is periodic in the x-direction, otherwise `false`.
+     * @return Periodicity in x-direction
      */
     bool get_px() const;
 
     /*!
-     * @brief Returns `true` if the grid is periodic in the 2nd dimension, otherwise `false`.
-     * @return Periodicity in 2nd dimension
+     * @brief Returns `true` if the grid is periodic in the y-direction, otherwise `false`.
+     * @return Periodicity in y-direction
      */
     bool get_py() const;
 
@@ -233,8 +233,8 @@ private:
 
     int _num_objects = 0; // Number of grid points ignoring land mask
     int _num_nonzero_objects = 0; // Number of non-land grid points
-    bool _px = false; // Periodicity in the 1st dimension
-    bool _py = false; // Periodicity in the 2nd dimension
+    bool _px = false; // Periodicity in the x-direction
+    bool _py = false; // Periodicity in the y-direction
     std::vector<int> _land_mask = {}; // Land mask values
     std::vector<int> _local_id = {}; // Map from sparse to dense index
     std::vector<int> _global_id = {}; // Unique non-land grid point IDs
