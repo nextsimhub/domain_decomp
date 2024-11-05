@@ -38,12 +38,7 @@ jobs:
         shell: bash
         run: |
           . /opt/spack-environment/activate.sh
-          cd build/test
-          for FILE in $(find test* -maxdepth 0 -type f ! -name "*.nc"); do
-            echo ${FILE}
-            NP=$(echo ${FILE} | sed -r "s/.*MPI([0-9]+)/\1/")
-            mpirun --allow-run-as-root --oversubscribe -n ${NP} ./${FILE}
-          done
+          cd build && ctest -V
 
   build-on-macos:
     runs-on: macos-latest
@@ -88,9 +83,4 @@ jobs:
           cmake --build build --config Release
       - name: Run unit tests
         run: |
-          cd build/test
-          for FILE in $(find test* -maxdepth 0 -type f ! -name "*.nc"); do
-            echo ${FILE}
-            NP=$(echo ${FILE} | sed -r "s/.*MPI([0-9]+)/\1/")
-            mpirun --allow-run-as-root --oversubscribe -n ${NP} ./${FILE}
-          done
+          cd build && ctest -V
