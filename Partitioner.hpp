@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.hpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 29 Oct 2024
+ * @date 05 Nov 2024
  */
 
 #pragma once
@@ -124,8 +124,8 @@ protected:
     int _total_num_procs = -1; // Total number of processes in communicator
     static const int NDIMS = 2; // Number of dimensions
     static const int NNBRS = 2 * NDIMS; // Number of neighbours (two per dimension)
-    bool _p0 = false; // Periodic boundary in the 1st dimension
-    bool _p1 = false; // Periodic boundary in the 2nd dimension
+    bool _px = false; // Periodic boundary in the x-direction
+    bool _py = false; // Periodic boundary in the y-direction
 
     // Letters used for each dimension
     std::vector<std::string> dim_chars = { "x", "y" };

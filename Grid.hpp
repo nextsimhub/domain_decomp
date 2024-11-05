@@ -1,7 +1,7 @@
 /*!
  * @file Grid.hpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 24 Oct 2024
+ * @date 05 Nov 2024
  */
 
 #pragma once
@@ -72,18 +72,18 @@ public:
      * @param dim_order Permutation for ordering of dimensions.
      * @param mask_name Name of land mask variable in netCDF file (optional)
      * @param ignore_mask Should the land mask be ignored?
-     * @param p0 Is the domain periodic in the 1st grid dimension?
-     * @param p1 Is the domain periodic in the 2nd grid dimension?
+     * @param px Is the domain periodic in the x-direction?
+     * @param py Is the domain periodic in the y-direction?
      * @return A distributed 2D grid object partitioned evenly in terms of grid
      * points.
      */
     // We are using the named constructor idiom so that objects can only be
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
     static Grid* create(MPI_Comm comm, const std::string& filename, bool ignore_mask = false,
-        bool p0 = false, bool p1 = false);
+        bool px = false, bool py = false);
     static Grid* create(MPI_Comm comm, const std::string& filename, const std::string xdim_name,
         const std::string ydim_name, const std::vector<int> dim_order, const std::string mask_name,
-        bool ignore_mask = false, bool p0 = false, bool p1 = false);
+        bool ignore_mask = false, bool px = false, bool py = false);
 
     /*!
      * @brief Returns the total number of objects in the local domain.
@@ -140,13 +140,13 @@ public:
      * @brief Returns `true` if the grid is periodic in the 1st dimension, otherwise `false`.
      * @return Periodicity in 1st dimension
      */
-    bool get_p0() const;
+    bool get_px() const;
 
     /*!
      * @brief Returns `true` if the grid is periodic in the 2nd dimension, otherwise `false`.
      * @return Periodicity in 2nd dimension
      */
-    bool get_p1() const;
+    bool get_py() const;
 
     /*!
      * @brief Returns the index mapping of sparse to dense representation, where
@@ -181,8 +181,8 @@ private:
     Grid(MPI_Comm comm, const std::string& filename, const std::string& dim0_id = "x",
         const std::string& dim1_id = "y",
         const std::vector<int>& dim_order = std::vector<int>({ 1, 0 }),
-        const std::string& mask_id = "mask", bool ignore_mask = false, bool p0 = false,
-        bool p1 = false);
+        const std::string& mask_id = "mask", bool ignore_mask = false, bool px = false,
+        bool py = false);
 
     /*!
      * @brief Read dims from netcdf grid file.
@@ -233,8 +233,8 @@ private:
 
     int _num_objects = 0; // Number of grid points ignoring land mask
     int _num_nonzero_objects = 0; // Number of non-land grid points
-    bool _p0 = false; // Periodicity in the 1st dimension
-    bool _p1 = false; // Periodicity in the 2nd dimension
+    bool _px = false; // Periodicity in the 1st dimension
+    bool _py = false; // Periodicity in the 2nd dimension
     std::vector<int> _land_mask = {}; // Land mask values
     std::vector<int> _local_id = {}; // Map from sparse to dense index
     std::vector<int> _global_id = {}; // Unique non-land grid point IDs

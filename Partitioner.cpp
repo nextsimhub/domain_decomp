@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 28 Oct 2024
+ * @date 05 Nov 2024
  */
 
 #include "Partitioner.hpp"
@@ -47,7 +47,7 @@ void Partitioner::get_neighbours_periodic(
 {
     // NOTE: Neighbours are looped in the order left-right-bottom-top
     for (int d = 0; d < NDIMS; d++) {
-        if ((d == 0 && _p0) || (d == 1 && _p1)) {
+        if ((d == 0 && _px) || (d == 1 && _py)) {
             for (int i = 0; i < 2; i++) {
                 int idx = 2 * d + i;
                 for (auto it = _neighbours_p[idx].begin(); it != _neighbours_p[idx].end(); ++it) {
@@ -364,7 +364,7 @@ void Partitioner::discover_neighbours()
 
         // When finding neighours *across periodic boundaries*, we need to check against the current
         // rank, too, because a subdomain can be a periodic neighbour of itself.
-        if (_p0) {
+        if (_px) {
             // Find my left periodic neighbours
             if ((domains[_rank].p1.x == 0) && (domains[p].p2.x == _global_ext[0])) {
                 int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
@@ -382,7 +382,7 @@ void Partitioner::discover_neighbours()
             }
         }
 
-        if (_p1) {
+        if (_py) {
             // Find my bottom periodic neighbours
             if ((domains[_rank].p1.y == 0) && (domains[p].p2.y == _global_ext[1])) {
                 int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
