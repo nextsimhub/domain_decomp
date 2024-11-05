@@ -20,23 +20,18 @@ function(create_test)
   target_include_directories(${ARG_TARGET}
     PRIVATE ${CMAKE_SOURCE_DIR} ${DOCTEST_INCLUDE_DIR}
     )
+
+  add_test(NAME ${ARG_TARGET} COMMAND ${MPIEXEC} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ./${ARG_TARGET})
+
 endfunction()
 
 # Add tests
-create_test(TARGET test_grid_0_MPI1 SOURCES test_grid_0_MPI1.cpp)
-create_test(TARGET test_grid_0_MPI2 SOURCES test_grid_0_MPI2.cpp)
-create_test(TARGET test_grid_1_MPI1 SOURCES test_grid_1_MPI1.cpp)
-create_test(TARGET test_grid_1_MPI2 SOURCES test_grid_1_MPI2.cpp)
-create_test(TARGET test_grid_2_MPI1 SOURCES test_grid_2_MPI1.cpp)
-create_test(TARGET test_grid_2_MPI2 SOURCES test_grid_2_MPI2.cpp)
-create_test(TARGET test_zoltan_0_MPI1 SOURCES test_zoltan_partitioner_0_MPI1.cpp)
-create_test(TARGET test_zoltan_0_MPI2 SOURCES test_zoltan_partitioner_0_MPI2.cpp)
-create_test(TARGET test_zoltan_1_MPI1 SOURCES test_zoltan_partitioner_1_MPI1.cpp)
-create_test(TARGET test_zoltan_1_MPI2 SOURCES test_zoltan_partitioner_1_MPI2.cpp)
-create_test(TARGET test_zoltan_2_MPI1 SOURCES test_zoltan_partitioner_2_MPI1.cpp)
-create_test(TARGET test_zoltan_2_MPI2 SOURCES test_zoltan_partitioner_2_MPI2.cpp)
-create_test(TARGET test_zoltan_2_MPI3 SOURCES test_zoltan_partitioner_2_MPI3.cpp)
-create_test(TARGET test_zoltan_2_MPI4 SOURCES test_zoltan_partitioner_2_MPI4.cpp)
+create_test(TARGET test_grid_0 SOURCES test_grid_0.cpp)
+create_test(TARGET test_grid_1 SOURCES test_grid_1.cpp)
+create_test(TARGET test_grid_2 SOURCES test_grid_2.cpp)
+create_test(TARGET test_zoltan_0 SOURCES test_zoltan_partitioner_0.cpp)
+create_test(TARGET test_zoltan_1 SOURCES test_zoltan_partitioner_1.cpp)
+create_test(TARGET test_zoltan_2 SOURCES test_zoltan_partitioner_2.cpp)
 
 # Generate input files from respective cdl files
 add_custom_command(
