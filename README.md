@@ -29,7 +29,7 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 * CMake >= 3.10
 * [netCDF-4 C](https://github.com/Unidata/netcdf-c/releases/tag/v4.8.1), built with parallel I/O support to netCDF-4 files through HDF5 and to classic files through PnetCDF
 * Zoltan, built with CMake from the **[Trilinos](https://github.com/trilinos/Trilinos.git)** package
-* [Catch2](https://github.com/catchorg/Catch2) for unit testing
+* [doctest](https://github.com/doctest/doctest) for unit testing
 * [Boost](https://www.boost.org/) program_options library
 
 #### Building Zoltan from source
