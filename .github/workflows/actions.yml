@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           . /opt/spack-environment/activate.sh
-          cd build && ctest -V
+          cd build && OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest -V
 
   build-on-macos:
     runs-on: macos-latest
