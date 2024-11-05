@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 12 Sep 2024
+ * @date 05 Nov 2024
  */
 
 #include "Partitioner.hpp"
@@ -38,6 +38,23 @@ void Partitioner::get_neighbours(
         for (auto it = _neighbours[idx].begin(); it != _neighbours[idx].end(); ++it) {
             ids[idx].push_back(it->first);
             halo_sizes[idx].push_back(it->second);
+        }
+    }
+}
+
+void Partitioner::get_neighbours_periodic(
+    std::vector<std::vector<int>>& ids_p, std::vector<std::vector<int>>& halo_sizes_p) const
+{
+    // NOTE: Neighbours are looped in the order left-right-bottom-top
+    for (int d = 0; d < NDIMS; d++) {
+        if ((d == 0 && _px) || (d == 1 && _py)) {
+            for (int i = 0; i < 2; i++) {
+                int idx = 2 * d + i;
+                for (auto it = _neighbours_p[idx].begin(); it != _neighbours_p[idx].end(); ++it) {
+                    ids_p[idx].push_back(it->first);
+                    halo_sizes_p[idx].push_back(it->second);
+                }
+            }
         }
     }
 }
@@ -113,12 +130,29 @@ void Partitioner::save_metadata(const std::string& filename) const
         CHECK_MPI(MPI_Exscan(&num_neighbours[idx], &offsets[idx], 1, MPI_INT, MPI_SUM, _comm));
     }
 
+    // Prepare periodic neighbour data
+    std::vector<std::vector<int>> ids_p(NNBRS), halos_p(NNBRS);
+    get_neighbours_periodic(ids_p, halos_p);
+    std::vector<int> num_neighbours_p(NNBRS), dims_p(NNBRS, 0), offsets_p(NNBRS, 0);
+    for (int idx = 0; idx < NNBRS; idx++) {
+        num_neighbours_p[idx] = (int)ids_p[idx].size();
+        CHECK_MPI(MPI_Allreduce(&num_neighbours_p[idx], &dims_p[idx], 1, MPI_INT, MPI_SUM, _comm));
+        CHECK_MPI(MPI_Exscan(&num_neighbours_p[idx], &offsets_p[idx], 1, MPI_INT, MPI_SUM, _comm));
+    }
+
     // Define dimensions in netCDF file
     int dimid;
     std::vector<int> dimids(NNBRS);
     NC_CHECK(nc_def_dim(nc_id, "P", _total_num_procs, &dimid));
     for (int idx = 0; idx < NNBRS; idx++) {
         NC_CHECK(nc_def_dim(nc_id, dir_chars[idx].c_str(), dims[idx], &dimids[idx]));
+    }
+
+    // Define periodic dimensions in netCDF file
+    std::vector<int> dimids_p(NNBRS);
+    for (int idx = 0; idx < NNBRS; idx++) {
+        NC_CHECK(
+            nc_def_dim(nc_id, (dir_chars[idx] + "_periodic").c_str(), dims_p[idx], &dimids_p[idx]));
     }
 
     // Define groups in netCDF file
@@ -148,6 +182,19 @@ void Partitioner::save_metadata(const std::string& filename) const
         NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_halos").c_str(), NC_INT,
             1, &dimids[idx], &halos_vid[idx]));
     }
+    int num_vid_p[NNBRS];
+    int ids_vid_p[NNBRS];
+    int halos_vid_p[NNBRS];
+    for (int idx = 0; idx < NNBRS; idx++) {
+        // Periodic members of connectivity group
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbours_periodic").c_str(),
+            NC_INT, 1, &dimid, &num_vid_p[idx]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_ids_periodic").c_str(),
+            NC_INT, 1, &dimids_p[idx], &ids_vid_p[idx]));
+        NC_CHECK(
+            nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_halos_periodic").c_str(),
+                NC_INT, 1, &dimids_p[idx], &halos_vid_p[idx]));
+    }
 
     // Write metadata to file
     NC_CHECK(nc_enddef(nc_id));
@@ -161,9 +208,14 @@ void Partitioner::save_metadata(const std::string& filename) const
         NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[idx], &start, &_local_ext_new[idx]));
     }
     for (int idx = 0; idx < NNBRS; idx++) {
+        // Numbers of neighbours
         size_t start = _rank;
         NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[idx], &start, &num_neighbours[idx]));
+        // Numbers of neighbours for periodic dimensions
+        NC_CHECK(nc_var_par_access(connectivity_gid, num_vid_p[idx], NC_COLLECTIVE));
+        NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid_p[idx], &start, &num_neighbours_p[idx]));
+        // IDs and halos
         start = offsets[idx];
         size_t count = num_neighbours[idx];
         NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid[idx], NC_COLLECTIVE));
@@ -171,6 +223,15 @@ void Partitioner::save_metadata(const std::string& filename) const
         NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid[idx], NC_COLLECTIVE));
         NC_CHECK(
             nc_put_vara_int(connectivity_gid, halos_vid[idx], &start, &count, halos[idx].data()));
+        // IDs and halos for periodic dimensions
+        start = offsets_p[idx];
+        count = num_neighbours_p[idx];
+        NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid_p[idx], NC_COLLECTIVE));
+        NC_CHECK(
+            nc_put_vara_int(connectivity_gid, ids_vid_p[idx], &start, &count, ids_p[idx].data()));
+        NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid_p[idx], NC_COLLECTIVE));
+        NC_CHECK(nc_put_vara_int(
+            connectivity_gid, halos_vid_p[idx], &start, &count, halos_p[idx].data()));
     }
     NC_CHECK(nc_close(nc_id));
 }
@@ -260,13 +321,16 @@ void Partitioner::discover_neighbours()
     }
 
     for (int p = 0; p < _total_num_procs; p++) {
+
+        // When finding neighbours *within* the domain, we don't check against the current rank
+        // because a subdomain can't be a neighbour of itself.
         if (p != _rank) {
 
             // Find my left neighbours
             // i.e., the left edge of domain[_rank] has to match the right edge of domain[p]
             if (domains[_rank].p1.x == domains[p].p2.x) {
                 // next compute overlap (if overlap is zero then they are not neighbours)
-                // domain overlap is equivalent to the amount of data transfered in halo exchnage.
+                // domain overlap is equivalent to the amount of data transfered in halo exchange.
                 int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
                 if (halo_size) {
                     _neighbours[0].insert(std::pair<int, int>(p, halo_size));
@@ -294,6 +358,44 @@ void Partitioner::discover_neighbours()
                 int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
                 if (halo_size) {
                     _neighbours[3].insert(std::pair<int, int>(p, halo_size));
+                }
+            }
+        }
+
+        // When finding neighours *across periodic boundaries*, we need to check against the current
+        // rank, too, because a subdomain can be a periodic neighbour of itself.
+        if (_px) {
+            // Find my left periodic neighbours
+            if ((domains[_rank].p1.x == 0) && (domains[p].p2.x == _global_ext[0])) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
+                if (halo_size) {
+                    _neighbours_p[0].insert(std::pair<int, int>(p, halo_size));
+                }
+            }
+
+            // Find my right periodic neighbours
+            if ((domains[_rank].p2.x == _global_ext[0]) && (domains[p].p1.x == 0)) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
+                if (halo_size) {
+                    _neighbours_p[1].insert(std::pair<int, int>(p, halo_size));
+                }
+            }
+        }
+
+        if (_py) {
+            // Find my bottom periodic neighbours
+            if ((domains[_rank].p1.y == 0) && (domains[p].p2.y == _global_ext[1])) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
+                if (halo_size) {
+                    _neighbours_p[2].insert(std::pair<int, int>(p, halo_size));
+                }
+            }
+
+            // Find my top periodic neighbours
+            if ((domains[_rank].p2.y == _global_ext[1]) && (domains[p].p1.y == 0)) {
+                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
+                if (halo_size) {
+                    _neighbours_p[3].insert(std::pair<int, int>(p, halo_size));
                 }
             }
         }

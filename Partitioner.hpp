@@ -1,7 +1,7 @@
 /*!
  * @file Partitioner.hpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 11 Sep 2024
+ * @date 05 Nov 2024
  */
 
 #pragma once
@@ -56,13 +56,25 @@ public:
     void get_bounding_box(int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const;
 
     /*!
-     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours for this
-     * process after partitioning. The neighbours are ordered left, right, bottom, top.
+     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours of this
+     * process in the domain interior after partitioning. The neighbours are ordered left, right,
+     * bottom, top.
      *
      * @param ids MPI ranks of the neighbours for each direction
      * @param halo_sizes Halo sizes of the neighbours for each direction
      */
     void get_neighbours(
+        std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const;
+
+    /*!
+     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours of this
+     * process across periodic boundaries after partitioning. The neighbours are ordered left,
+     * right, bottom, top.
+     *
+     * @param ids MPI ranks of the neighbours for each direction
+     * @param halo_sizes Halo sizes of the neighbours for each direction
+     */
+    void get_neighbours_periodic(
         std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const;
 
     /*!
@@ -103,7 +115,7 @@ protected:
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
     Partitioner(MPI_Comm comm);
 
-    // Discover the processe's neighbours and halo sizes after partitioning
+    // Discover the neighbours and halo sizes of the process after partitioning
     void discover_neighbours();
 
 protected:
@@ -112,6 +124,8 @@ protected:
     int _total_num_procs = -1; // Total number of processes in communicator
     static const int NDIMS = 2; // Number of dimensions
     static const int NNBRS = 2 * NDIMS; // Number of neighbours (two per dimension)
+    bool _px = false; // Periodic boundary in the x-direction
+    bool _py = false; // Periodic boundary in the y-direction
 
     // Letters used for each dimension
     std::vector<std::string> dim_chars = { "x", "y" };
@@ -148,6 +162,9 @@ protected:
 
     // Vector of maps of neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours = std::vector<std::map<int, int>>(NNBRS);
+
+    // Vector of maps of periodic neighbours to their halo sizes after partitioning
+    std::vector<std::map<int, int>> _neighbours_p = std::vector<std::map<int, int>>(NNBRS);
 
 public:
     struct LIB_EXPORT Factory {

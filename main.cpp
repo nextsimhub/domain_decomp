@@ -1,7 +1,7 @@
 /*!
  * @file main.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 23 Aug 2024
+ * @date 05 Nov 2024
  */
 
 #include <cstdio>
@@ -17,12 +17,13 @@
 using namespace std;
 namespace po = boost::program_options;
 
-void validateOrder(const std::string DimOrderStr)
+bool validateOrder(const std::string DimOrderStr)
 {
     if (DimOrderStr != "xy" && DimOrderStr != "yx") {
         cerr << "ERROR: invalid option. [order] must be either 'xy' or 'yx'." << endl;
+        return false;
     }
-    return;
+    return true;
 }
 
 std::vector<int> dimOrderFromStr(const std::string& DimOrderStr)
@@ -50,7 +51,9 @@ int main(int argc, char* argv[])
         ("ydim,y", po::value<string>()->default_value("y"), "Name of y dimension in netCDF grid file")
         ("order,o", po::value<string>()->default_value("yx"), "Order of dimensions in netCDF grid file, e.g., 'yx' or 'xy'")
         ("mask,m", po::value<string>()->default_value("mask"), "Mask variable name in netCDF grid file")
-        ("ignore-mask,i", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file");
+        ("ignore-mask,i", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file")
+        ("periodic-x,px", po::bool_switch()->default_value(false), "Periodicity in x-direction")
+        ("periodic-y,py", po::bool_switch()->default_value(false), "Periodicity in y-direction");
     // clang-format on
 
     // Parse optional command line options
@@ -67,12 +70,15 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    validateOrder(vm["order"].as<string>());
+    if (!validateOrder(vm["order"].as<string>())) {
+        return 1;
+    }
     std::vector<int> order = dimOrderFromStr(vm["order"].as<string>());
 
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["xdim"].as<string>(),
-        vm["ydim"].as<string>(), order, vm["mask"].as<string>(), vm["ignore-mask"].as<bool>());
+        vm["ydim"].as<string>(), order, vm["mask"].as<string>(), vm["ignore-mask"].as<bool>(),
+        vm["periodic-x"].as<bool>(), vm["periodic-y"].as<bool>());
 
     // Create a Zoltan partitioner
     Partitioner* partitioner

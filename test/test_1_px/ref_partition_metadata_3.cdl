@@ -5,10 +5,10 @@ dimensions:
 	P = 3 ;
 	L = 2 ;
 	R = 2 ;
-	B = UNLIMITED ; // (0 currently)
-	T = UNLIMITED ; // (0 currently)
-	L_periodic = UNLIMITED ; // (0 currently)
-	R_periodic = UNLIMITED ; // (0 currently)
+	B = 1 ;
+	T = 1 ;
+	L_periodic = 2 ;
+	R_periodic = 2 ;
 	B_periodic = UNLIMITED ; // (0 currently)
 	T_periodic = UNLIMITED ; // (0 currently)
 
@@ -20,13 +20,13 @@ group: bounding_boxes {
   	int domain_extent_y(P) ;
   data:
 
-   domain_x = 0, 2, 4 ;
+   domain_x = 0, 0, 4 ;
 
-   domain_extent_x = 2, 2, 2 ;
+   domain_extent_x = 4, 4, 2 ;
 
-   domain_y = 0, 0, 0 ;
+   domain_y = 0, 2, 0 ;
 
-   domain_extent_y = 4, 4, 4 ;
+   domain_extent_y = 2, 2, 4 ;
   } // group bounding_boxes
 
 group: connectivity {
@@ -57,25 +57,41 @@ group: connectivity {
   	int top_neighbour_halos_periodic(T_periodic) ;
   data:
 
-   left_neighbours = 0, 1, 1 ;
+   left_neighbours = 0, 0, 2 ;
 
    left_neighbour_ids = 0, 1 ;
 
-   left_neighbour_halos = 4, 4 ;
+   left_neighbour_halos = 2, 2 ;
 
    right_neighbours = 1, 1, 0 ;
 
-   right_neighbour_ids = 1, 2 ;
+   right_neighbour_ids = 2, 2 ;
 
-   right_neighbour_halos = 4, 4 ;
+   right_neighbour_halos = 2, 2 ;
 
-   bottom_neighbours = 0, 0, 0 ;
+   bottom_neighbours = 0, 1, 0 ;
 
-   top_neighbours = 0, 0, 0 ;
+   bottom_neighbour_ids = 0 ;
 
-   left_neighbours_periodic = 0, 0, 0 ;
+   bottom_neighbour_halos = 4 ;
 
-   right_neighbours_periodic = 0, 0, 0 ;
+   top_neighbours = 1, 0, 0 ;
+
+   top_neighbour_ids = 1 ;
+
+   top_neighbour_halos = 4 ;
+
+   left_neighbours_periodic = 1, 1, 0 ;
+
+   left_neighbour_ids_periodic = 2, 2 ;
+
+   left_neighbour_halos_periodic = 2, 2 ;
+
+   right_neighbours_periodic = 0, 0, 2 ;
+
+   right_neighbour_ids_periodic = 0, 1 ;
+
+   right_neighbour_halos_periodic = 2, 2 ;
 
    bottom_neighbours_periodic = 0, 0, 0 ;
 

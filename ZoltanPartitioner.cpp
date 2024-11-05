@@ -1,7 +1,7 @@
 /*!
  * @file ZoltanPartitioner.cpp
  * @author Athena Elafrou <ae488@cam.ac.uk>
- * @date 11 Sep 2024
+ * @date 05 Nov 2024
  */
 
 #include "ZoltanPartitioner.hpp"
@@ -96,6 +96,8 @@ void ZoltanPartitioner::partition(Grid& grid)
     _num_procs = grid.get_num_procs();
     _global_ext = grid.get_global_ext();
     grid.get_bounding_box(_global[0], _global[1], _local_ext[0], _local_ext[1]);
+    _px = grid.get_px();
+    _py = grid.get_py();
 
     if (_total_num_procs == 1) {
         for (int idx = 0; idx < 2; idx++) {
