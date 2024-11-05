@@ -71,9 +71,9 @@ public:
      * @param ydim_name Name of 2nd grid dimension in netCDF file (optional)
      * @param dim_order Permutation for ordering of dimensions.
      * @param mask_name Name of land mask variable in netCDF file (optional)
-     * @param ignore_mask Should the land mask be ignored?
-     * @param px Is the domain periodic in the x-direction?
-     * @param py Is the domain periodic in the y-direction?
+     * @param ignore_mask Should the land mask be ignored
+     * @param px Is the domain periodic in the x-direction
+     * @param py Is the domain periodic in the y-direction
      * @return A distributed 2D grid object partitioned evenly in terms of grid
      * points.
      */
