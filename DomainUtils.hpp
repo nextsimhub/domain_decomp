@@ -8,6 +8,11 @@
 #ifndef DOMAINUTILS_HPP
 #define DOMAINUTILS_HPP
 
+#include <array>
+
+enum Edge { LEFT, RIGHT, BOTTOM, TOP, N_EDGE };
+static constexpr std::array<Edge, N_EDGE> edges = { LEFT, RIGHT, BOTTOM, TOP };
+
 /*!
  * @brief 2D point structs. Points can be used to construct Domains.
  */
@@ -30,19 +35,26 @@ struct Point {
  */
 struct Domain {
     Point p1, p2;
+    /*!
+     * @brief return width of domain
+     */
+    int get_width() const;
+    /*!
+     * @brief return height of domain
+     */
+    int get_height() const;
 };
 
 /*!
- * @brief Compute the overlap between two domains. Will return zero if domains
- * do not overlap.
+ * @brief Compute the overlap between two domains. Will return zero if domains do not overlap.
  *
- * Note that this doesn't check if two domains are neighbours, just that they
- * overlap in the x or y direction.
+ * Note that this doesn't check if two domains are neighbours, just that they overlap in the x or y
+ * direction.
  *
  * @param d1 First Domain
  * @param d2 Second Domain
  * @param dir direction to find overlap ('x' or 'y')
  */
-int domainOverlap(const Domain d1, const Domain d2, const char dir);
+int domain_overlap(const Domain d1, const Domain d2, const Edge edge);
 
 #endif /* DOMAINUTILS_HPP */
