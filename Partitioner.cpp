@@ -9,11 +9,89 @@
 #include "Utils.hpp"
 #include "ZoltanPartitioner.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <stdexcept>
 
 #include <netcdf.h>
 #include <netcdf_par.h>
+
+bool Partitioner::is_neighbour(
+    const Domain d1, const Domain d2, const Edge edge, const bool is_px, const bool is_py)
+{
+    if (edge == TOP) {
+        // Check if TOP neighbour i.e., the bottom of domain d2 must match the top of domain d1.
+        // The logic for the other edges is essentially the same.
+        if (is_py) {
+            if (d1.p2.y == d2.p1.y + _global_ext[1]) {
+                return true;
+            }
+        } else {
+            if (d1.p2.y == d2.p1.y) {
+                return true;
+            }
+        }
+    } else if (edge == BOTTOM) {
+        if (is_py) {
+            if (d1.p1.y == d2.p2.y - _global_ext[1]) {
+                return true;
+            }
+        } else {
+            if (d1.p1.y == d2.p2.y) {
+                return true;
+            }
+        }
+    } else if (edge == LEFT) {
+        if (is_px) {
+            if (d1.p1.x == d2.p2.x - _global_ext[0]) {
+                return true;
+            }
+        } else {
+            if (d1.p1.x == d2.p2.x) {
+                return true;
+            }
+        }
+    } else if (edge == RIGHT) {
+        if (is_px) {
+            if (d1.p2.x == d2.p1.x + _global_ext[0]) {
+                return true;
+            }
+        } else {
+
+            if (d1.p2.x == d2.p1.x) {
+                return true;
+            }
+        }
+    } else {
+        std::cerr << "ERROR: edge must be LEFT, RIGHT, BOTTOM, TOP." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    return false;
+}
+
+int Partitioner::halo_start(const Domain d1, const Domain d2, const Edge edge)
+{
+    int start = 0;
+    if (edge == TOP) {
+        // offset between domains
+        int dx = std::max(d1.p1.x, d2.p1.x) - d2.p1.x;
+        start = dx;
+    } else if (edge == BOTTOM) {
+        int dx = std::max(d1.p1.x, d2.p1.x) - d2.p1.x;
+        start = (d2.get_height() - 1) * d2.get_width() + dx;
+    } else if (edge == LEFT) {
+        int dy = std::max(d1.p1.y, d2.p1.y) - d2.p1.y;
+        start = ((dy + 1) * d2.get_width()) - 1;
+    } else if (edge == RIGHT) {
+        int dy = std::max(d1.p1.y, d2.p1.y) - d2.p1.y;
+        start = dy * d2.get_width();
+    } else {
+        std::cerr << "ERROR: edge must be LEFT, RIGHT, BOTTOM, TOP." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    return start;
+}
 
 Partitioner::Partitioner(MPI_Comm comm)
 {
@@ -31,29 +109,31 @@ void Partitioner::get_bounding_box(
     local_ext_1 = _local_ext_new[1];
 }
 
-void Partitioner::get_neighbours(
-    std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const
+void Partitioner::get_neighbour_info(std::vector<std::vector<int>>& ids,
+    std::vector<std::vector<int>>& halo_sizes, std::vector<std::vector<int>>& halo_starts) const
 {
-    for (int idx = 0; idx < NNBRS; idx++) {
-        for (auto it = _neighbours[idx].begin(); it != _neighbours[idx].end(); ++it) {
-            ids[idx].push_back(it->first);
-            halo_sizes[idx].push_back(it->second);
+    for (auto edge : edges) {
+        for (auto it = _neighbours[edge].begin(); it != _neighbours[edge].end(); ++it) {
+            ids[edge].push_back(it->first);
+            halo_sizes[edge].push_back(it->second);
+        }
+        for (auto it = _halo_starts[edge].begin(); it != _halo_starts[edge].end(); ++it) {
+            halo_starts[edge].push_back(it->second);
         }
     }
 }
 
-void Partitioner::get_neighbours_periodic(
-    std::vector<std::vector<int>>& ids_p, std::vector<std::vector<int>>& halo_sizes_p) const
+void Partitioner::get_neighbour_info_periodic(std::vector<std::vector<int>>& ids,
+    std::vector<std::vector<int>>& halo_sizes, std::vector<std::vector<int>>& halo_starts) const
 {
-    // NOTE: Neighbours are looped in the order left-right-bottom-top
-    for (int d = 0; d < NDIMS; d++) {
-        if ((d == 0 && _px) || (d == 1 && _py)) {
-            for (int i = 0; i < 2; i++) {
-                int idx = 2 * d + i;
-                for (auto it = _neighbours_p[idx].begin(); it != _neighbours_p[idx].end(); ++it) {
-                    ids_p[idx].push_back(it->first);
-                    halo_sizes_p[idx].push_back(it->second);
-                }
+    for (auto edge : edges) {
+        if (((edge == LEFT || edge == RIGHT) && _px) || ((edge == TOP || edge == BOTTOM) && _py)) {
+            for (auto it = _neighbours_p[edge].begin(); it != _neighbours_p[edge].end(); ++it) {
+                ids[edge].push_back(it->first);
+                halo_sizes[edge].push_back(it->second);
+            }
+            for (auto it = _halo_starts_p[edge].begin(); it != _halo_starts_p[edge].end(); ++it) {
+                halo_starts[edge].push_back(it->second);
             }
         }
     }
@@ -117,42 +197,41 @@ void Partitioner::save_metadata(const std::string& filename) const
             nc_id, global_extent_names[idx].c_str(), _global_ext[idx], &dimid_global[idx]));
     }
 
-    // There are two neighbours for each dimension
-    const int NNBRS = NDIMS * 2; // TODO: Why redeclared?
-
     // Prepare neighbour data
-    std::vector<std::vector<int>> ids(NNBRS), halos(NNBRS);
-    get_neighbours(ids, halos);
-    std::vector<int> num_neighbours(NNBRS), dims(NNBRS, 0), offsets(NNBRS, 0);
-    for (int idx = 0; idx < NNBRS; idx++) {
-        num_neighbours[idx] = (int)ids[idx].size();
-        CHECK_MPI(MPI_Allreduce(&num_neighbours[idx], &dims[idx], 1, MPI_INT, MPI_SUM, _comm));
-        CHECK_MPI(MPI_Exscan(&num_neighbours[idx], &offsets[idx], 1, MPI_INT, MPI_SUM, _comm));
+    std::vector<std::vector<int>> ids(N_EDGE), halos(N_EDGE), halo_starts(N_EDGE);
+    get_neighbour_info(ids, halos, halo_starts);
+    std::vector<int> num_neighbours(N_EDGE), dims(N_EDGE, 0), offsets(N_EDGE, 0);
+    for (auto edge : edges) {
+        num_neighbours[edge] = (int)ids[edge].size();
+        CHECK_MPI(MPI_Allreduce(&num_neighbours[edge], &dims[edge], 1, MPI_INT, MPI_SUM, _comm));
+        CHECK_MPI(MPI_Exscan(&num_neighbours[edge], &offsets[edge], 1, MPI_INT, MPI_SUM, _comm));
     }
 
     // Prepare periodic neighbour data
-    std::vector<std::vector<int>> ids_p(NNBRS), halos_p(NNBRS);
-    get_neighbours_periodic(ids_p, halos_p);
-    std::vector<int> num_neighbours_p(NNBRS), dims_p(NNBRS, 0), offsets_p(NNBRS, 0);
-    for (int idx = 0; idx < NNBRS; idx++) {
-        num_neighbours_p[idx] = (int)ids_p[idx].size();
-        CHECK_MPI(MPI_Allreduce(&num_neighbours_p[idx], &dims_p[idx], 1, MPI_INT, MPI_SUM, _comm));
-        CHECK_MPI(MPI_Exscan(&num_neighbours_p[idx], &offsets_p[idx], 1, MPI_INT, MPI_SUM, _comm));
+    std::vector<std::vector<int>> ids_p(N_EDGE), halos_p(N_EDGE), halo_starts_p(N_EDGE);
+    get_neighbour_info_periodic(ids_p, halos_p, halo_starts_p);
+    std::vector<int> num_neighbours_p(N_EDGE), dims_p(N_EDGE, 0), offsets_p(N_EDGE, 0);
+    for (auto edge : edges) {
+        num_neighbours_p[edge] = (int)ids_p[edge].size();
+        CHECK_MPI(
+            MPI_Allreduce(&num_neighbours_p[edge], &dims_p[edge], 1, MPI_INT, MPI_SUM, _comm));
+        CHECK_MPI(
+            MPI_Exscan(&num_neighbours_p[edge], &offsets_p[edge], 1, MPI_INT, MPI_SUM, _comm));
     }
 
     // Define dimensions in netCDF file
     int dimid;
-    std::vector<int> dimids(NNBRS);
+    std::vector<int> dimids(N_EDGE);
     NC_CHECK(nc_def_dim(nc_id, "P", _total_num_procs, &dimid));
-    for (int idx = 0; idx < NNBRS; idx++) {
-        NC_CHECK(nc_def_dim(nc_id, dir_chars[idx].c_str(), dims[idx], &dimids[idx]));
+    for (auto edge : edges) {
+        NC_CHECK(nc_def_dim(nc_id, dir_chars[edge].c_str(), dims[edge], &dimids[edge]));
     }
 
     // Define periodic dimensions in netCDF file
-    std::vector<int> dimids_p(NNBRS);
-    for (int idx = 0; idx < NNBRS; idx++) {
-        NC_CHECK(
-            nc_def_dim(nc_id, (dir_chars[idx] + "_periodic").c_str(), dims_p[idx], &dimids_p[idx]));
+    std::vector<int> dimids_p(N_EDGE);
+    for (auto edge : edges) {
+        NC_CHECK(nc_def_dim(
+            nc_id, (dir_chars[edge] + "_periodic").c_str(), dims_p[edge], &dimids_p[edge]));
     }
 
     // Define groups in netCDF file
@@ -163,9 +242,7 @@ void Partitioner::save_metadata(const std::string& filename) const
     // Define variables in netCDF file
     int top_vid[NDIMS];
     int cnt_vid[NDIMS];
-    int num_vid[NNBRS];
-    int ids_vid[NNBRS];
-    int halos_vid[NNBRS];
+    int num_vid[N_EDGE];
     for (int idx = 0; idx < NDIMS; idx++) {
         // Bounding boxes group
         NC_CHECK(nc_def_var(
@@ -173,27 +250,38 @@ void Partitioner::save_metadata(const std::string& filename) const
         NC_CHECK(nc_def_var(bbox_gid, ("domain_extent_" + dim_chars[idx]).c_str(), NC_INT, 1,
             &dimid, &cnt_vid[idx]));
     }
-    for (int idx = 0; idx < NNBRS; idx++) {
+
+    int ids_vid[N_EDGE];
+    int halos_vid[N_EDGE];
+    int halo_starts_vid[N_EDGE];
+    for (auto edge : edges) {
         // Connectivity group
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbours").c_str(), NC_INT, 1,
-            &dimid, &num_vid[idx]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_ids").c_str(), NC_INT,
-            1, &dimids[idx], &ids_vid[idx]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_halos").c_str(), NC_INT,
-            1, &dimids[idx], &halos_vid[idx]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbours").c_str(), NC_INT, 1,
+            &dimid, &num_vid[edge]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_ids").c_str(), NC_INT,
+            1, &dimids[edge], &ids_vid[edge]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_halos").c_str(),
+            NC_INT, 1, &dimids[edge], &halos_vid[edge]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_halo_starts").c_str(),
+            NC_INT, 1, &dimids[edge], &halo_starts_vid[edge]));
     }
-    int num_vid_p[NNBRS];
-    int ids_vid_p[NNBRS];
-    int halos_vid_p[NNBRS];
-    for (int idx = 0; idx < NNBRS; idx++) {
+
+    int num_vid_p[N_EDGE];
+    int ids_vid_p[N_EDGE];
+    int halos_vid_p[N_EDGE];
+    int halo_starts_vid_p[N_EDGE];
+    for (auto edge : edges) {
         // Periodic members of connectivity group
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbours_periodic").c_str(),
-            NC_INT, 1, &dimid, &num_vid_p[idx]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_ids_periodic").c_str(),
-            NC_INT, 1, &dimids_p[idx], &ids_vid_p[idx]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbours_periodic").c_str(),
+            NC_INT, 1, &dimid, &num_vid_p[edge]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_ids_periodic").c_str(),
+            NC_INT, 1, &dimids_p[edge], &ids_vid_p[edge]));
         NC_CHECK(
-            nc_def_var(connectivity_gid, (dir_names[idx] + "_neighbour_halos_periodic").c_str(),
-                NC_INT, 1, &dimids_p[idx], &halos_vid_p[idx]));
+            nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_halos_periodic").c_str(),
+                NC_INT, 1, &dimids_p[edge], &halos_vid_p[edge]));
+        NC_CHECK(nc_def_var(connectivity_gid,
+            (dir_names[edge] + "_neighbour_halo_starts_periodic").c_str(), NC_INT, 1,
+            &dimids_p[edge], &halo_starts_vid_p[edge]));
     }
 
     // Write metadata to file
@@ -207,31 +295,38 @@ void Partitioner::save_metadata(const std::string& filename) const
         NC_CHECK(nc_var_par_access(bbox_gid, cnt_vid[idx], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[idx], &start, &_local_ext_new[idx]));
     }
-    for (int idx = 0; idx < NNBRS; idx++) {
+    for (auto edge : edges) {
         // Numbers of neighbours
         size_t start = _rank;
-        NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[idx], NC_COLLECTIVE));
-        NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[idx], &start, &num_neighbours[idx]));
+        NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[edge], NC_COLLECTIVE));
+        NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[edge], &start, &num_neighbours[edge]));
         // Numbers of neighbours for periodic dimensions
-        NC_CHECK(nc_var_par_access(connectivity_gid, num_vid_p[idx], NC_COLLECTIVE));
-        NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid_p[idx], &start, &num_neighbours_p[idx]));
+        NC_CHECK(nc_var_par_access(connectivity_gid, num_vid_p[edge], NC_COLLECTIVE));
+        NC_CHECK(
+            nc_put_var1_int(connectivity_gid, num_vid_p[edge], &start, &num_neighbours_p[edge]));
         // IDs and halos
-        start = offsets[idx];
-        size_t count = num_neighbours[idx];
-        NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid[idx], NC_COLLECTIVE));
-        NC_CHECK(nc_put_vara_int(connectivity_gid, ids_vid[idx], &start, &count, ids[idx].data()));
-        NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid[idx], NC_COLLECTIVE));
+        start = offsets[edge];
+        size_t count = num_neighbours[edge];
+        NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid[edge], NC_COLLECTIVE));
         NC_CHECK(
-            nc_put_vara_int(connectivity_gid, halos_vid[idx], &start, &count, halos[idx].data()));
-        // IDs and halos for periodic dimensions
-        start = offsets_p[idx];
-        count = num_neighbours_p[idx];
-        NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid_p[idx], NC_COLLECTIVE));
+            nc_put_vara_int(connectivity_gid, ids_vid[edge], &start, &count, ids[edge].data()));
+        NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid[edge], NC_COLLECTIVE));
         NC_CHECK(
-            nc_put_vara_int(connectivity_gid, ids_vid_p[idx], &start, &count, ids_p[idx].data()));
-        NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid_p[idx], NC_COLLECTIVE));
+            nc_put_vara_int(connectivity_gid, halos_vid[edge], &start, &count, halos[edge].data()));
+        NC_CHECK(nc_var_par_access(connectivity_gid, halo_starts_vid[edge], NC_COLLECTIVE));
         NC_CHECK(nc_put_vara_int(
-            connectivity_gid, halos_vid_p[idx], &start, &count, halos_p[idx].data()));
+            connectivity_gid, halo_starts_vid[edge], &start, &count, halo_starts[edge].data()));
+        // IDs and halos for periodic dimensions
+        start = offsets_p[edge];
+        count = num_neighbours_p[edge];
+        NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid_p[edge], NC_COLLECTIVE));
+        NC_CHECK(
+            nc_put_vara_int(connectivity_gid, ids_vid_p[edge], &start, &count, ids_p[edge].data()));
+        NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid_p[edge], NC_COLLECTIVE));
+        NC_CHECK(nc_put_vara_int(
+            connectivity_gid, halos_vid_p[edge], &start, &count, halos_p[edge].data()));
+        NC_CHECK(nc_put_vara_int(
+            connectivity_gid, halo_starts_vid_p[edge], &start, &count, halo_starts_p[edge].data()));
     }
     NC_CHECK(nc_close(nc_id));
 }
@@ -326,76 +421,27 @@ void Partitioner::discover_neighbours()
         // because a subdomain can't be a neighbour of itself.
         if (p != _rank) {
 
-            // Find my left neighbours
-            // i.e., the left edge of domain[_rank] has to match the right edge of domain[p]
-            if (domains[_rank].p1.x == domains[p].p2.x) {
-                // next compute overlap (if overlap is zero then they are not neighbours)
-                // domain overlap is equivalent to the amount of data transfered in halo exchange.
-                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
-                if (halo_size) {
-                    _neighbours[0].insert(std::pair<int, int>(p, halo_size));
-                }
-            }
-
-            // Find my right neighbours
-            if (domains[_rank].p2.x == domains[p].p1.x) {
-                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
-                if (halo_size) {
-                    _neighbours[1].insert(std::pair<int, int>(p, halo_size));
-                }
-            }
-
-            // Find my bottom neighbours
-            if (domains[_rank].p1.y == domains[p].p2.y) {
-                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
-                if (halo_size) {
-                    _neighbours[2].insert(std::pair<int, int>(p, halo_size));
-                }
-            }
-
-            // Find my top neighbours
-            if (domains[_rank].p2.y == domains[p].p1.y) {
-                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
-                if (halo_size) {
-                    _neighbours[3].insert(std::pair<int, int>(p, halo_size));
+            for (auto edge : edges) {
+                if (is_neighbour(domains[_rank], domains[p], edge)) {
+                    int halo_size = domain_overlap(domains[_rank], domains[p], edge);
+                    if (halo_size > 0) {
+                        _neighbours[edge].insert(std::pair<int, int>(p, halo_size));
+                        int start = halo_start(domains[_rank], domains[p], edge);
+                        _halo_starts[edge].insert(std::pair<int, int>(p, start));
+                    }
                 }
             }
         }
 
-        // When finding neighours *across periodic boundaries*, we need to check against the current
-        // rank, too, because a subdomain can be a periodic neighbour of itself.
-        if (_px) {
-            // Find my left periodic neighbours
-            if ((domains[_rank].p1.x == 0) && (domains[p].p2.x == _global_ext[0])) {
-                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
-                if (halo_size) {
-                    _neighbours_p[0].insert(std::pair<int, int>(p, halo_size));
-                }
-            }
-
-            // Find my right periodic neighbours
-            if ((domains[_rank].p2.x == _global_ext[0]) && (domains[p].p1.x == 0)) {
-                int halo_size = domainOverlap(domains[_rank], domains[p], 'y');
-                if (halo_size) {
-                    _neighbours_p[1].insert(std::pair<int, int>(p, halo_size));
-                }
-            }
-        }
-
-        if (_py) {
-            // Find my bottom periodic neighbours
-            if ((domains[_rank].p1.y == 0) && (domains[p].p2.y == _global_ext[1])) {
-                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
-                if (halo_size) {
-                    _neighbours_p[2].insert(std::pair<int, int>(p, halo_size));
-                }
-            }
-
-            // Find my top periodic neighbours
-            if ((domains[_rank].p2.y == _global_ext[1]) && (domains[p].p1.y == 0)) {
-                int halo_size = domainOverlap(domains[_rank], domains[p], 'x');
-                if (halo_size) {
-                    _neighbours_p[3].insert(std::pair<int, int>(p, halo_size));
+        // When finding neighours *across periodic boundaries*, we need to check against the
+        // current rank, too, because a subdomain can be a periodic neighbour of itself.
+        for (auto edge : edges) {
+            if (is_neighbour(domains[_rank], domains[p], edge, _px, _py)) {
+                int halo_size = domain_overlap(domains[_rank], domains[p], edge);
+                if (halo_size > 0) {
+                    _neighbours_p[edge].insert(std::pair<int, int>(p, halo_size));
+                    int start = halo_start(domains[_rank], domains[p], edge);
+                    _halo_starts_p[edge].insert(std::pair<int, int>(p, start));
                 }
             }
         }

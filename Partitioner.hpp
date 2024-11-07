@@ -8,6 +8,7 @@
 
 #include <map>
 
+#include "DomainUtils.hpp"
 #include "Grid.hpp"
 #include "domain_decomp_export.hpp"
 
@@ -62,20 +63,24 @@ public:
      *
      * @param ids MPI ranks of the neighbours for each direction
      * @param halo_sizes Halo sizes of the neighbours for each direction
+     * @param halo_starts Halo starting indices of the neighbours for each direction
      */
-    void get_neighbours(
-        std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const;
+    void get_neighbour_info(std::vector<std::vector<int>>& ids,
+        std::vector<std::vector<int>>& halo_sizes,
+        std::vector<std::vector<int>>& halo_starts) const;
 
     /*!
-     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours of this
-     * process across periodic boundaries after partitioning. The neighbours are ordered left,
+     * @brief Returns vectors containing the MPI ranks and halo sizes of the periodic neighbours of
+     * this process in the domain interior after partitioning. The neighbours are ordered left,
      * right, bottom, top.
      *
-     * @param ids MPI ranks of the neighbours for each direction
-     * @param halo_sizes Halo sizes of the neighbours for each direction
+     * @param ids MPI ranks of the periodic neighbours for each direction
+     * @param halo_sizes Halo sizes of the periodic neighbours for each direction
+     * @param halo_starts Halo starting indices of the periodic neighbours for each direction
      */
-    void get_neighbours_periodic(
-        std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const;
+    void get_neighbour_info_periodic(std::vector<std::vector<int>>& ids,
+        std::vector<std::vector<int>>& halo_sizes,
+        std::vector<std::vector<int>>& halo_starts) const;
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -163,8 +168,43 @@ protected:
     // Vector of maps of neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours = std::vector<std::map<int, int>>(NNBRS);
 
+    // Vector of maps of neighbours to their halo start indices after partitioning
+    std::vector<std::map<int, int>> _halo_starts = std::vector<std::map<int, int>>(NNBRS);
+
     // Vector of maps of periodic neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours_p = std::vector<std::map<int, int>>(NNBRS);
+    //
+    // Vector of maps of periodic neighbours to their halo start indices after partitioning
+    std::vector<std::map<int, int>> _halo_starts_p = std::vector<std::map<int, int>>(NNBRS);
+
+private:
+    /*!
+     * @brief Check if 2 domains are neighbouring. If true, then domain 2 is
+     * the [edge] neighbour of domain 1, relative to domain 1.
+     * e.g., if domain 2 is to the right of domain 1, the following call will
+     * return true
+     * is_neighbour(d1, d2, RIGHT) == true
+     *
+     * @param d1 first domain
+     * @param d2 second domain
+     * @param edge LEFT, RIGHT, BOTTOM or TOP
+     * @param is_px are we looking for periodic neighbour in x-direction?
+     * @param is_py are we looking for periodic neighbour in y-direction?
+     * @return bool
+     */
+    bool is_neighbour(const Domain d1, const Domain d2, const Edge edge, const bool is_px = false,
+        const bool is_py = false);
+
+    /*!
+     * @brief Compute the start location of the halo for a given pair of domains. This should only
+     * be called if the two domains have already been confirmed as neighbours using is_neighbour().
+     *
+     * @param d1 first domain
+     * @param d2 second domain
+     * @param edge LEFT, RIGHT, BOTTOM or TOP
+     * @return starting index of halo for the flattened domain array
+     */
+    int halo_start(const Domain d1, const Domain d2, const Edge edge);
 
 public:
     struct LIB_EXPORT Factory {
