@@ -56,11 +56,15 @@ int Partitioner::halo_start(const Domain d1, const Domain d2, const Edge edge)
 {
     int start = 0;
     if (edge == TOP) {
-        // offset between domains
+        // dx is the offset between domains
         int dx = std::max(d1.p1.x, d2.p1.x) - d2.p1.x;
+        // in this case the start location is equivalent
         start = dx;
     } else if (edge == BOTTOM) {
+        // dx is the offset between domains
         int dx = std::max(d1.p1.x, d2.p1.x) - d2.p1.x;
+        // start will be in last row in the 2D-domain, therefore we need to account for (ny-1) * nx
+        // elements that come before the offset dx.
         start = (d2.get_height() - 1) * d2.get_width() + dx;
     } else if (edge == LEFT) {
         int dy = std::max(d1.p1.y, d2.p1.y) - d2.p1.y;
