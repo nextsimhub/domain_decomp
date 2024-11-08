@@ -197,7 +197,7 @@ private:
     /*!
      * @brief Compute the start location of the halo for a given pair of neighbouring domains.
      *
-     * For example, in the diagram above. If we want to compute the start location for the halo of
+     * For example, in the diagram below. If we want to compute the start location for the halo of
      * domain 1 which is the LEFT neighbour of domain 2, halo_start should return 4 (see square
      * bracket in diagram below).
      *         memory             domains          halo required
