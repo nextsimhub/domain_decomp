@@ -25,7 +25,8 @@ COPY . /decomp
 RUN spack env activate /opt/spack-environment \
     && cd /decomp \
     && cmake -G "Unix Makefiles" -Bbuild -S. \
-    && cmake --build build --config Release
+    && cmake --build build --config Release \
+    && cp build/decomp /usr/bin/
 
 # Bare OS image to run the installed executables
 FROM ubuntu:22.04

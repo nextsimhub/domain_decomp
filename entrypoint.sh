@@ -10,8 +10,8 @@ NP=$1; shift
 case $NP in
     ''|*[!0-9]*)
         echo "Provide the number of domains before any options"
-        exec /decomp/build/decomp --help
+        exec decomp --help
         exit 15
         ;;
-    *) mpirun --allow-run-as-root -n $NP --oversubscribe /decomp/build/decomp "$@" ;;
+    *) mpirun --allow-run-as-root -n $NP --oversubscribe decomp "$@" ;;
 esac
