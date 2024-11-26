@@ -23,6 +23,7 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 ## Getting Started
 
 ### Requirements
+A local installation requires:
 * A Unix-like operating system (e.g., Linux or Mac OS X)
 * ANSI C++ compiler
 * MPI library for message passing (e.g., MPICH or OpenMPI)
@@ -31,6 +32,8 @@ The proposed approach is based on the Recursive Coordinate Bisection (RCB) geome
 * Zoltan, built with CMake from the **[Trilinos](https://github.com/trilinos/Trilinos.git)** package
 * [doctest](https://github.com/doctest/doctest) for unit testing
 * [Boost](https://www.boost.org/) program_options library
+
+Alternatively, the partitioning tool can be used via a Docker image, in which case only a Docker installation is required. See section on Docker below.
 
 #### Building Zoltan from source
 
@@ -289,3 +292,33 @@ for each MPI process. The file also defines the variables `X_neighbours(P)`, `X_
 `X_neighbour_halos(X_dim)`, where `X` is `top/bottom/left/right`, which correspond to the number of neighbours per process, the
 neighbour IDs and halo sizes of each process sorted from lower to higher MPI rank. Note that `top/bottom/left/right` refer to
 the orientation as shown in Fig. 2 (ASCII diagram).
+
+### How to run using Docker
+
+First, build the docker image, e.g.
+
+```
+$ docker build . -t decomp
+```
+
+This builds a Docker image with the tag `decomp`. The build process takes substantial amount of time (about half an hour on a recent laptop), as it requires building all the prerequsites, as well as the partitioning tool itself.
+
+Once built, the Docker image can be used to partition a given grid using the syntax
+
+```
+$ docker run --rm -v $DATADIR:/io decomp $NPART -g $GRIDIN [other options]
+```
+
+where $DATADIR is the directory containing the input grid file, $NPART is the number of partitions and $GRIDIN is the input grid file name and path relative to $DATADIR. The output will be written to $DATADIR. The `--rm` flag to `docker run` is optional, but it's use is recommended as the docker container which `docker run` creates is not needed afterwards and `--rm` removes this. The online help can also be envoked using
+
+```
+$ docker run --rm decomp -h
+```
+
+A typical use case is to run the program from the same directory the input grid file is in, in which case the command above can be given as
+
+```
+$ docker run --rm -v $PWD:/io decomp $NPART -g $GRIDIN [other options]
+```
+
+and $GRIDIN is simply the file name for the input fill.

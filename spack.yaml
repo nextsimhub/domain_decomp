@@ -1,0 +1,17 @@
+spack:
+  packages:
+    all:
+      compiler: [gcc@11.4.0]
+  specs:
+  - boost@1.80.0+log+program_options
+  - 'cmake@3.20:'
+  - gmake
+  - netcdf-c@4.9.2+mpi+parallel-netcdf
+  - netcdf-cxx4@4.3.1
+  - zoltan
+  concretizer:
+    unify: true
+  config:
+    install_missing_compilers: true
+    install_tree: /opt/software
+  view: /opt/views/view
