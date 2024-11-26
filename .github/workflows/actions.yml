@@ -44,11 +44,22 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
+
+        # # tmate can be used to get an interactive ssh session to the github runner
+        # # for debugging actions. See
+        # # [here](https://github.com/mxschmitt/action-tmate) for more information.
+        # # uncomment these lines to debug mac build
+        #   - name: Setup tmate session
+        #     uses: mxschmitt/action-tmate@v3
+
       - name: Install dependencies
         run: |
           brew install bash
           brew install cmake
           brew install boost
+          brew unlink pkg-config@0.29.2
+          brew install pkgconf
+          brew link --overwrite pkgconf
           brew install hdf5-mpi
           brew install pnetcdf
           git clone https://github.com/trilinos/Trilinos.git
