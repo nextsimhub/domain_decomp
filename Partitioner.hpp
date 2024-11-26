@@ -8,6 +8,7 @@
 
 #include <map>
 
+#include "DomainUtils.hpp"
 #include "Grid.hpp"
 #include "domain_decomp_export.hpp"
 
@@ -56,26 +57,30 @@ public:
     void get_bounding_box(int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const;
 
     /*!
-     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours of this
-     * process in the domain interior after partitioning. The neighbours are ordered left, right,
-     * bottom, top.
+     * @brief Returns vectors containing the MPI ranks, halo sizes and halo starting indices of the
+     * neighbours of this process in the domain interior after partitioning. The neighbours are
+     * ordered left, right, bottom, top.
      *
      * @param ids MPI ranks of the neighbours for each direction
      * @param halo_sizes Halo sizes of the neighbours for each direction
+     * @param halo_starts Halo starting indices of the neighbours for each direction
      */
-    void get_neighbours(
-        std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const;
+    void get_neighbour_info(std::vector<std::vector<int>>& ids,
+        std::vector<std::vector<int>>& halo_sizes,
+        std::vector<std::vector<int>>& halo_starts) const;
 
     /*!
-     * @brief Returns vectors containing the MPI ranks and halo sizes of the neighbours of this
-     * process across periodic boundaries after partitioning. The neighbours are ordered left,
-     * right, bottom, top.
+     * @brief Returns vectors containing the MPI ranks, halo sizes and halo starting indices of the
+     * neighbours of this process across periodic boundaries after partitioning. The neighbours are
+     * ordered left, right, bottom, top.
      *
-     * @param ids MPI ranks of the neighbours for each direction
-     * @param halo_sizes Halo sizes of the neighbours for each direction
+     * @param ids MPI ranks of the periodic neighbours for each direction
+     * @param halo_sizes Halo sizes of the periodic neighbours for each direction
+     * @param halo_starts Halo starting indices of the periodic neighbours for each direction
      */
-    void get_neighbours_periodic(
-        std::vector<std::vector<int>>& ids, std::vector<std::vector<int>>& halo_sizes) const;
+    void get_neighbour_info_periodic(std::vector<std::vector<int>>& ids,
+        std::vector<std::vector<int>>& halo_sizes,
+        std::vector<std::vector<int>>& halo_starts) const;
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -163,8 +168,72 @@ protected:
     // Vector of maps of neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours = std::vector<std::map<int, int>>(NNBRS);
 
+    // Vector of maps of neighbours to their halo start indices after partitioning
+    std::vector<std::map<int, int>> _halo_starts = std::vector<std::map<int, int>>(NNBRS);
+
     // Vector of maps of periodic neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours_p = std::vector<std::map<int, int>>(NNBRS);
+
+    // Vector of maps of periodic neighbours to their halo start indices after partitioning
+    std::vector<std::map<int, int>> _halo_starts_p = std::vector<std::map<int, int>>(NNBRS);
+
+private:
+    /*!
+     * @brief Check if two domains are neighbouring. If true, then domain 2 is the [edge] neighbour
+     * of domain 1, relative to domain 1. e.g., if domain 2 is to the right of domain 1, the
+     * following call will return true:
+     * is_neighbour(d1, d2, RIGHT)
+     *
+     * @param d1 first domain
+     * @param d2 second domain
+     * @param edge LEFT, RIGHT, BOTTOM or TOP
+     * @param is_px are we looking for periodic neighbour in x-direction?
+     * @param is_py are we looking for periodic neighbour in y-direction?
+     * @return bool
+     */
+    bool is_neighbour(const Domain d1, const Domain d2, const Edge edge, const bool is_px = false,
+        const bool is_py = false);
+
+    /*!
+     * @brief Compute the start location of the halo for a given pair of neighbouring domains.
+     *
+     * For example, in the diagram below. If we want to compute the start location for the halo of
+     * domain 1 which is the LEFT neighbour of domain 2, halo_start should return 4 (see square
+     * bracket in diagram below).
+     *         memory             domains          halo required
+     *   4┌───────────┬─────┐ ┌──────────┬────┐  ┌──────────┬────┐
+     *    │ 5 6 7 8 9 │ 6 7 │ │          │    │  │         9│    │
+     *    │           │     │ │    1     │    │  │          │    │
+     *    │ 0 1 2 3[4]│ 4 5 │ │          │    │  │         4│    │
+     *   2├───────────┤     │ ├──────────┤  2 │  ├──────────┤    │
+     *    │ 5 6 7 8 9 │ 2 3 │ │          │    │  │          │    │
+     *    │           │     │ │    0     │    │  │          │    │
+     * Y▲ │ 0 1 2 3 4 │ 0 1 │ │          │    │  │          │    │
+     *  │ └───────────┴─────┘ └──────────┴────┘  └──────────┴────┘
+     *  │0            5     7
+     *  └───►X
+     *
+     * Another example. If we want the start location of the halo for domain 0 which is domain 1's
+     * BOTTOM neighbour. We want halo_start to return 5. (see square bracket in diagram below).
+     *         memory             domains          halo required
+     *   4┌───────────┬─────┐ ┌──────────┬────┐  ┌──────────┬────┐
+     *    │ 5 6 7 8 9 │ 6 7 │ │          │    │  │          │    │
+     *    │           │     │ │    1     │    │  │          │    │
+     *    │ 0 1 2 3 4 │ 4 5 │ │          │    │  │          │    │
+     *   2├───────────┤     │ ├──────────┤  2 │  ├──────────┤    │
+     *    │[5]6 7 8 9 │ 2 3 │ │          │    │  │5 6 7 8 9 │    │
+     *    │           │     │ │    0     │    │  │          │    │
+     * Y▲ │ 0 1 2 3 4 │ 0 1 │ │          │    │  │          │    │
+     *  │ └───────────┴─────┘ └──────────┴────┘  └──────────┴────┘
+     *  │0            5     7
+     *  └───►X
+     *
+     * @param d1 first domain
+     * @param d2 second domain
+     * @param edge LEFT, RIGHT, BOTTOM or TOP
+     * @return starting index of halo for the flattened domain array
+     */
+    int halo_start(const Domain d1, const Domain d2, const Edge edge);
 
 public:
     struct LIB_EXPORT Factory {

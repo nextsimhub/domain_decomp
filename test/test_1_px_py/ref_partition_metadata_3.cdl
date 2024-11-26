@@ -34,27 +34,35 @@ group: connectivity {
   	int left_neighbours(P) ;
   	int left_neighbour_ids(L) ;
   	int left_neighbour_halos(L) ;
+  	int left_neighbour_halo_starts(L) ;
   	int right_neighbours(P) ;
   	int right_neighbour_ids(R) ;
   	int right_neighbour_halos(R) ;
+  	int right_neighbour_halo_starts(R) ;
   	int bottom_neighbours(P) ;
   	int bottom_neighbour_ids(B) ;
   	int bottom_neighbour_halos(B) ;
+  	int bottom_neighbour_halo_starts(B) ;
   	int top_neighbours(P) ;
   	int top_neighbour_ids(T) ;
   	int top_neighbour_halos(T) ;
+  	int top_neighbour_halo_starts(T) ;
   	int left_neighbours_periodic(P) ;
   	int left_neighbour_ids_periodic(L_periodic) ;
   	int left_neighbour_halos_periodic(L_periodic) ;
+  	int left_neighbour_halo_starts_periodic(L_periodic) ;
   	int right_neighbours_periodic(P) ;
   	int right_neighbour_ids_periodic(R_periodic) ;
   	int right_neighbour_halos_periodic(R_periodic) ;
+  	int right_neighbour_halo_starts_periodic(R_periodic) ;
   	int bottom_neighbours_periodic(P) ;
   	int bottom_neighbour_ids_periodic(B_periodic) ;
   	int bottom_neighbour_halos_periodic(B_periodic) ;
+  	int bottom_neighbour_halo_starts_periodic(B_periodic) ;
   	int top_neighbours_periodic(P) ;
   	int top_neighbour_ids_periodic(T_periodic) ;
   	int top_neighbour_halos_periodic(T_periodic) ;
+  	int top_neighbour_halo_starts_periodic(T_periodic) ;
   data:
 
    left_neighbours = 0, 0, 2 ;
@@ -63,11 +71,15 @@ group: connectivity {
 
    left_neighbour_halos = 2, 2 ;
 
+   left_neighbour_halo_starts = 3, 3 ;
+
    right_neighbours = 1, 1, 0 ;
 
    right_neighbour_ids = 2, 2 ;
 
    right_neighbour_halos = 2, 2 ;
+
+   right_neighbour_halo_starts = 0, 4 ;
 
    bottom_neighbours = 0, 1, 0 ;
 
@@ -75,11 +87,15 @@ group: connectivity {
 
    bottom_neighbour_halos = 4 ;
 
+   bottom_neighbour_halo_starts = 4 ;
+
    top_neighbours = 1, 0, 0 ;
 
    top_neighbour_ids = 1 ;
 
    top_neighbour_halos = 4 ;
+
+   top_neighbour_halo_starts = 0 ;
 
    left_neighbours_periodic = 1, 1, 0 ;
 
@@ -87,11 +103,15 @@ group: connectivity {
 
    left_neighbour_halos_periodic = 2, 2 ;
 
+   left_neighbour_halo_starts_periodic = 1, 5 ;
+
    right_neighbours_periodic = 0, 0, 2 ;
 
    right_neighbour_ids_periodic = 0, 1 ;
 
    right_neighbour_halos_periodic = 2, 2 ;
+
+   right_neighbour_halo_starts_periodic = 0, 0 ;
 
    bottom_neighbours_periodic = 1, 0, 1 ;
 
@@ -99,10 +119,14 @@ group: connectivity {
 
    bottom_neighbour_halos_periodic = 4, 2 ;
 
+   bottom_neighbour_halo_starts_periodic = 4, 6 ;
+
    top_neighbours_periodic = 0, 1, 1 ;
 
    top_neighbour_ids_periodic = 0, 2 ;
 
    top_neighbour_halos_periodic = 4, 2 ;
+
+   top_neighbour_halo_starts_periodic = 0, 0 ;
   } // group connectivity
 }

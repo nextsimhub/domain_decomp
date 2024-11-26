@@ -20,6 +20,7 @@ void validate_order(const std::string DimOrderStr)
 {
     if (DimOrderStr != "xy" && DimOrderStr != "yx") {
         cerr << "ERROR: invalid option. [order] must be either 'xy' or 'yx'." << endl;
+        exit(EXIT_FAILURE);
     }
     return;
 }
@@ -63,7 +64,7 @@ int main(int argc, char* argv[])
         po::notify(vm);
     } catch (po::error& e) {
         cerr << "ERROR: " << e.what() << endl;
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     validate_order(vm["order"].as<string>());
@@ -83,7 +84,8 @@ int main(int argc, char* argv[])
     // Retrieve neighbours
     vector<vector<int>> ids = { {}, {}, {}, {} };
     vector<vector<int>> halos = { {}, {}, {}, {} };
-    partitioner->get_neighbours(ids, halos);
+    vector<vector<int>> haloStarts = { {}, {}, {}, {} };
+    partitioner->get_neighbour_info(ids, halos, haloStarts);
 
     // MPI ranks of neighbours in order: top, bottom, left, right
     vector<int> ids_tblr(ids[3]);
@@ -95,8 +97,10 @@ int main(int argc, char* argv[])
     MPI_Comm comm_dist_graph;
     int err = MPI_Dist_graph_create_adjacent(comm, ids_tblr.size(), ids_tblr.data(), MPI_UNWEIGHTED,
         ids_tblr.size(), ids_tblr.data(), MPI_UNWEIGHTED, MPI_INFO_NULL, 0, &comm_dist_graph);
-    if (err != MPI_SUCCESS)
+    if (err != MPI_SUCCESS) {
         std::cerr << "MPI error" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     // Get my rank in the new communicator
     int mpi_rank;
@@ -240,8 +244,10 @@ int main(int argc, char* argv[])
     // Perform halo exchange
     err = MPI_Neighbor_alltoallw(data.data(), scounts.data(), sdispls.data(), sendtypes.data(),
         data.data(), rcounts.data(), rdispls.data(), recvtypes.data(), comm_dist_graph);
-    if (err != MPI_SUCCESS)
+    if (err != MPI_SUCCESS) {
         std::cerr << "MPI error" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     // Cleanup
     delete grid;
