@@ -309,7 +309,7 @@ Once built, the Docker image can be used to partition a given grid using the syn
 $ docker run --rm -v $DATADIR:/io decomp $NPART -g $GRIDIN [other options]
 ```
 
-where $DATADIR is the directory containing the input grid file, $NPART is the number of partitions and $GRIDIN is the input grid file name and path relative to $DATADIR. The output will be written to $DATADIR. The `--rm` flag to `docker run` is optional, but it's use is recommended. The online help can also be envoked using
+where $DATADIR is the directory containing the input grid file, $NPART is the number of partitions and $GRIDIN is the input grid file name and path relative to $DATADIR. The output will be written to $DATADIR. The `--rm` flag to `docker run` is optional, but it's use is recommended as the docker container which `docker run` creates is not needed afterwards and `--rm` removes this. The online help can also be envoked using
 
 ```
 $ docker run --rm decomp -h
