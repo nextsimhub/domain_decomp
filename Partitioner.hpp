@@ -63,11 +63,13 @@ public:
      *
      * @param ids MPI ranks of the neighbours for each direction
      * @param halo_sizes Halo sizes of the neighbours for each direction
-     * @param halo_starts Halo starting indices of the neighbours for each direction
+     * @param halo_send index in send buffer to get halo data
+     * @param halo_recv index in recv buffer to put halo data
      */
-    void get_neighbour_info(std::vector<std::vector<int>>& ids,
-        std::vector<std::vector<int>>& halo_sizes,
-        std::vector<std::vector<int>>& halo_starts) const;
+    void get_neighbour_info(std::array<std::vector<int>, N_EDGE>& ids,
+        std::array<std::vector<int>, N_EDGE>& halo_sizes,
+        std::array<std::vector<int>, N_EDGE>& halo_send,
+        std::array<std::vector<int>, N_EDGE>& halo_recv) const;
 
     /*!
      * @brief Returns vectors containing the MPI ranks, halo sizes and halo starting indices of the
@@ -76,11 +78,13 @@ public:
      *
      * @param ids MPI ranks of the periodic neighbours for each direction
      * @param halo_sizes Halo sizes of the periodic neighbours for each direction
-     * @param halo_starts Halo starting indices of the periodic neighbours for each direction
+     * @param halo_send index in send buffer to get halo data
+     * @param halo_recv index in recv buffer to put halo data
      */
-    void get_neighbour_info_periodic(std::vector<std::vector<int>>& ids,
-        std::vector<std::vector<int>>& halo_sizes,
-        std::vector<std::vector<int>>& halo_starts) const;
+    void get_neighbour_info_periodic(std::array<std::vector<int>, N_EDGE>& ids,
+        std::array<std::vector<int>, N_EDGE>& halo_sizes,
+        std::array<std::vector<int>, N_EDGE>& halo_send,
+        std::array<std::vector<int>, N_EDGE>& halo_recv) const;
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -168,14 +172,24 @@ protected:
     // Vector of maps of neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours = std::vector<std::map<int, int>>(NNBRS);
 
-    // Vector of maps of neighbours to their halo start indices after partitioning
-    std::vector<std::map<int, int>> _halo_starts = std::vector<std::map<int, int>>(NNBRS);
+    // Vector of maps of neighbours to their send buffer indices - index of data to fetch from send
+    // buffer
+    std::vector<std::map<int, int>> _send_pos = std::vector<std::map<int, int>>(NNBRS);
+
+    // Vector of maps of neighbours to their recv (receive) buffer indices - index where data will
+    // be stored in the recv buffer
+    std::vector<std::map<int, int>> _recv_pos = std::vector<std::map<int, int>>(NNBRS);
 
     // Vector of maps of periodic neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours_p = std::vector<std::map<int, int>>(NNBRS);
 
-    // Vector of maps of periodic neighbours to their halo start indices after partitioning
-    std::vector<std::map<int, int>> _halo_starts_p = std::vector<std::map<int, int>>(NNBRS);
+    // Vector of maps of periodic neighbours to their send buffer indices - index of data to fetch
+    // from send buffer
+    std::vector<std::map<int, int>> _send_pos_p = std::vector<std::map<int, int>>(NNBRS);
+
+    // Vector of maps of periodic neighbours to their recv (receive) buffer indices - index where
+    // data will be stored in the recv buffer
+    std::vector<std::map<int, int>> _recv_pos_p = std::vector<std::map<int, int>>(NNBRS);
 
 private:
     /*!
@@ -196,6 +210,8 @@ private:
 
     /*!
      * @brief Compute the start location of the halo for a given pair of neighbouring domains.
+     *
+     * TODO: This needs to be updated to reflect changes to halo start
      *
      * For example, in the diagram below. If we want to compute the start location for the halo of
      * domain 1 which is the LEFT neighbour of domain 2, halo_start should return 4 (see square
@@ -233,7 +249,8 @@ private:
      * @param edge LEFT, RIGHT, BOTTOM or TOP
      * @return starting index of halo for the flattened domain array
      */
-    int halo_start(const Domain d1, const Domain d2, const Edge edge);
+    void haloBufferPositions(
+        const Domain d1, const Domain d2, const Edge edge, int& sendPos, int& recvPos);
 
 public:
     struct LIB_EXPORT Factory {
