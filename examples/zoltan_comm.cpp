@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <iostream>
 
+#include "DomainUtils.hpp"
 #include "Grid.hpp"
 #include "Partitioner.hpp"
 
@@ -82,10 +83,8 @@ int main(int argc, char* argv[])
     partitioner->partition(*grid);
 
     // Retrieve neighbours
-    vector<vector<int>> ids = { {}, {}, {}, {} };
-    vector<vector<int>> halos = { {}, {}, {}, {} };
-    vector<vector<int>> haloStarts = { {}, {}, {}, {} };
-    partitioner->get_neighbour_info(ids, halos, haloStarts);
+    array<vector<int>, N_EDGE> ids, halos, halo_send, halo_recv;
+    partitioner->get_neighbour_info(ids, halos, halo_send, halo_recv);
 
     // MPI ranks of neighbours in order: top, bottom, left, right
     vector<int> ids_tblr(ids[3]);
