@@ -54,6 +54,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          brew install bash
           brew install boost
           brew unlink pkg-config
           brew install pkgconf
