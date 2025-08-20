@@ -53,7 +53,8 @@ int main(int argc, char* argv[])
         ("mask,m", po::value<string>()->default_value("mask"), "Mask variable name in netCDF grid file")
         ("ignore-mask,i", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file")
         ("periodic-x,px", po::bool_switch()->default_value(false), "Periodicity in x-direction")
-        ("periodic-y,py", po::bool_switch()->default_value(false), "Periodicity in y-direction");
+        ("periodic-y,py", po::bool_switch()->default_value(false), "Periodicity in y-direction")
+        ("output-prefix,op", po::value<string>()->default_value(""), "Prefix for output filenames");
     // clang-format on
 
     // Parse optional command line options
@@ -74,6 +75,13 @@ int main(int argc, char* argv[])
         return 1;
     }
     std::vector<int> order = dimOrderFromStr(vm["order"].as<string>());
+    string prefix = vm["output-prefix"].as<string>();
+    if (prefix.find('/') != std::string::npos) {
+        throw std::invalid_argument("prefix must not contain '/'");
+    }
+    if (!prefix.empty()) {
+        prefix += "_";
+    }
 
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["xdim"].as<string>(),
@@ -90,8 +98,8 @@ int main(int argc, char* argv[])
     // Store partitioning results in netCDF file
     int num_procs;
     MPI_Comm_size(comm, &num_procs);
-    partitioner->save_mask("partition_mask_" + to_string(num_procs) + ".nc");
-    partitioner->save_metadata("partition_metadata_" + to_string(num_procs) + ".nc");
+    partitioner->save_mask(prefix + "partition_mask_" + to_string(num_procs) + ".nc");
+    partitioner->save_metadata(prefix + "partition_metadata_" + to_string(num_procs) + ".nc");
 
     // Cleanup
     delete grid;
