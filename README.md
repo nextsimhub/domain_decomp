@@ -106,7 +106,7 @@ The project installs a shared library that can be imported by other CMake projec
 
 Running the help of the `domain` tool gives the following:
 
-```
+```sh
 $ ./build/decomp -h
 Usage: ./build/decomp [options]
 Options:
@@ -118,7 +118,9 @@ Options:
                             or 'xy'
   -m [ --mask ] arg (=mask) Mask variable name in netCDF grid file
   -i [ --ignore-mask ]      Ignore mask in netCDF grid file
-
+  --periodic-x              Periodicity in x-direction
+  --periodic-y              Periodicity in y-direction
+  --output-prefix arg       Prefix for output filenames
 ```
 
 We can see that the most of the options have defaults (shown in parentheses) e.g., if you do not specify the name of the land
