@@ -13,6 +13,9 @@
 enum Edge { LEFT, RIGHT, BOTTOM, TOP, N_EDGE };
 static constexpr std::array<Edge, N_EDGE> edges = { LEFT, RIGHT, BOTTOM, TOP };
 
+enum Vertex {TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT, N_VERTEX};
+static constexpr std::array<Vertex, N_VERTEX> vertices = {TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT};
+
 /*!
  * @brief 2D point structs. Points can be used to construct Domains.
  */

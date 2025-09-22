@@ -52,6 +52,40 @@ bool Partitioner::is_neighbour(
     }
 }
 
+bool Partitioner::is_diagonal_neighbour(
+    const Domain d1, const Domain d2, const Vertex vertex, const bool is_px, const bool is_py)
+{
+    if (vertex == TOP_LEFT) {
+
+        // Check if TOP Left neighbour i.e., 
+        // the bottom right of domain d2 must match 
+        // the top left of domain d1.
+        // The logic for the other vertices is essentially the same.
+        return d1.p1.x == d2.p2.x && d2.p1.y == d1.p2.y + _global_ext[1];
+    } else if (vertex == TOP_RIGHT) {
+        if (is_py) {
+            return d1.p1.y == d2.p2.y - _global_ext[1];
+        } else {
+            return d1.p1.y == d2.p2.y;
+        }
+    } else if (edge == LEFT) {
+        if (is_px) {
+            return d1.p1.x == d2.p2.x - _global_ext[0];
+        } else {
+            return d1.p1.x == d2.p2.x;
+        }
+    } else if (edge == RIGHT) {
+        if (is_px) {
+            return d1.p2.x == d2.p1.x + _global_ext[0];
+        } else {
+            return d1.p2.x == d2.p1.x;
+        }
+    } else {
+        std::cerr << "ERROR: edge must be LEFT, RIGHT, BOTTOM, TOP." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
 int Partitioner::halo_start(const Domain d1, const Domain d2, const Edge edge)
 {
     int start = 0;
@@ -432,4 +466,57 @@ void Partitioner::discover_neighbours()
             }
         }
     }
+}
+
+void Partitioner::discover_diagonal_neighbours(){
+    
+     // Currently implements only the neighbour
+     // on diagonal with point contact and non-periodic
+     // case
+
+     // Gather bounding boxes for all processes
+    std::vector<Point> origins(_total_num_procs);
+    std::vector<Point> extents(_total_num_procs);
+    std::vector<Domain> domains(_total_num_procs);
+    std::vector<int> tmp_diag0(_total_num_procs);
+    std::vector<int> tmp_diag1(_total_num_procs);
+
+    CHECK_MPI(MPI_Allgather(&_global_new[0], 1, MPI_INT, tmp_diag0.data(), 1, MPI_INT, _comm));
+    CHECK_MPI(MPI_Allgather(&_global_new[1], 1, MPI_INT, tmp_diag1.data(), 1, MPI_INT, _comm));
+
+    // origin points mark the bottom-left corner of each domain
+    for (int p = 0; p < _total_num_procs; p++) {
+        origins[p].x = tmp_diag0[p];
+        origins[p].y = tmp_diag1[p];
+    }
+
+    // generate domains
+    for (int p = 0; p < _total_num_procs; p++) {
+        domains[p].p1.x = origins[p].x;
+        domains[p].p1.y = origins[p].y;
+        domains[p].p2.x = origins[p].x + extents[p].x;
+        domains[p].p2.y = origins[p].y + extents[p].y;
+    }
+
+    for (int p = 0; p < _total_num_procs; p++) {
+
+        // When finding neighbours *within* the domain, we don't check against the current rank
+        // because a subdomain can't be a neighbour of itself.
+        if (p != _rank) {
+
+            for (auto vertex : vertices) {
+                if (is_diagonal_neighbour(domains[_rank], domains[p], vertex)) {
+                    /*
+                    int halo_size = domain_overlap(domains[_rank], domains[p], edge);
+                    if (halo_size > 0) {
+                        _neighbours[edge].insert(std::pair<int, int>(p, halo_size));
+                        int start = halo_start(domains[_rank], domains[p], edge);
+                        _halo_starts[edge].insert(std::pair<int, int>(p, start));
+                    }
+                    */
+                }
+            }
+        }
+    }
+
 }
