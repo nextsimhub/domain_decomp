@@ -506,14 +506,15 @@ void Partitioner::discover_diagonal_neighbours(){
 
             for (auto vertex : vertices) {
                 if (is_diagonal_neighbour(domains[_rank], domains[p], vertex)) {
-                    /*
-                    int halo_size = domain_overlap(domains[_rank], domains[p], edge);
-                    if (halo_size > 0) {
-                        _neighbours[edge].insert(std::pair<int, int>(p, halo_size));
+                    bool is_contact = domain_overlap_diagonal(domains[_rank], domains[p], vertex);
+                    if (is_contact == true) {
+                        _neighbours[edge].insert(std::pair<int, int>(p, 0));
+                        // halo_size = 0 in case of point contact at diagonal
+                        /*
                         int start = halo_start(domains[_rank], domains[p], edge);
                         _halo_starts[edge].insert(std::pair<int, int>(p, start));
+                        */
                     }
-                    */
                 }
             }
         }
