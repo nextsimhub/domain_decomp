@@ -193,6 +193,9 @@ private:
      */
     bool is_neighbour(const Domain d1, const Domain d2, const Edge edge, const bool is_px = false,
         const bool is_py = false);
+    bool is_diagonal_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
+        const bool is_px = false, const bool is_py = false);
+
 
     /*!
      * @brief Compute the start location of the halo for a given pair of neighbouring domains.
@@ -234,6 +237,7 @@ private:
      * @return starting index of halo for the flattened domain array
      */
     int halo_start(const Domain d1, const Domain d2, const Edge edge);
+    int halo_start_neighbour(const Domain d1, const Domain d2, const Vertex vertex);
 
 public:
     struct LIB_EXPORT Factory {

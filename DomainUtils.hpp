@@ -60,4 +60,6 @@ struct Domain {
  */
 int domain_overlap(const Domain d1, const Domain d2, const Edge edge);
 
+bool domain_overlap_diagonal(const Domain d1, const Domain d2, const Vertex vertex);
+
 #endif /* DOMAINUTILS_HPP */

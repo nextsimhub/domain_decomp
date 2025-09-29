@@ -113,6 +113,28 @@ int Partitioner::halo_start(const Domain d1, const Domain d2, const Edge edge)
     return start;
 }
 
+int Partitioner::halo_start_neighbour(const Domain d1, const Domain d2, const Vertex vertex)
+{
+    int start = 0;
+    if (vertex == TOP_LEFT) {
+        // Start location is bottom right of d2
+        start = d2.get_width() - 1;
+    } else if (vertex == TOP_RIGHT) {
+        // Start location is bottom left of d2
+        start = 0;
+    } else if (vertex == BOTTOM_RIGHT) {
+        // Start location is top-left of d2
+        start = d2.get_width() * (d2.get_height() - 1);
+    } else if (vertex == BOTTOM_LEFT) {
+        // Start location is top-right of d2
+        start = d2.get_height() * d2.get_width() - 1;
+    } else {
+        std::cerr << "ERROR: vertex must be TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    return start;
+}
+
 Partitioner::Partitioner(MPI_Comm comm)
 {
     _comm = comm;
@@ -508,12 +530,12 @@ void Partitioner::discover_diagonal_neighbours(){
                 if (is_diagonal_neighbour(domains[_rank], domains[p], vertex)) {
                     bool is_contact = domain_overlap_diagonal(domains[_rank], domains[p], vertex);
                     if (is_contact == true) {
-                        _neighbours[edge].insert(std::pair<int, int>(p, 0));
-                        // halo_size = 0 in case of point contact at diagonal
-                        /*
-                        int start = halo_start(domains[_rank], domains[p], edge);
-                        _halo_starts[edge].insert(std::pair<int, int>(p, start));
-                        */
+                        _neighbours[vertex].insert(std::pair<int, int>(p, 1));
+                        // halo_size = 1 in case of point contact at diagonal
+                        
+                        int start = halo_start_neighbour(domains[_rank], domains[p], vertex);
+                        _halo_starts[vertex].insert(std::pair<int, int>(p, start));
+                        
                     }
                 }
             }
