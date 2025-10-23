@@ -1,1 +1,0 @@
-/usr/bin/c++ -rdynamic -Wl,--dependency-file=CMakeFiles/zoltan_comm.dir/link.d CMakeFiles/zoltan_comm.dir/zoltan_comm.o -o zoltan_comm  -lBoost::program_options -lProject::

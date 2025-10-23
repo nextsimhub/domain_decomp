@@ -56,32 +56,32 @@ bool Partitioner::is_diagonal_neighbour(
     const Domain d1, const Domain d2, const Vertex vertex, const bool is_px, const bool is_py)
 {
     if (vertex == TOP_LEFT) {
-
+        // is_px and is_py is not updatd ath moment as periodic boundaries are not considered.
         // Check if TOP Left neighbour i.e., 
         // the bottom right of domain d2 must match 
         // the top left of domain d1.
         // The logic for the other vertices is essentially the same.
-        return d1.p1.x == d2.p2.x && d2.p1.y == d1.p2.y + _global_ext[1];
+        return d1.p2.y >= d2.p1.y && d1.p2.y < d2.p2.y && d1.p1.x > d2.p1.x && d1.p1.x <= d2.p2.x;
     } else if (vertex == TOP_RIGHT) {
         if (is_py) {
             return d1.p1.y == d2.p2.y - _global_ext[1];
         } else {
-            return d1.p1.y == d2.p2.y;
+            return d1.p2.y >= d2.p1.y && d1.p2.y < d2.p2.y && d1.p2.x >= d2.p1.x && d1.p2.x < d2.p2.x;
         }
-    } else if (edge == LEFT) {
+    } else if (vertex == BOTTOM_RIGHT) {
         if (is_px) {
             return d1.p1.x == d2.p2.x - _global_ext[0];
         } else {
-            return d1.p1.x == d2.p2.x;
+            return d1.p1.y <= d2.p2.y && d1.p1.y > d2.p1.y && d1.p2.x >= d2.p1.x && d1.p2.x < d2.p2.x;
         }
-    } else if (edge == RIGHT) {
+    } else if (vertex == BOTTOM_LEFT) {
         if (is_px) {
             return d1.p2.x == d2.p1.x + _global_ext[0];
         } else {
-            return d1.p2.x == d2.p1.x;
+            return d1.p1.y <= d2.p2.y && d1.p1.y > d2.p1.y && d1.p1.x <= d2.p2.x && d1.p1.x > d2.p1.x;
         }
     } else {
-        std::cerr << "ERROR: edge must be LEFT, RIGHT, BOTTOM, TOP." << std::endl;
+        std::cerr << "ERROR: vertex must be TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT." << std::endl;
         exit(EXIT_FAILURE);
     }
 }
@@ -117,17 +117,29 @@ int Partitioner::halo_start_neighbour(const Domain d1, const Domain d2, const Ve
 {
     int start = 0;
     if (vertex == TOP_LEFT) {
-        // Start location is bottom right of d2
-        start = d2.get_width() - 1;
+        if (d2.p1.y < d1.p2.y){ // Left case
+            start = (d1.p2.y - d2.p1.y + 1) * d2.get_width() - 1;
+        } else { // Top Case
+            start = d1.p1.x - d2.p1.x - 1;
+        }
     } else if (vertex == TOP_RIGHT) {
-        // Start location is bottom left of d2
-        start = 0;
+        if (d2.p1.x < d1.p2.x){ // Top case
+            start = d1.p2.x - d2.p1.x;
+        } else { // Right Case
+            start = (d1.p2.y - d2.p1.y) * d2.get_width();
+        }
     } else if (vertex == BOTTOM_RIGHT) {
-        // Start location is top-left of d2
-        start = d2.get_width() * (d2.get_height() - 1);
+        if (d2.p1.y < d1.p1.y){ // Bottom case
+            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width() + (d1.p2.x - d2.p1.x) + 1;
+        } else { // Right Case
+            start = (d1.p1.y - d2.p1.y + 1) * d2.get_width() - 1;
+        }
     } else if (vertex == BOTTOM_LEFT) {
-        // Start location is top-right of d2
-        start = d2.get_height() * d2.get_width() - 1;
+        if (d2.p1.y < d1.p1.y){ // Bottom case
+            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width() + (d1.p2.x - d2.p1.x) - 1;
+        } else { // Left Case
+            start = (d1.p1.y - d2.p1.y) * d2.get_width() - 1;
+        }
     } else {
         std::cerr << "ERROR: vertex must be TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT." << std::endl;
         exit(EXIT_FAILURE);
@@ -527,16 +539,13 @@ void Partitioner::discover_diagonal_neighbours(){
         if (p != _rank) {
 
             for (auto vertex : vertices) {
+                // Combine is_diagonal_neighbour and domain_overlap_diagonal
                 if (is_diagonal_neighbour(domains[_rank], domains[p], vertex)) {
-                    bool is_contact = domain_overlap_diagonal(domains[_rank], domains[p], vertex);
-                    if (is_contact == true) {
-                        _neighbours[vertex].insert(std::pair<int, int>(p, 1));
-                        // halo_size = 1 in case of point contact at diagonal
-                        
-                        int start = halo_start_neighbour(domains[_rank], domains[p], vertex);
-                        _halo_starts[vertex].insert(std::pair<int, int>(p, start));
-                        
-                    }
+                    _neighbours[vertex].insert(std::pair<int, int>(p, 1));
+                    // halo_size = 1 in case of contact at diagonal
+                    
+                    int start = halo_start_neighbour(domains[_rank], domains[p], vertex);
+                    _halo_starts[vertex].insert(std::pair<int, int>(p, start));
                 }
             }
         }

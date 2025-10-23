@@ -1,7 +1,0 @@
-/home/nvs31/nextsimdg_domain_decomp/domain_decomp/examples/CMakeFiles/zoltan_comm.dir
-/home/nvs31/nextsimdg_domain_decomp/domain_decomp/examples/CMakeFiles/edit_cache.dir
-/home/nvs31/nextsimdg_domain_decomp/domain_decomp/examples/CMakeFiles/rebuild_cache.dir
-/home/nvs31/nextsimdg_domain_decomp/domain_decomp/examples/CMakeFiles/list_install_components.dir
-/home/nvs31/nextsimdg_domain_decomp/domain_decomp/examples/CMakeFiles/install.dir
-/home/nvs31/nextsimdg_domain_decomp/domain_decomp/examples/CMakeFiles/install/local.dir
-/home/nvs31/nextsimdg_domain_decomp/domain_decomp/examples/CMakeFiles/install/strip.dir
