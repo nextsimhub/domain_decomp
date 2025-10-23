@@ -33,33 +33,3 @@ int domain_overlap(const Domain d1, const Domain d2, const Edge edge)
     }
     return overlap;
 }
-
-bool domain_overlap_diagonal(const Domain d1, const Domain d2, const Vertex vertex)
-{
-    bool contact = false;
-    if (vertex == TOP_LEFT) {
-        // check that domain d1 and domain d2 contact at top-left conrner of d1
-        if (d1.p1.x == d2.p2.x && d1.p2.y == d2.p1.y) {
-            contact = true;
-        }
-    } else if (vertex == TOP_RIGHT) {
-        // check that domain d1 and domain d2 contact at top-right conrner of d1
-        if (d1.p2.x == d2.p1.x && d1.p2.y == d2.p1.y) {
-            contact = true;
-        }
-    } else if (vertex == BOTTOM_RIGHT) {
-        // check that domain d1 and domain d2 contact at bottom-right conrner of d1
-        if (d1.p2.x == d2.p1.x && d1.p1.y == d2.p2.y) {
-            contact = true;
-        }
-    } else if (vertex == BOTTOM_LEFT) {
-        // check that domain d1 and domain d2 contact at bottom-left conrner of d1
-        if (d1.p1.x == d2.p2.x && d1.p1.y == d2.p2.y) {
-            contact = true;
-        }
-    } else {
-        std::cerr << "ERROR: vertex must be TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    return contact;
-}
