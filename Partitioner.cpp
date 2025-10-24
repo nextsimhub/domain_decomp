@@ -502,12 +502,8 @@ void Partitioner::discover_neighbours()
     }
 }
 
-void Partitioner::discover_diagonal_neighbours(){
+void Partitioner::discover_corner_neighbours(){
     
-     // Currently implements only the neighbour
-     // on diagonal with point contact and non-periodic
-     // case
-
      // Gather bounding boxes for all processes
     std::vector<Point> origins(_total_num_procs);
     std::vector<Point> extents(_total_num_procs);
@@ -539,13 +535,12 @@ void Partitioner::discover_diagonal_neighbours(){
         if (p != _rank) {
 
             for (auto vertex : vertices) {
-                // Combine is_diagonal_neighbour and domain_overlap_diagonal
-                if (is_diagonal_neighbour(domains[_rank], domains[p], vertex)) {
-                    _neighbours[vertex].insert(std::pair<int, int>(p, 1));
+                if (is_corner_neighbour(domains[_rank], domains[p], vertex)) {
+                    _corner_neighbours[vertex].insert(std::pair<int, int>(p, 1));
                     // halo_size = 1 in case of contact at diagonal
                     
-                    int start = halo_start_neighbour(domains[_rank], domains[p], vertex);
-                    _halo_starts[vertex].insert(std::pair<int, int>(p, start));
+                    int start = halo_corner_start(domains[_rank], domains[p], vertex);
+                    _halo_corner_starts[vertex].insert(std::pair<int, int>(p, start));
                 }
             }
         }

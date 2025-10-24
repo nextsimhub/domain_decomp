@@ -64,6 +64,7 @@ public:
      * @param ids MPI ranks of the neighbours for each direction
      * @param halo_sizes Halo sizes of the neighbours for each direction
      * @param halo_starts Halo starting indices of the neighbours for each direction
+     * @param halo_corner_starts Halo starting indices of the "corner" neighbours for each direction
      */
     void get_neighbour_info(std::vector<std::vector<int>>& ids,
         std::vector<std::vector<int>>& halo_sizes,
@@ -168,8 +169,14 @@ protected:
     // Vector of maps of neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours = std::vector<std::map<int, int>>(NNBRS);
 
+    // Vector of maps of "corner" neighbours to their halo sizes after partitioning
+    std::vector<std::map<int, int>> _corner_neighbours = std::vector<std::map<int, int>>(NNBRS);
+
     // Vector of maps of neighbours to their halo start indices after partitioning
     std::vector<std::map<int, int>> _halo_starts = std::vector<std::map<int, int>>(NNBRS);
+
+    // Vector of maps of "corner" neighbours to their halo start indices after partitioning
+    std::vector<std::map<int, int>> _halo_corner_starts = std::vector<std::map<int, int>>(NNBRS);
 
     // Vector of maps of periodic neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours_p = std::vector<std::map<int, int>>(NNBRS);
@@ -193,7 +200,7 @@ private:
      */
     bool is_neighbour(const Domain d1, const Domain d2, const Edge edge, const bool is_px = false,
         const bool is_py = false);
-    bool is_diagonal_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
+    bool is_corner_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
         const bool is_px = false, const bool is_py = false);
 
 
@@ -237,7 +244,7 @@ private:
      * @return starting index of halo for the flattened domain array
      */
     int halo_start(const Domain d1, const Domain d2, const Edge edge);
-    int halo_start_neighbour(const Domain d1, const Domain d2, const Vertex vertex);
+    int halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex);
 
 public:
     struct LIB_EXPORT Factory {
