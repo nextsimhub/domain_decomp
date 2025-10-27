@@ -52,7 +52,7 @@ bool Partitioner::is_neighbour(
     }
 }
 
-bool Partitioner::is_diagonal_neighbour(
+bool Partitioner::is_corner_neighbour(
     const Domain d1, const Domain d2, const Vertex vertex, const bool is_px, const bool is_py)
 {
     if (vertex == TOP_LEFT) {
@@ -175,6 +175,17 @@ void Partitioner::get_neighbour_info(std::vector<std::vector<int>>& ids,
             halo_starts[edge].push_back(it->second);
         }
     }
+
+    for (auto vertex : vertices) {
+        for (auto it = _corner_neighbours[vertex].begin(); it != _neighbours[vertex].end(); ++it) {
+            corner_ids[vertex].push_back(it->first);
+            // halo size = 1 for "corner" neighbour
+        }
+        for (auto it = _halo_corner_starts[vertex].begin(); it != _halo_corner_starts[vertex].end(); ++it) {
+            halo_corner_starts[vertex].push_back(it->second);
+        }
+    }
+
 }
 
 void Partitioner::get_neighbour_info_periodic(std::vector<std::vector<int>>& ids,
@@ -310,7 +321,9 @@ void Partitioner::save_metadata(const std::string& filename) const
     int halo_starts_vid[N_EDGE];
     for (auto edge : edges) {
         // Connectivity group
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbours").c_str(), NC_INT, 1,
+        // NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbours").c_str(), NC_INT, 1,
+        //     &dimid, &num_vid[edge]));
+        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_nbs").c_str(), NC_INT, 1,
             &dimid, &num_vid[edge]));
         NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_ids").c_str(), NC_INT,
             1, &dimids[edge], &ids_vid[edge]));
@@ -483,6 +496,16 @@ void Partitioner::discover_neighbours()
                         int start = halo_start(domains[_rank], domains[p], edge);
                         _halo_starts[edge].insert(std::pair<int, int>(p, start));
                     }
+                }
+            }
+
+            for (auto vertex : vertices) {
+                if (is_corner_neighbour(domains[_rank], domains[p], vertex)) {
+                    _corner_neighbours[vertex].insert(std::pair<int, int>(p, 1));
+                    // halo_size = 1 in case of contact at diagonal
+                    
+                    int start = halo_corner_start(domains[_rank], domains[p], vertex);
+                    _halo_corner_starts[vertex].insert(std::pair<int, int>(p, start));
                 }
             }
         }

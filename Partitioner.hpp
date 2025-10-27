@@ -124,6 +124,9 @@ protected:
     // Discover the neighbours and halo sizes of the process after partitioning
     void discover_neighbours();
 
+    // Discover the "corner" neighbours of the process after partitioning
+    void discover_corner_neighbours();
+
 protected:
     MPI_Comm _comm; // MPI communicator
     int _rank = -1; // Process rank
@@ -139,8 +142,14 @@ protected:
     // Letters used for each direction
     std::vector<std::string> dir_chars = { "L", "R", "B", "T" };
 
+    // Letters used for each "corner"
+    std::vector<std::string> corner_dir_chars = { "TL", "TR", "BR", "BL" };
+
     // Names used for each direction
     std::vector<std::string> dir_names = { "left", "right", "bottom", "top" };
+
+    // Names used for each "corner"
+    std::vector<std::string> corner_dir_names = { "top_left", "top_right", "bottom_right", "bottom_left" };
 
     // Names used for global dimension extents
     std::vector<std::string> global_extent_names = { "NX", "NY" };
