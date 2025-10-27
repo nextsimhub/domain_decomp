@@ -265,7 +265,7 @@ void Partitioner::save_metadata(const std::string& filename) const
 
     // Prepare neighbour data
     std::vector<std::vector<int>> ids(N_EDGE), halos(N_EDGE), halo_starts(N_EDGE);
-    std::vector<std::vector<int>> corner_ids(N_VERTEX), halo_corner_starts(N_VERTEX;
+    std::vector<std::vector<int>> corner_ids(N_VERTEX), halo_corner_starts(N_VERTEX);
     get_neighbour_info(ids, halos, halo_starts, corner_ids, halo_corner_starts);
 
     std::vector<int> num_neighbours(N_EDGE), dims(N_EDGE, 0), offsets(N_EDGE, 0);
