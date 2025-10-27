@@ -164,7 +164,8 @@ void Partitioner::get_bounding_box(
 }
 
 void Partitioner::get_neighbour_info(std::vector<std::vector<int>>& ids,
-    std::vector<std::vector<int>>& halo_sizes, std::vector<std::vector<int>>& halo_starts) const
+    std::vector<std::vector<int>>& halo_sizes, std::vector<std::vector<int>>& halo_starts,
+    std::vector<std::vector<int>>& corner_ids, std::vector<std::vector<int>>& halo_corner_starts) const
 {
     for (auto edge : edges) {
         for (auto it = _neighbours[edge].begin(); it != _neighbours[edge].end(); ++it) {
@@ -177,7 +178,7 @@ void Partitioner::get_neighbour_info(std::vector<std::vector<int>>& ids,
     }
 
     for (auto vertex : vertices) {
-        for (auto it = _corner_neighbours[vertex].begin(); it != _neighbours[vertex].end(); ++it) {
+        for (auto it = _corner_neighbours[vertex].begin(); it != _corner_neighbours[vertex].end(); ++it) {
             corner_ids[vertex].push_back(it->first);
             // halo size = 1 for "corner" neighbour
         }
@@ -264,12 +265,21 @@ void Partitioner::save_metadata(const std::string& filename) const
 
     // Prepare neighbour data
     std::vector<std::vector<int>> ids(N_EDGE), halos(N_EDGE), halo_starts(N_EDGE);
-    get_neighbour_info(ids, halos, halo_starts);
+    std::vector<std::vector<int>> corner_ids(N_VERTEX), halo_corner_starts(N_VERTEX;
+    get_neighbour_info(ids, halos, halo_starts, corner_ids, halo_corner_starts);
+
     std::vector<int> num_neighbours(N_EDGE), dims(N_EDGE, 0), offsets(N_EDGE, 0);
     for (auto edge : edges) {
         num_neighbours[edge] = (int)ids[edge].size();
         CHECK_MPI(MPI_Allreduce(&num_neighbours[edge], &dims[edge], 1, MPI_INT, MPI_SUM, _comm));
         CHECK_MPI(MPI_Exscan(&num_neighbours[edge], &offsets[edge], 1, MPI_INT, MPI_SUM, _comm));
+    }
+
+    std::vector<int> num_corner_neighbours(N_VERTEX), corner_dims(N_VERTEX, 0), corner_offsets(N_VERTEX, 0);
+    for (auto vertex : vertices) {
+            num_corner_neighbours[vertex] = (int)corner_ids[vertex].size();
+            CHECK_MPI(MPI_Allreduce(&num_corner_neighbours[vertex], &corner_dims[vertex], 1, MPI_INT, MPI_SUM, _comm));
+            CHECK_MPI(MPI_Exscan(&num_corner_neighbours[vertex], &corner_offsets[vertex], 1, MPI_INT, MPI_SUM, _comm));
     }
 
     // Prepare periodic neighbour data
@@ -290,6 +300,14 @@ void Partitioner::save_metadata(const std::string& filename) const
     NC_CHECK(nc_def_dim(nc_id, "P", _total_num_procs, &dimid));
     for (auto edge : edges) {
         NC_CHECK(nc_def_dim(nc_id, dir_chars[edge].c_str(), dims[edge], &dimids[edge]));
+    }
+
+    // Define dimensions in netCDF file
+    int corner_dimid;
+    std::vector<int> corner_dimids(N_VERTEX);
+    NC_CHECK(nc_def_dim(nc_id, "P", _total_num_procs, &corner_dimid));
+    for (auto vertex : vertices) {
+        NC_CHECK(nc_def_dim(nc_id, corner_dir_chars[vertex].c_str(), corner_dims[vertex], &corner_dimids[vertex]));
     }
 
     // Define periodic dimensions in netCDF file
@@ -331,6 +349,19 @@ void Partitioner::save_metadata(const std::string& filename) const
             NC_INT, 1, &dimids[edge], &halos_vid[edge]));
         NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_halo_starts").c_str(),
             NC_INT, 1, &dimids[edge], &halo_starts_vid[edge]));
+    }
+
+    int num_corner_vid[N_VERTEX];
+    int ids_corner_vid[N_VERTEX];
+    int halo_corner_starts_vid[N_VERTEX];
+    for (auto vertex : vertices) {
+        // Connectivity group
+        NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbours").c_str(), NC_INT, 1,
+            &corner_dimid, &num_corner_vid[vertex]));
+        NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_ids").c_str(), NC_INT,
+            1, &corner_dimids[vertex], &ids_corner_vid[vertex]));
+        NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_halo_starts").c_str(),
+            NC_INT, 1, &corner_dimids[vertex], &halo_corner_starts_vid[vertex]));
     }
 
     int num_vid_p[N_EDGE];
