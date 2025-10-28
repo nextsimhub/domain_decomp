@@ -62,13 +62,16 @@ public:
      * ordered left, right, bottom, top.
      *
      * @param ids MPI ranks of the neighbours for each direction
+     * @param corner_ids MPI ranks of the "corner" neighbours for each direction
      * @param halo_sizes Halo sizes of the neighbours for each direction
      * @param halo_starts Halo starting indices of the neighbours for each direction
      * @param halo_corner_starts Halo starting indices of the "corner" neighbours for each direction
      */
     void get_neighbour_info(std::vector<std::vector<int>>& ids,
         std::vector<std::vector<int>>& halo_sizes,
-        std::vector<std::vector<int>>& halo_starts) const;
+        std::vector<std::vector<int>>& halo_starts,
+        std::vector<std::vector<int>>& corner_ids,
+        std::vector<std::vector<int>>& halo_corner_starts) const;
 
     /*!
      * @brief Returns vectors containing the MPI ranks, halo sizes and halo starting indices of the

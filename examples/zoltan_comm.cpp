@@ -85,7 +85,9 @@ int main(int argc, char* argv[])
     vector<vector<int>> ids = { {}, {}, {}, {} };
     vector<vector<int>> halos = { {}, {}, {}, {} };
     vector<vector<int>> haloStarts = { {}, {}, {}, {} };
-    partitioner->get_neighbour_info(ids, halos, haloStarts);
+    vector<vector<int>> cornerIds = { {}, {}, {}, {} };
+    vector<vector<int>> haloCornerStarts = { {}, {}, {}, {} };
+    partitioner->get_neighbour_info(ids, halos, haloStarts, cornerIds, haloCornerStarts);
 
     // MPI ranks of neighbours in order: top, bottom, left, right
     vector<int> ids_tblr(ids[3]);
