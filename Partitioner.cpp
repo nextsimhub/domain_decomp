@@ -130,9 +130,9 @@ int Partitioner::halo_corner_start(const Domain d1, const Domain d2, const Verte
         }
     } else if (vertex == BOTTOM_RIGHT) {
         if (d2.p1.y < d1.p1.y){ // Bottom case
-            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width() + (d1.p2.x - d2.p1.x) + 1;
+            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width() + (d1.p2.x - d2.p1.x);
         } else { // Right Case
-            start = (d1.p1.y - d2.p1.y + 1) * d2.get_width() - 1;
+            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width();
         }
     } else if (vertex == BOTTOM_LEFT) {
         if (d2.p1.y < d1.p1.y){ // Bottom case
@@ -277,9 +277,9 @@ void Partitioner::save_metadata(const std::string& filename) const
 
     std::vector<int> num_corner_neighbours(N_VERTEX), corner_dims(N_VERTEX, 0), corner_offsets(N_VERTEX, 0);
     for (auto vertex : vertices) {
-            num_corner_neighbours[vertex] = (int)corner_ids[vertex].size();
-            CHECK_MPI(MPI_Allreduce(&num_corner_neighbours[vertex], &corner_dims[vertex], 1, MPI_INT, MPI_SUM, _comm));
-            CHECK_MPI(MPI_Exscan(&num_corner_neighbours[vertex], &corner_offsets[vertex], 1, MPI_INT, MPI_SUM, _comm));
+        num_corner_neighbours[vertex] = (int)corner_ids[vertex].size();
+        CHECK_MPI(MPI_Allreduce(&num_corner_neighbours[vertex], &corner_dims[vertex], 1, MPI_INT, MPI_SUM, _comm));
+        CHECK_MPI(MPI_Exscan(&num_corner_neighbours[vertex], &corner_offsets[vertex], 1, MPI_INT, MPI_SUM, _comm));
     }
 
     // Prepare periodic neighbour data
@@ -356,6 +356,8 @@ void Partitioner::save_metadata(const std::string& filename) const
         // Connectivity group
         NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbours").c_str(), NC_INT, 1,
             &corner_dimid, &num_corner_vid[vertex]));
+        // NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_ids").c_str(), NC_INT,
+        //     1, &corner_dimids[vertex], &ids_corner_vid[vertex]));
         NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_ids").c_str(), NC_INT,
             1, &corner_dimids[vertex], &ids_corner_vid[vertex]));
         NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_halo_starts").c_str(),
@@ -432,27 +434,14 @@ void Partitioner::save_metadata(const std::string& filename) const
         NC_CHECK(nc_put_var1_int(connectivity_gid, num_corner_vid[vertex], &start, &num_corner_neighbours[vertex]));
         // "Corner" IDs and halos
 
-        // int num_corner_vid[N_VERTEX];
-        // int ids_corner_vid[N_VERTEX];
-        // int halo_corner_starts_vid[N_VERTEX];
-
-        // start = offsets[edge];
-        // size_t count = num_corner_neighbours[vertex];
-        // NC_CHECK(nc_var_par_access(connectivity_gid, ids_corner_vid[vertex], NC_COLLECTIVE));
-        // NC_CHECK(
-        //     nc_put_vara_int(connectivity_gid, ids_vid[edge], &start, &count, ids[edge].data()));
-        // NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid[edge], NC_COLLECTIVE));
-        // NC_CHECK(
-        //     nc_put_vara_int(connectivity_gid, halos_vid[edge], &start, &count, halos[edge].data()));
-        // NC_CHECK(nc_var_par_access(connectivity_gid, halo_corner_starts_vid[vertex], NC_COLLECTIVE));
-        // NC_CHECK(nc_put_vara_int(
-        //     connectivity_gid, halo_starts_vid[edge], &start, &count, halo_starts[edge].data()));
-
-        start = 0;
+        start = corner_offsets[vertex];
         size_t count = num_corner_neighbours[vertex];
         NC_CHECK(nc_var_par_access(connectivity_gid, ids_corner_vid[vertex], NC_COLLECTIVE));
         NC_CHECK(
             nc_put_vara_int(connectivity_gid, ids_corner_vid[vertex], &start, &count, corner_ids[vertex].data()));
+        // NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid[edge], NC_COLLECTIVE));
+        // NC_CHECK(
+        //     nc_put_vara_int(connectivity_gid, halos_vid[edge], &start, &count, halos[edge].data()));
         NC_CHECK(nc_var_par_access(connectivity_gid, halo_corner_starts_vid[vertex], NC_COLLECTIVE));
         NC_CHECK(nc_put_vara_int(
             connectivity_gid, halo_corner_starts_vid[vertex], &start, &count, halo_corner_starts[vertex].data()));
