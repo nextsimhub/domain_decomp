@@ -8,6 +8,7 @@ variables:
 // global attributes:
 		:title = "Non-default dimension naming and ordering" ;
 data:
+
  land_mask =
   0, 0, 0, 0, 0, 0,
   1, 1, 1, 1, 1, 1,
