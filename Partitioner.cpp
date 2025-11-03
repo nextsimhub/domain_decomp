@@ -136,7 +136,7 @@ int Partitioner::halo_corner_start(const Domain d1, const Domain d2, const Verte
         }
     } else if (vertex == BOTTOM_LEFT) {
         if (d2.p1.y < d1.p1.y){ // Bottom case
-            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width() + (d1.p2.x - d2.p1.x) - 1;
+            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width() + (d1.p1.x - d2.p1.x) - 1;
         } else { // Left Case
             start = (d1.p1.y - d2.p1.y) * d2.get_width() - 1;
         }
