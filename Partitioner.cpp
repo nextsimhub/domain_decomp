@@ -356,8 +356,6 @@ void Partitioner::save_metadata(const std::string& filename) const
         // Connectivity group
         NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbours").c_str(), NC_INT, 1,
             &corner_dimid, &num_corner_vid[vertex]));
-        // NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_ids").c_str(), NC_INT,
-        //     1, &corner_dimids[vertex], &ids_corner_vid[vertex]));
         NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_ids").c_str(), NC_INT,
             1, &corner_dimids[vertex], &ids_corner_vid[vertex]));
         NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_halo_starts").c_str(),
@@ -439,9 +437,6 @@ void Partitioner::save_metadata(const std::string& filename) const
         NC_CHECK(nc_var_par_access(connectivity_gid, ids_corner_vid[vertex], NC_COLLECTIVE));
         NC_CHECK(
             nc_put_vara_int(connectivity_gid, ids_corner_vid[vertex], &start, &count, corner_ids[vertex].data()));
-        // NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid[edge], NC_COLLECTIVE));
-        // NC_CHECK(
-        //     nc_put_vara_int(connectivity_gid, halos_vid[edge], &start, &count, halos[edge].data()));
         NC_CHECK(nc_var_par_access(connectivity_gid, halo_corner_starts_vid[vertex], NC_COLLECTIVE));
         NC_CHECK(nc_put_vara_int(
             connectivity_gid, halo_corner_starts_vid[vertex], &start, &count, halo_corner_starts[vertex].data()));
@@ -575,50 +570,4 @@ void Partitioner::discover_neighbours()
             }
         }
     }
-}
-
-void Partitioner::discover_corner_neighbours(){
-    
-     // Gather bounding boxes for all processes
-    std::vector<Point> origins(_total_num_procs);
-    std::vector<Point> extents(_total_num_procs);
-    std::vector<Domain> domains(_total_num_procs);
-    std::vector<int> tmp_diag0(_total_num_procs);
-    std::vector<int> tmp_diag1(_total_num_procs);
-
-    CHECK_MPI(MPI_Allgather(&_global_new[0], 1, MPI_INT, tmp_diag0.data(), 1, MPI_INT, _comm));
-    CHECK_MPI(MPI_Allgather(&_global_new[1], 1, MPI_INT, tmp_diag1.data(), 1, MPI_INT, _comm));
-
-    // origin points mark the bottom-left corner of each domain
-    for (int p = 0; p < _total_num_procs; p++) {
-        origins[p].x = tmp_diag0[p];
-        origins[p].y = tmp_diag1[p];
-    }
-
-    // generate domains
-    for (int p = 0; p < _total_num_procs; p++) {
-        domains[p].p1.x = origins[p].x;
-        domains[p].p1.y = origins[p].y;
-        domains[p].p2.x = origins[p].x + extents[p].x;
-        domains[p].p2.y = origins[p].y + extents[p].y;
-    }
-
-    for (int p = 0; p < _total_num_procs; p++) {
-
-        // When finding neighbours *within* the domain, we don't check against the current rank
-        // because a subdomain can't be a neighbour of itself.
-        if (p != _rank) {
-
-            for (auto vertex : vertices) {
-                if (is_corner_neighbour(domains[_rank], domains[p], vertex)) {
-                    _corner_neighbours[vertex].insert(std::pair<int, int>(p, 1));
-                    // halo_size = 1 in case of contact at diagonal
-                    
-                    int start = halo_corner_start(domains[_rank], domains[p], vertex);
-                    _halo_corner_starts[vertex].insert(std::pair<int, int>(p, start));
-                }
-            }
-        }
-    }
-
 }

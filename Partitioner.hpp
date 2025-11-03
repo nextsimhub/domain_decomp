@@ -127,9 +127,6 @@ protected:
     // Discover the neighbours and halo sizes of the process after partitioning
     void discover_neighbours();
 
-    // Discover the "corner" neighbours of the process after partitioning
-    void discover_corner_neighbours();
-
 protected:
     MPI_Comm _comm; // MPI communicator
     int _rank = -1; // Process rank
