@@ -52,10 +52,22 @@ add_custom_command(
         ncgen -b -o test_2.nc ${CMAKE_CURRENT_SOURCE_DIR}/test_2.cdl
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test_2.cdl
 )
+add_custom_command(
+    OUTPUT test_3.nc
+    COMMAND
+        ncgen -b -o test_3.nc ${CMAKE_CURRENT_SOURCE_DIR}/test_3.cdl
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test_3.cdl
+)
+add_custom_command(
+    OUTPUT test_4.nc
+    COMMAND
+        ncgen -b -o test_4.nc ${CMAKE_CURRENT_SOURCE_DIR}/test_4.cdl
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test_4.cdl
+)
 add_custom_target(
     generate_input_files
     ALL
-    DEPENDS test_0.nc test_1.nc test_2.nc
+    DEPENDS test_0.nc test_1.nc test_2.nc test_3.nc test_4.nc
 )
 
 # integration test
@@ -72,3 +84,18 @@ set_property(
   MPIEXEC_PREFLAGS=${MPIEXEC_PREFLAGS}
   CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+# integration "corner" test
+# add_test(
+#   NAME integration_corner
+#   COMMAND
+#   bash ${CMAKE_CURRENT_SOURCE_DIR}/integration-corner-test.sh
+# )
+# set_property(
+#   TEST integration_corner
+#   PROPERTY ENVIRONMENT
+#   MPIEXEC=${MPIEXEC}
+#   MPIEXEC_NUMPROC_FLAG=${MPIEXEC_NUMPROC_FLAG}
+#   MPIEXEC_PREFLAGS=${MPIEXEC_PREFLAGS}
+#   CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+# )

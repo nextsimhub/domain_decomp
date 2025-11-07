@@ -1,0 +1,20 @@
+netcdf test_4 {
+dimensions:
+	m = 7 ;
+	n = 7 ;
+variables:
+	int land_mask(n, m) ;
+
+// global attributes:
+		:title = "Non-default dimension naming and ordering" ;
+data:
+
+ land_mask =
+  1, 1, 1, 1, 0, 0, 0,
+  1, 1, 1, 1, 0, 0, 0,
+  1, 1, 1, 1, 0, 0, 0,
+  1, 1, 1, 1, 1, 1, 1,
+  0, 0, 0, 1, 1, 1, 1,
+  0, 0, 0, 1, 1, 1, 1,
+  0, 0, 0, 1, 1, 1, 1 ;
+}

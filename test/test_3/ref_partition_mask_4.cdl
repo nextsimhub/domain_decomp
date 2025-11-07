@@ -1,0 +1,19 @@
+netcdf partition_mask_4 {
+dimensions:
+	y = 6 ;
+	x = 6 ;
+variables:
+	int pid(y, x) ;
+
+// global attributes:
+		:num_processes = 4 ;
+data:
+
+ pid =
+  0, 0, 0, 2, 2, 2,
+  0, 0, 0, 2, 2, 2,
+  0, 0, 0, 2, 2, 2,
+  1, 1, 1, 3, 3, 3,
+  1, 1, 1, 3, 3, 3,
+  1, 1, 1, 3, 3, 3 ;
+}

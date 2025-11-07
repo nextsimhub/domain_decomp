@@ -3,13 +3,13 @@ dimensions:
 	m = 6 ;
 	n = 6 ;
 variables:
-	int land_mask(n, m) ;
+	int mask(n, m) ;
 
 // global attributes:
 		:title = "Non-default dimension naming and ordering" ;
 data:
 
- land_mask =
+ mask =
   1, 1, 1, 1, 1, 1,
   1, 1, 1, 1, 1, 1,
   1, 1, 1, 1, 1, 1,

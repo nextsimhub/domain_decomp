@@ -7,6 +7,11 @@ dimensions:
 	R = 2 ;
 	B = UNLIMITED ; // (0 currently)
 	T = UNLIMITED ; // (0 currently)
+	corner_P = 3 ;
+	TL = UNLIMITED ; // (0 currently)
+	TR = UNLIMITED ; // (0 currently)
+	BR = UNLIMITED ; // (0 currently)
+	BL = UNLIMITED ; // (0 currently)
 	L_periodic = UNLIMITED ; // (0 currently)
 	R_periodic = UNLIMITED ; // (0 currently)
 	B_periodic = UNLIMITED ; // (0 currently)
@@ -47,6 +52,18 @@ group: connectivity {
   	int top_neighbour_ids(T) ;
   	int top_neighbour_halos(T) ;
   	int top_neighbour_halo_starts(T) ;
+  	int top_left_neighbours(corner_P) ;
+  	int top_left_neighbour_ids(TL) ;
+  	int top_left_neighbour_halo_starts(TL) ;
+  	int top_right_neighbours(corner_P) ;
+  	int top_right_neighbour_ids(TR) ;
+  	int top_right_neighbour_halo_starts(TR) ;
+  	int bottom_right_neighbours(corner_P) ;
+  	int bottom_right_neighbour_ids(BR) ;
+  	int bottom_right_neighbour_halo_starts(BR) ;
+  	int bottom_left_neighbours(corner_P) ;
+  	int bottom_left_neighbour_ids(BL) ;
+  	int bottom_left_neighbour_halo_starts(BL) ;
   	int left_neighbours_periodic(P) ;
   	int left_neighbour_ids_periodic(L_periodic) ;
   	int left_neighbour_halos_periodic(L_periodic) ;
@@ -84,6 +101,14 @@ group: connectivity {
    bottom_neighbours = 0, 0, 0 ;
 
    top_neighbours = 0, 0, 0 ;
+
+   top_left_neighbours = 0, 0, 0 ;
+
+   top_right_neighbours = 0, 0, 0 ;
+
+   bottom_right_neighbours = 0, 0, 0 ;
+
+   bottom_left_neighbours = 0, 0, 0 ;
 
    left_neighbours_periodic = 0, 0, 0 ;
 
