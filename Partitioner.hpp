@@ -64,27 +64,28 @@ public:
      * @param ids MPI ranks of the neighbours for each direction
      * @param corner_ids MPI ranks of the "corner" neighbours for each direction
      * @param halo_sizes Halo sizes of the neighbours for each direction
-     * @param halo_starts Halo starting indices of the neighbours for each direction
-     * @param halo_corner_starts Halo starting indices of the "corner" neighbours for each direction
+     * @param halo_send index in send buffer to get halo data
+     * @param halo_recv index in recv buffer to put halo data
      */
-    void get_neighbour_info(std::vector<std::vector<int>>& ids,
-        std::vector<std::vector<int>>& halo_sizes,
-        std::vector<std::vector<int>>& halo_starts,
-        std::vector<std::vector<int>>& corner_ids,
+    void get_neighbour_info(std::array<std::vector<int>, N_EDGE>& ids,
+        std::array<std::vector<int>, N_EDGE>& halo_sizes,
+        std::array<std::vector<int>, N_EDGE>& halo_send,
+        std::array<std::vector<int>, N_EDGE>& halo_recv, std::vector<std::vector<int>>& corner_ids,
         std::vector<std::vector<int>>& halo_corner_starts) const;
-
     /*!
-     * @brief Returns vectors containing the MPI ranks, halo sizes and halo starting indices of the
-     * neighbours of this process across periodic boundaries after partitioning. The neighbours are
-     * ordered left, right, bottom, top.
+     * @brief Returns vectors containing the MPI ranks, halo sizes and halo starting indices of
+     * the neighbours of this process across periodic boundaries after partitioning. The
+     * neighbours are ordered left, right, bottom, top.
      *
      * @param ids MPI ranks of the periodic neighbours for each direction
      * @param halo_sizes Halo sizes of the periodic neighbours for each direction
-     * @param halo_starts Halo starting indices of the periodic neighbours for each direction
+     * @param halo_send index in send buffer to get halo data
+     * @param halo_recv index in recv buffer to put halo data
      */
-    void get_neighbour_info_periodic(std::vector<std::vector<int>>& ids,
-        std::vector<std::vector<int>>& halo_sizes,
-        std::vector<std::vector<int>>& halo_starts) const;
+    void get_neighbour_info_periodic(std::array<std::vector<int>, N_EDGE>& ids,
+        std::array<std::vector<int>, N_EDGE>& halo_sizes,
+        std::array<std::vector<int>, N_EDGE>& halo_send,
+        std::array<std::vector<int>, N_EDGE>& halo_recv) const;
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -149,7 +150,8 @@ protected:
     std::vector<std::string> dir_names = { "left", "right", "bottom", "top" };
 
     // Names used for each "corner"
-    std::vector<std::string> corner_dir_names = { "top_left", "top_right", "bottom_right", "bottom_left" };
+    std::vector<std::string> corner_dir_names
+        = { "top_left", "top_right", "bottom_right", "bottom_left" };
 
     // Names used for global dimension extents
     std::vector<std::string> global_extent_names = { "NX", "NY" };
@@ -181,8 +183,13 @@ protected:
     // Vector of maps of "corner" neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _corner_neighbours = std::vector<std::map<int, int>>(NNBRS);
 
-    // Vector of maps of neighbours to their halo start indices after partitioning
-    std::vector<std::map<int, int>> _halo_starts = std::vector<std::map<int, int>>(NNBRS);
+    // Vector of maps of neighbours to their send buffer indices - index of data to fetch from send
+    // buffer
+    std::vector<std::map<int, int>> _send_pos = std::vector<std::map<int, int>>(NNBRS);
+
+    // Vector of maps of neighbours to their recv (receive) buffer indices - index where data will
+    // be stored in the recv buffer
+    std::vector<std::map<int, int>> _recv_pos = std::vector<std::map<int, int>>(NNBRS);
 
     // Vector of maps of "corner" neighbours to their halo start indices after partitioning
     std::vector<std::map<int, int>> _halo_corner_starts = std::vector<std::map<int, int>>(NNBRS);
@@ -190,8 +197,13 @@ protected:
     // Vector of maps of periodic neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours_p = std::vector<std::map<int, int>>(NNBRS);
 
-    // Vector of maps of periodic neighbours to their halo start indices after partitioning
-    std::vector<std::map<int, int>> _halo_starts_p = std::vector<std::map<int, int>>(NNBRS);
+    // Vector of maps of periodic neighbours to their send buffer indices - index of data to fetch
+    // from send buffer
+    std::vector<std::map<int, int>> _send_pos_p = std::vector<std::map<int, int>>(NNBRS);
+
+    // Vector of maps of periodic neighbours to their recv (receive) buffer indices - index where
+    // data will be stored in the recv buffer
+    std::vector<std::map<int, int>> _recv_pos_p = std::vector<std::map<int, int>>(NNBRS);
 
 private:
     /*!
@@ -212,9 +224,10 @@ private:
     bool is_corner_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
         const bool is_px = false, const bool is_py = false);
 
-
     /*!
      * @brief Compute the start location of the halo for a given pair of neighbouring domains.
+     *
+     * TODO: This needs to be updated to reflect changes to halo start
      *
      * For example, in the diagram below. If we want to compute the start location for the halo of
      * domain 1 which is the LEFT neighbour of domain 2, halo_start should return 4 (see square
@@ -252,7 +265,8 @@ private:
      * @param edge LEFT, RIGHT, BOTTOM or TOP
      * @return starting index of halo for the flattened domain array
      */
-    int halo_start(const Domain d1, const Domain d2, const Edge edge);
+    void haloBufferPositions(
+        const Domain d1, const Domain d2, const Edge edge, int& sendPos, int& recvPos);
     int halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex);
 
 public:

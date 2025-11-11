@@ -39,19 +39,23 @@ group: connectivity {
   	int left_neighbours(P) ;
   	int left_neighbour_ids(L) ;
   	int left_neighbour_halos(L) ;
-  	int left_neighbour_halo_starts(L) ;
+  	int left_neighbour_halo_send(L) ;
+  	int left_neighbour_halo_recv(L) ;
   	int right_neighbours(P) ;
   	int right_neighbour_ids(R) ;
   	int right_neighbour_halos(R) ;
-  	int right_neighbour_halo_starts(R) ;
+  	int right_neighbour_halo_send(R) ;
+  	int right_neighbour_halo_recv(R) ;
   	int bottom_neighbours(P) ;
   	int bottom_neighbour_ids(B) ;
   	int bottom_neighbour_halos(B) ;
-  	int bottom_neighbour_halo_starts(B) ;
+  	int bottom_neighbour_halo_send(B) ;
+  	int bottom_neighbour_halo_recv(B) ;
   	int top_neighbours(P) ;
   	int top_neighbour_ids(T) ;
   	int top_neighbour_halos(T) ;
-  	int top_neighbour_halo_starts(T) ;
+  	int top_neighbour_halo_send(T) ;
+  	int top_neighbour_halo_recv(T) ;
   	int top_left_neighbours(corner_P) ;
   	int top_left_neighbour_ids(TL) ;
   	int top_left_neighbour_halo_starts(TL) ;
@@ -67,19 +71,23 @@ group: connectivity {
   	int left_neighbours_periodic(P) ;
   	int left_neighbour_ids_periodic(L_periodic) ;
   	int left_neighbour_halos_periodic(L_periodic) ;
-  	int left_neighbour_halo_starts_periodic(L_periodic) ;
+  	int left_neighbour_halo_send_periodic(L_periodic) ;
+  	int left_neighbour_halo_recv_periodic(L_periodic) ;
   	int right_neighbours_periodic(P) ;
   	int right_neighbour_ids_periodic(R_periodic) ;
   	int right_neighbour_halos_periodic(R_periodic) ;
-  	int right_neighbour_halo_starts_periodic(R_periodic) ;
+  	int right_neighbour_halo_send_periodic(R_periodic) ;
+  	int right_neighbour_halo_recv_periodic(R_periodic) ;
   	int bottom_neighbours_periodic(P) ;
   	int bottom_neighbour_ids_periodic(B_periodic) ;
   	int bottom_neighbour_halos_periodic(B_periodic) ;
-  	int bottom_neighbour_halo_starts_periodic(B_periodic) ;
+  	int bottom_neighbour_halo_send_periodic(B_periodic) ;
+  	int bottom_neighbour_halo_recv_periodic(B_periodic) ;
   	int top_neighbours_periodic(P) ;
   	int top_neighbour_ids_periodic(T_periodic) ;
   	int top_neighbour_halos_periodic(T_periodic) ;
-  	int top_neighbour_halo_starts_periodic(T_periodic) ;
+  	int top_neighbour_halo_send_periodic(T_periodic) ;
+  	int top_neighbour_halo_recv_periodic(T_periodic) ;
   data:
 
    left_neighbours = 0, 0, 1, 1 ;
@@ -88,7 +96,9 @@ group: connectivity {
 
    left_neighbour_halos = 3, 3 ;
 
-   left_neighbour_halo_starts = 2, 2 ;
+   left_neighbour_halo_send = 3, 3 ;
+
+   left_neighbour_halo_recv = 9, 9 ;
 
    right_neighbours = 1, 1, 0, 0 ;
 
@@ -96,7 +106,9 @@ group: connectivity {
 
    right_neighbour_halos = 3, 3 ;
 
-   right_neighbour_halo_starts = 0, 0 ;
+   right_neighbour_halo_send = 9, 9 ;
+
+   right_neighbour_halo_recv = 3, 3 ;
 
    bottom_neighbours = 0, 1, 0, 1 ;
 
@@ -104,7 +116,9 @@ group: connectivity {
 
    bottom_neighbour_halos = 3, 3 ;
 
-   bottom_neighbour_halo_starts = 6, 6 ;
+   bottom_neighbour_halo_send = 6, 6 ;
+
+   bottom_neighbour_halo_recv = 0, 0 ;
 
    top_neighbours = 1, 0, 1, 0 ;
 
@@ -112,7 +126,9 @@ group: connectivity {
 
    top_neighbour_halos = 3, 3 ;
 
-   top_neighbour_halo_starts = 0, 0 ;
+   top_neighbour_halo_send = 0, 0 ;
+
+   top_neighbour_halo_recv = 6, 6 ;
 
    top_left_neighbours = 0, 0, 1, 0 ;
 
