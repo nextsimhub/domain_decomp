@@ -234,8 +234,9 @@ void Partitioner::get_bounding_box(
 void Partitioner::get_neighbour_info(std::array<std::vector<int>, N_EDGE>& ids,
     std::array<std::vector<int>, N_EDGE>& halo_sizes,
     std::array<std::vector<int>, N_EDGE>& halo_send,
-    std::array<std::vector<int>, N_EDGE>& halo_recv, std::vector<std::vector<int>>& corner_ids,
-    std::vector<std::vector<int>>& halo_corner_starts) const
+    std::array<std::vector<int>, N_EDGE>& halo_recv,
+    std::array<std::vector<int>, N_VERTEX>& corner_ids,
+    std::array<std::vector<int>, N_VERTEX>& corner_send) const
 {
     for (auto edge : edges) {
         for (auto it = _neighbours[edge].begin(); it != _neighbours[edge].end(); ++it) {
@@ -250,11 +251,7 @@ void Partitioner::get_neighbour_info(std::array<std::vector<int>, N_EDGE>& ids,
         for (auto it = _corner_neighbours[vertex].begin(); it != _corner_neighbours[vertex].end();
              ++it) {
             corner_ids[vertex].push_back(it->first);
-            // halo size = 1 for "corner" neighbour
-        }
-        for (auto it = _corner_send_pos[vertex].begin(); it != _corner_send_pos[vertex].end();
-             ++it) {
-            halo_corner_starts[vertex].push_back(it->second);
+            corner_send[vertex].push_back(_corner_send_pos[vertex].at(it->first));
         }
     }
 }
@@ -262,16 +259,27 @@ void Partitioner::get_neighbour_info(std::array<std::vector<int>, N_EDGE>& ids,
 void Partitioner::get_neighbour_info_periodic(std::array<std::vector<int>, N_EDGE>& ids,
     std::array<std::vector<int>, N_EDGE>& halo_sizes,
     std::array<std::vector<int>, N_EDGE>& halo_send,
-    std::array<std::vector<int>, N_EDGE>& halo_recv) const
+    std::array<std::vector<int>, N_EDGE>& halo_recv,
+    std::array<std::vector<int>, N_VERTEX>& corner_ids,
+    std::array<std::vector<int>, N_VERTEX>& corner_send) const
 {
     for (auto edge : edges) {
         if (((edge == LEFT || edge == RIGHT) && _px) || ((edge == TOP || edge == BOTTOM) && _py)) {
+
             for (auto it = _neighbours_p[edge].begin(); it != _neighbours_p[edge].end(); ++it) {
                 ids[edge].push_back(it->first);
                 halo_sizes[edge].push_back(it->second);
                 halo_send[edge].push_back(_send_pos_p[edge].at(it->first));
                 halo_recv[edge].push_back(_recv_pos_p[edge].at(it->first));
             }
+        }
+    }
+
+    for (auto vertex : vertices) {
+        for (auto it = _corner_neighbours_p[vertex].begin();
+             it != _corner_neighbours_p[vertex].end(); ++it) {
+            corner_ids[vertex].push_back(it->first);
+            corner_send[vertex].push_back(_corner_send_pos_p[vertex].at(it->first));
         }
     }
 }
@@ -336,7 +344,7 @@ void Partitioner::save_metadata(const std::string& filename) const
 
     // Prepare neighbour data
     std::array<std::vector<int>, N_EDGE> ids, halos, halo_send, halo_recv;
-    std::vector<std::vector<int>> corner_ids(N_VERTEX), corner_send(N_VERTEX);
+    std::array<std::vector<int>, N_VERTEX> corner_ids, corner_send;
     get_neighbour_info(ids, halos, halo_send, halo_recv, corner_ids, corner_send);
 
     std::vector<int> num_neighbours(N_EDGE), dims(N_EDGE, 0), offsets(N_EDGE, 0);
@@ -358,7 +366,9 @@ void Partitioner::save_metadata(const std::string& filename) const
 
     // Prepare periodic neighbour data
     std::array<std::vector<int>, N_EDGE> ids_p, halos_p, halo_send_p, halo_recv_p;
-    get_neighbour_info_periodic(ids_p, halos_p, halo_send_p, halo_recv_p);
+    std::array<std::vector<int>, N_VERTEX> corner_ids_p, corner_send_p;
+    get_neighbour_info_periodic(
+        ids_p, halos_p, halo_send_p, halo_recv_p, corner_ids_p, corner_send_p);
     std::vector<int> num_neighbours_p(N_EDGE), dims_p(N_EDGE, 0), offsets_p(N_EDGE, 0);
     for (auto edge : edges) {
         num_neighbours_p[edge] = (int)ids_p[edge].size();
