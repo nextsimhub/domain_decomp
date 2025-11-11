@@ -84,8 +84,7 @@ int main(int argc, char* argv[])
 
     // Retrieve neighbours
     array<vector<int>, N_EDGE> ids, halos, halo_send, halo_recv;
-    vector<vector<int>> cornerIds = { {}, {}, {}, {} };
-    vector<vector<int>> haloCornerStarts = { {}, {}, {}, {} };
+    array<vector<int>, N_VERTEX> cornerIds, haloCornerStarts;
     partitioner->get_neighbour_info(ids, halos, halo_send, halo_recv, cornerIds, haloCornerStarts);
 
     // MPI ranks of neighbours in order: top, bottom, left, right

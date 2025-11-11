@@ -70,8 +70,9 @@ public:
     void get_neighbour_info(std::array<std::vector<int>, N_EDGE>& ids,
         std::array<std::vector<int>, N_EDGE>& halo_sizes,
         std::array<std::vector<int>, N_EDGE>& halo_send,
-        std::array<std::vector<int>, N_EDGE>& halo_recv, std::vector<std::vector<int>>& corner_ids,
-        std::vector<std::vector<int>>& halo_corner_starts) const;
+        std::array<std::vector<int>, N_EDGE>& halo_recv,
+        std::array<std::vector<int>, N_VERTEX>& corner_ids,
+        std::array<std::vector<int>, N_VERTEX>& corner_send) const;
     /*!
      * @brief Returns vectors containing the MPI ranks, halo sizes and halo starting indices of
      * the neighbours of this process across periodic boundaries after partitioning. The
@@ -85,7 +86,9 @@ public:
     void get_neighbour_info_periodic(std::array<std::vector<int>, N_EDGE>& ids,
         std::array<std::vector<int>, N_EDGE>& halo_sizes,
         std::array<std::vector<int>, N_EDGE>& halo_send,
-        std::array<std::vector<int>, N_EDGE>& halo_recv) const;
+        std::array<std::vector<int>, N_EDGE>& halo_recv,
+        std::array<std::vector<int>, N_VERTEX>& corner_ids,
+        std::array<std::vector<int>, N_VERTEX>& corner_send) const;
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
