@@ -180,7 +180,8 @@ protected:
     // Vector of maps of neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours = std::vector<std::map<int, int>>(NNBRS);
 
-    // Vector of maps of "corner" neighbours to their halo sizes after partitioning
+    // Vector of maps of "corner" neighbours to their halo sizes after partitioning (corners are all
+    // of size 1)
     std::vector<std::map<int, int>> _corner_neighbours = std::vector<std::map<int, int>>(NNBRS);
 
     // Vector of maps of neighbours to their send buffer indices - index of data to fetch from send
@@ -192,7 +193,7 @@ protected:
     std::vector<std::map<int, int>> _recv_pos = std::vector<std::map<int, int>>(NNBRS);
 
     // Vector of maps of "corner" neighbours to their halo start indices after partitioning
-    std::vector<std::map<int, int>> _halo_corner_starts = std::vector<std::map<int, int>>(NNBRS);
+    std::vector<std::map<int, int>> _corner_send_pos = std::vector<std::map<int, int>>(NNBRS);
 
     // Vector of maps of periodic neighbours to their halo sizes after partitioning
     std::vector<std::map<int, int>> _neighbours_p = std::vector<std::map<int, int>>(NNBRS);
@@ -209,7 +210,7 @@ protected:
     std::vector<std::map<int, int>> _corner_neighbours_p = std::vector<std::map<int, int>>(NNBRS);
 
     // Vector of maps of "corner" neighbours to their halo start indices after partitioning
-    std::vector<std::map<int, int>> _halo_corner_starts_p = std::vector<std::map<int, int>>(NNBRS);
+    std::vector<std::map<int, int>> _corner_send_pos_p = std::vector<std::map<int, int>>(NNBRS);
 
 private:
     /*!
