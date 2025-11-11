@@ -205,6 +205,12 @@ protected:
     // data will be stored in the recv buffer
     std::vector<std::map<int, int>> _recv_pos_p = std::vector<std::map<int, int>>(NNBRS);
 
+    // Vector of maps of "corner" neighbours to their halo sizes after partitioning
+    std::vector<std::map<int, int>> _corner_neighbours_p = std::vector<std::map<int, int>>(NNBRS);
+
+    // Vector of maps of "corner" neighbours to their halo start indices after partitioning
+    std::vector<std::map<int, int>> _halo_corner_starts_p = std::vector<std::map<int, int>>(NNBRS);
+
 private:
     /*!
      * @brief Check if two domains are neighbouring. If true, then domain 2 is the [edge] neighbour
@@ -267,7 +273,8 @@ private:
      */
     void haloBufferPositions(
         const Domain d1, const Domain d2, const Edge edge, int& sendPos, int& recvPos);
-    int halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex);
+    int halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex,
+        const bool is_px = false, const bool is_py = false);
 
 public:
     struct LIB_EXPORT Factory {
