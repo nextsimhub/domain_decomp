@@ -252,7 +252,7 @@ void Partitioner::get_neighbour_info(std::array<std::vector<int>, N_EDGE>& ids,
             corner_ids[vertex].push_back(it->first);
             // halo size = 1 for "corner" neighbour
         }
-        for (auto it = _halo_corner_starts[vertex].begin(); it != _halo_corner_starts[vertex].end();
+        for (auto it = _corner_send_pos[vertex].begin(); it != _corner_send_pos[vertex].end();
              ++it) {
             halo_corner_starts[vertex].push_back(it->second);
         }
@@ -336,8 +336,8 @@ void Partitioner::save_metadata(const std::string& filename) const
 
     // Prepare neighbour data
     std::array<std::vector<int>, N_EDGE> ids, halos, halo_send, halo_recv;
-    std::vector<std::vector<int>> corner_ids(N_VERTEX), halo_corner_starts(N_VERTEX);
-    get_neighbour_info(ids, halos, halo_send, halo_recv, corner_ids, halo_corner_starts);
+    std::vector<std::vector<int>> corner_ids(N_VERTEX), corner_send(N_VERTEX);
+    get_neighbour_info(ids, halos, halo_send, halo_recv, corner_ids, corner_send);
 
     std::vector<int> num_neighbours(N_EDGE), dims(N_EDGE, 0), offsets(N_EDGE, 0);
     for (auto edge : edges) {
@@ -429,16 +429,16 @@ void Partitioner::save_metadata(const std::string& filename) const
 
     int num_corner_vid[N_VERTEX];
     int ids_corner_vid[N_VERTEX];
-    int halo_corner_starts_vid[N_VERTEX];
+    int corner_send_vid[N_VERTEX];
     for (auto vertex : vertices) {
         // Connectivity group
         NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbours").c_str(),
             NC_INT, 1, &corner_dimid, &num_corner_vid[vertex]));
         NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_ids").c_str(),
             NC_INT, 1, &corner_dimids[vertex], &ids_corner_vid[vertex]));
-        NC_CHECK(nc_def_var(connectivity_gid,
-            (corner_dir_names[vertex] + "_neighbour_halo_starts").c_str(), NC_INT, 1,
-            &corner_dimids[vertex], &halo_corner_starts_vid[vertex]));
+        NC_CHECK(
+            nc_def_var(connectivity_gid, (corner_dir_names[vertex] + "_neighbour_send").c_str(),
+                NC_INT, 1, &corner_dimids[vertex], &corner_send_vid[vertex]));
     }
 
     int num_vid_p[N_EDGE];
@@ -525,10 +525,9 @@ void Partitioner::save_metadata(const std::string& filename) const
         NC_CHECK(nc_var_par_access(connectivity_gid, ids_corner_vid[vertex], NC_COLLECTIVE));
         NC_CHECK(nc_put_vara_int(
             connectivity_gid, ids_corner_vid[vertex], &start, &count, corner_ids[vertex].data()));
-        NC_CHECK(
-            nc_var_par_access(connectivity_gid, halo_corner_starts_vid[vertex], NC_COLLECTIVE));
-        NC_CHECK(nc_put_vara_int(connectivity_gid, halo_corner_starts_vid[vertex], &start, &count,
-            halo_corner_starts[vertex].data()));
+        NC_CHECK(nc_var_par_access(connectivity_gid, corner_send_vid[vertex], NC_COLLECTIVE));
+        NC_CHECK(nc_put_vara_int(
+            connectivity_gid, corner_send_vid[vertex], &start, &count, corner_send[vertex].data()));
     }
 
     NC_CHECK(nc_close(nc_id));
@@ -644,7 +643,7 @@ void Partitioner::discover_neighbours()
                 if (is_corner_neighbour(domains[_rank], domains[p], vertex)) {
                     _corner_neighbours[vertex].insert(std::pair<int, int>(p, 1));
                     int start = halo_corner_start(domains[_rank], domains[p], vertex);
-                    _halo_corner_starts[vertex].insert(std::pair<int, int>(p, start));
+                    _corner_send_pos[vertex].insert(std::pair<int, int>(p, start));
                 }
             }
         }
@@ -670,8 +669,8 @@ void Partitioner::discover_neighbours()
         for (auto vertex : vertices) {
             if (is_corner_neighbour(domains[_rank], domains[p], vertex, _px, _py)) {
                 _corner_neighbours_p[vertex].insert(std::pair<int, int>(p, 1));
-                // int start = halo_corner_start(domains[_rank], domains[p], vertex, _px, _py);
-                // _halo_corner_starts_p[vertex].insert(std::pair<int, int>(p, start));
+                int start = halo_corner_start(domains[_rank], domains[p], vertex, _px, _py);
+                _corner_send_pos_p[vertex].insert(std::pair<int, int>(p, start));
             }
         }
     }
