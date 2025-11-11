@@ -7,7 +7,6 @@ dimensions:
 	R = 2 ;
 	B = UNLIMITED ; // (0 currently)
 	T = UNLIMITED ; // (0 currently)
-	corner_P = 3 ;
 	TL = UNLIMITED ; // (0 currently)
 	TR = UNLIMITED ; // (0 currently)
 	BR = UNLIMITED ; // (0 currently)
@@ -16,6 +15,10 @@ dimensions:
 	R_periodic = UNLIMITED ; // (0 currently)
 	B_periodic = UNLIMITED ; // (0 currently)
 	T_periodic = UNLIMITED ; // (0 currently)
+	TL_periodic = UNLIMITED ; // (0 currently)
+	TR_periodic = UNLIMITED ; // (0 currently)
+	BR_periodic = UNLIMITED ; // (0 currently)
+	BL_periodic = UNLIMITED ; // (0 currently)
 
 group: bounding_boxes {
   variables:
@@ -56,16 +59,16 @@ group: connectivity {
   	int top_neighbour_halos(T) ;
   	int top_neighbour_halo_send(T) ;
   	int top_neighbour_halo_recv(T) ;
-  	int top_left_neighbours(corner_P) ;
+  	int top_left_neighbours(P) ;
   	int top_left_neighbour_ids(TL) ;
   	int top_left_neighbour_send(TL) ;
-  	int top_right_neighbours(corner_P) ;
+  	int top_right_neighbours(P) ;
   	int top_right_neighbour_ids(TR) ;
   	int top_right_neighbour_send(TR) ;
-  	int bottom_right_neighbours(corner_P) ;
+  	int bottom_right_neighbours(P) ;
   	int bottom_right_neighbour_ids(BR) ;
   	int bottom_right_neighbour_send(BR) ;
-  	int bottom_left_neighbours(corner_P) ;
+  	int bottom_left_neighbours(P) ;
   	int bottom_left_neighbour_ids(BL) ;
   	int bottom_left_neighbour_send(BL) ;
   	int left_neighbours_periodic(P) ;
@@ -88,6 +91,18 @@ group: connectivity {
   	int top_neighbour_halos_periodic(T_periodic) ;
   	int top_neighbour_halo_send_periodic(T_periodic) ;
   	int top_neighbour_halo_recv_periodic(T_periodic) ;
+  	int top_left_neighbours_periodic(P) ;
+  	int top_left_neighbour_ids_periodic(TL_periodic) ;
+  	int top_left_neighbour_send_periodic(TL_periodic) ;
+  	int top_right_neighbours_periodic(P) ;
+  	int top_right_neighbour_ids_periodic(TR_periodic) ;
+  	int top_right_neighbour_send_periodic(TR_periodic) ;
+  	int bottom_right_neighbours_periodic(P) ;
+  	int bottom_right_neighbour_ids_periodic(BR_periodic) ;
+  	int bottom_right_neighbour_send_periodic(BR_periodic) ;
+  	int bottom_left_neighbours_periodic(P) ;
+  	int bottom_left_neighbour_ids_periodic(BL_periodic) ;
+  	int bottom_left_neighbour_send_periodic(BL_periodic) ;
   data:
 
    left_neighbours = 0, 1, 1 ;
@@ -129,5 +144,13 @@ group: connectivity {
    bottom_neighbours_periodic = 0, 0, 0 ;
 
    top_neighbours_periodic = 0, 0, 0 ;
+
+   top_left_neighbours_periodic = 0, 0, 0 ;
+
+   top_right_neighbours_periodic = 0, 0, 0 ;
+
+   bottom_right_neighbours_periodic = 0, 0, 0 ;
+
+   bottom_left_neighbours_periodic = 0, 0, 0 ;
   } // group connectivity
 }
