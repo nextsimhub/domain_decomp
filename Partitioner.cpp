@@ -55,34 +55,39 @@ bool Partitioner::is_neighbour(
 bool Partitioner::is_corner_neighbour(
     const Domain d1, const Domain d2, const Vertex vertex, const bool is_px, const bool is_py)
 {
+    // create helper vars for domain 1
+    auto left = d1.p1.x;
+    auto right = d1.p2.x;
+    auto top = d1.p2.y;
+    auto bottom = d1.p1.y;
+
+    // adjust for periodic boundaries if domain lies on one of the outer boundaries
+    if (is_px) {
+        if (left == 0) {
+            left = _global_ext[0];
+        }
+        if (right == _global_ext[0]) {
+            right = 0;
+        }
+    }
+    if (is_py) {
+        if (bottom == 0) {
+            bottom = _global_ext[1];
+        }
+        if (top == _global_ext[1]) {
+            top = 0;
+        }
+    }
     if (vertex == TOP_LEFT) {
-        // is_px and is_py is not updatd ath moment as periodic boundaries are not considered.
-        // Check if TOP Left neighbour i.e.,
-        // the bottom right of domain d2 must match
-        // the top left of domain d1.
-        // The logic for the other vertices is essentially the same.
-        return d1.p2.y >= d2.p1.y && d1.p2.y < d2.p2.y && d1.p1.x > d2.p1.x && d1.p1.x <= d2.p2.x;
+        // Check if top and left coordinates of domain 1 fall in domain 2 (d2)
+        // Similar logic applies to the other corners
+        return top >= d2.p1.y && top < d2.p2.y && left > d2.p1.x && left <= d2.p2.x;
     } else if (vertex == TOP_RIGHT) {
-        if (is_py) {
-            return d1.p1.y == d2.p2.y - _global_ext[1];
-        } else {
-            return d1.p2.y >= d2.p1.y && d1.p2.y < d2.p2.y && d1.p2.x >= d2.p1.x
-                && d1.p2.x < d2.p2.x;
-        }
+        return top >= d2.p1.y && top < d2.p2.y && right < d2.p2.x && right >= d2.p1.x;
     } else if (vertex == BOTTOM_RIGHT) {
-        if (is_px) {
-            return d1.p1.x == d2.p2.x - _global_ext[0];
-        } else {
-            return d1.p1.y <= d2.p2.y && d1.p1.y > d2.p1.y && d1.p2.x >= d2.p1.x
-                && d1.p2.x < d2.p2.x;
-        }
+        return bottom <= d2.p2.y && bottom > d2.p1.y && right >= d2.p1.x && right < d2.p2.x;
     } else if (vertex == BOTTOM_LEFT) {
-        if (is_px) {
-            return d1.p2.x == d2.p1.x + _global_ext[0];
-        } else {
-            return d1.p1.y <= d2.p2.y && d1.p1.y > d2.p1.y && d1.p1.x <= d2.p2.x
-                && d1.p1.x > d2.p1.x;
-        }
+        return bottom <= d2.p2.y && bottom > d2.p1.y && left <= d2.p2.x && left > d2.p1.x;
     } else {
         std::cerr << "ERROR: vertex must be TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT."
                   << std::endl;
@@ -153,35 +158,57 @@ void Partitioner::haloBufferPositions(
     }
 }
 
-int Partitioner::halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex)
+int Partitioner::halo_corner_start(
+    const Domain d1, const Domain d2, const Vertex vertex, const bool is_px, const bool is_py)
 {
-    // The function is_corner_neighbour must be called and it
-    // must be verified whether is_corner_neighbour returns True,
-    // before halo_corner_start is called. 
+    // create helper vars for domain 1
+    auto left = d1.p1.x;
+    auto right = d1.p2.x;
+    auto top = d1.p2.y;
+    auto bottom = d1.p1.y;
+
+    // adjust for periodic boundaries if domain lies on one of the outer boundaries
+    if (is_px) {
+        if (left == 0) {
+            left = _global_ext[0];
+        }
+        if (right == _global_ext[0]) {
+            right = 0;
+        }
+    }
+    if (is_py) {
+        if (bottom == 0) {
+            bottom = _global_ext[1];
+        }
+        if (top == _global_ext[1]) {
+            top = 0;
+        }
+    }
+
     int start = 0;
     if (vertex == TOP_LEFT) {
-        if (d2.p1.y < d1.p2.y) { // Left case
-            start = (d1.p2.y - d2.p1.y + 1) * d2.get_width() - 1;
-        } else { // Top Case
-            start = d1.p1.x - d2.p1.x - 1;
+        if (d2.p1.y < top) {
+            start = (top - d2.p1.y + 1) * d2.get_width() - 1;
+        } else {
+            start = left - d2.p1.x - 1;
         }
     } else if (vertex == TOP_RIGHT) {
-        if (d2.p1.x < d1.p2.x) { // Top case
-            start = d1.p2.x - d2.p1.x;
-        } else { // Right Case
-            start = (d1.p2.y - d2.p1.y) * d2.get_width();
+        if (d2.p1.x < right) {
+            start = right - d2.p1.x;
+        } else {
+            start = (top - d2.p1.y) * d2.get_width();
         }
     } else if (vertex == BOTTOM_RIGHT) {
-        if (d2.p1.y < d1.p1.y) { // Bottom case
-            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width() + (d1.p2.x - d2.p1.x);
-        } else { // Right Case
-            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width();
+        if (d2.p1.y < bottom) {
+            start = (bottom - d2.p1.y - 1) * d2.get_width() + (right - d2.p1.x);
+        } else {
+            start = (bottom - d2.p1.y - 1) * d2.get_width();
         }
     } else if (vertex == BOTTOM_LEFT) {
-        if (d2.p1.y < d1.p1.y) { // Bottom case
-            start = (d1.p1.y - d2.p1.y - 1) * d2.get_width() + (d1.p1.x - d2.p1.x) - 1;
-        } else { // Left Case
-            start = (d1.p1.y - d2.p1.y) * d2.get_width() - 1;
+        if (d2.p1.y < bottom) {
+            start = (bottom - d2.p1.y - 1) * d2.get_width() + (left - d2.p1.x) - 1;
+        } else {
+            start = (bottom - d2.p1.y) * d2.get_width() - 1;
         }
     } else {
         std::cerr << "ERROR: vertex must be TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT."
@@ -600,6 +627,7 @@ void Partitioner::discover_neighbours()
         // because a subdomain can't be a neighbour of itself.
         if (p != _rank) {
 
+            // check edge neighours
             for (auto edge : edges) {
                 if (is_neighbour(domains[_rank], domains[p], edge)) {
                     int halo_size = domain_overlap(domains[_rank], domains[p], edge);
@@ -614,11 +642,10 @@ void Partitioner::discover_neighbours()
                 }
             }
 
+            // check corner neighours
             for (auto vertex : vertices) {
                 if (is_corner_neighbour(domains[_rank], domains[p], vertex)) {
                     _corner_neighbours[vertex].insert(std::pair<int, int>(p, 1));
-                    // halo_size = 1 in case of contact at diagonal
-
                     int start = halo_corner_start(domains[_rank], domains[p], vertex);
                     _halo_corner_starts[vertex].insert(std::pair<int, int>(p, start));
                 }
@@ -627,6 +654,7 @@ void Partitioner::discover_neighbours()
 
         // When finding neighours *across periodic boundaries*, we need to check against the
         // current rank, too, because a subdomain can be a periodic neighbour of itself.
+        // check periodic edge neighours
         for (auto edge : edges) {
             if (is_neighbour(domains[_rank], domains[p], edge, _px, _py)) {
                 int halo_size = domain_overlap(domains[_rank], domains[p], edge);
@@ -638,6 +666,15 @@ void Partitioner::discover_neighbours()
                     _send_pos_p[edge].insert(std::pair<int, int>(p, sendPos));
                     _recv_pos_p[edge].insert(std::pair<int, int>(p, recvPos));
                 }
+            }
+        }
+
+        // check periodic corner neighours
+        for (auto vertex : vertices) {
+            if (is_corner_neighbour(domains[_rank], domains[p], vertex, _px, _py)) {
+                _corner_neighbours_p[vertex].insert(std::pair<int, int>(p, 1));
+                // int start = halo_corner_start(domains[_rank], domains[p], vertex, _px, _py);
+                // _halo_corner_starts_p[vertex].insert(std::pair<int, int>(p, start));
             }
         }
     }
