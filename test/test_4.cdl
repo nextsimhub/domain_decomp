@@ -1,12 +1,12 @@
 netcdf test_4 {
 dimensions:
-	m = 7 ;
-	n = 7 ;
+	x = 7 ;
+	y = 7 ;
 variables:
-	int land_mask(n, m) ;
+	int land_mask(y, x) ;
 
 // global attributes:
-		:title = "Non-default dimension naming and ordering" ;
+		:title = "With overlap on right and left corner neighbours" ;
 data:
 
  land_mask =
