@@ -1,12 +1,12 @@
 netcdf test_3 {
 dimensions:
-	m = 6 ;
-	n = 6 ;
+	x = 6 ;
+	y = 6 ;
 variables:
-	int mask(n, m) ;
+	int mask(y, x) ;
 
 // global attributes:
-		:title = "Non-default dimension naming and ordering" ;
+		:title = "No land mask" ;
 data:
 
  mask =

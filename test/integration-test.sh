@@ -11,22 +11,27 @@ declare -A FNAMES=(
   ["test_1_px"]="test_1.nc"
   ["test_1_py"]="test_1.nc"
   ["test_1_px_py"]="test_1.nc"
+  ["test_4_px"]="test_4.nc"
+  ["test_4_py"]="test_4.nc"
+  ["test_4_px_py"]="test_4.nc"
 )
 
 # set flags for each integration test
 declare -A FLAGS=(
   ["test_1"]="-x x -y y -m mask -o yx"
   ["test_2"]="-x m -y n -m land_mask -o yx"
-  ["test_3"]="-x m -y n -m mask -o yx"
-  ["test_4"]="-x m -y n -m land_mask -o yx"
+  ["test_3"]="-x x -y y -m mask -o yx"
+  ["test_4"]="-x x -y y -m land_mask -o yx"
   ["test_1_px"]="-x x -y y -m mask -o yx --px"
   ["test_1_py"]="-x x -y y -m mask -o yx --py"
   ["test_1_px_py"]="-x x -y y -m mask -o yx --px --py"
+  ["test_4_px"]="-x x -y y -m land_mask -o yx --px"
+  ["test_4_py"]="-x x -y y -m land_mask -o yx --py"
+  ["test_4_px_py"]="-x x -y y -m land_mask -o yx --px --py"
 )
 
 # run the domain decomp tool for each test case
-# for TEST in test_1 test_2 test_1_px test_1_py test_1_px_py; do
-for TEST in test_1 test_2; do
+for TEST in test_1 test_2 test_1_px test_1_py test_1_px_py; do
   echo "Running integration test '${TEST}'"
   ${MPIEXEC} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} \
     ../decomp -g ${FNAMES[${TEST}]} ${FLAGS[${TEST}]} >/dev/null
@@ -39,7 +44,7 @@ for TEST in test_1 test_2; do
   echo -e "\033[0;32mTest passed\033[0m"
 done
 
-for TEST in test_3 test_4; do
+for TEST in test_3 test_4 test_4_px test_4_py test_4_px_py; do
   echo "Running integration corner test '${TEST}'"
   ${MPIEXEC} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} \
     ../decomp -g ${FNAMES[${TEST}]} ${FLAGS[${TEST}]} >/dev/null
