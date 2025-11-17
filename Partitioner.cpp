@@ -104,7 +104,7 @@ void Partitioner::haloBufferPositions(
     // recv buffer is formed from the data gathered during the halo exchange. It is also laid out a
     // similar way in memory.
 
-    // For detailed description refer to Halo exchange logic:
+    // Detailed description of Halo exchange logic is available at:
     // https://nextsim-dg.readthedocs.io/en/latest/halo-exchange.html
 
     send_pos = 0;
