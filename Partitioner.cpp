@@ -104,6 +104,9 @@ void Partitioner::haloBufferPositions(
     // recv buffer is formed from the data gathered during the halo exchange. It is also laid out a
     // similar way in memory.
 
+    // For detailed description refer to Halo exchange logic:
+    // https://nextsim-dg.readthedocs.io/en/latest/halo-exchange.html
+
     send_pos = 0;
     if (edge == TOP) {
         // dx is the offset between domains
@@ -152,6 +155,9 @@ void Partitioner::haloBufferPositions(
 
 int Partitioner::halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex)
 {
+    // halo_corner_start must be called after calling the function
+    // is_corner_neighbour and verifying whether is_corner_neighbour
+    // returns True.
     int start = 0;
     if (vertex == TOP_LEFT) {
         if (d2.p1.y < d1.p2.y) { // Left case
