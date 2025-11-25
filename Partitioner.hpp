@@ -24,8 +24,10 @@ enum class LIB_EXPORT PartitionerType {
  * @class Partitioner
  * @brief Abstract polymorphic class that encapsulates a 2D grid partitioner.
  */
+
 class LIB_EXPORT Partitioner {
 public:
+
     // Disallow compiler-generated special functions
     Partitioner(const Partitioner&) = delete;
     Partitioner& operator=(const Partitioner&) = delete;
@@ -89,6 +91,18 @@ public:
         std::array<std::vector<int>, N_EDGE>& halo_recv,
         std::array<std::vector<int>, N_VERTEX>& corner_ids,
         std::array<std::vector<int>, N_VERTEX>& corner_send) const;
+    /*
+    Wrapper function for is_corner_neighbour
+    (To be used for unit testing only)
+    */
+    bool friend_is_corner_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
+        const bool is_px = false, const bool is_py = false);
+    /*
+    Wrapper function for halo_corner_start
+    (To be used for unit testing only)
+    */
+    int friend_halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex,
+        const bool is_px = false, const bool is_py = false);
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a

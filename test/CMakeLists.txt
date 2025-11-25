@@ -32,6 +32,8 @@ create_test(TARGET test_grid_2 SOURCES test_grid_2.cpp)
 create_test(TARGET test_zoltan_0 SOURCES test_zoltan_partitioner_0.cpp)
 create_test(TARGET test_zoltan_1 SOURCES test_zoltan_partitioner_1.cpp)
 create_test(TARGET test_zoltan_2 SOURCES test_zoltan_partitioner_2.cpp)
+create_test(TARGET test_halo_corner_start SOURCES test_halo_corner_start.cpp)
+create_test(TARGET test_is_corner_neighbour SOURCES test_is_corner_neighbour.cpp)
 
 # Generate input files from respective cdl files
 add_custom_command(
