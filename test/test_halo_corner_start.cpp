@@ -62,6 +62,8 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
 
     int start;
 
+    // Non-periodic cases
+    // Top right
     for (int p = 0; p < test_nb_procs; p++) {
     if (p != test_rank) {
         if (partitioner->friend_is_corner_neighbour(domains[test_rank], domains[p], TOP_RIGHT)){
@@ -74,6 +76,7 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
         REQUIRE(start == 0);
     }
 
+    // Bottom right
     for (int p = 0; p < test_nb_procs; p++) {
     if (p != test_rank) {
         if (partitioner->friend_is_corner_neighbour(domains[test_rank], domains[p], BOTTOM_RIGHT)){
@@ -86,6 +89,7 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
         REQUIRE(start == 6);
     }
 
+    // Top left
     for (int p = 0; p < test_nb_procs; p++) {
     if (p != test_rank) {
         if (partitioner->friend_is_corner_neighbour(domains[test_rank], domains[p], TOP_LEFT)){
@@ -98,6 +102,7 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
         REQUIRE(start == 2);
     }
 
+    // Bottom left
     for (int p = 0; p < test_nb_procs; p++) {
     if (p != test_rank) {
         if (partitioner->friend_is_corner_neighbour(domains[test_rank], domains[p], BOTTOM_LEFT)){
@@ -107,6 +112,59 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
     }
 
     if (test_rank == 3){
+        REQUIRE(start == 8);
+    }
+
+    // Periodic cases
+    // Top right
+    for (int p = 0; p < test_nb_procs; p++) {
+    if (p != test_rank) {
+        if (partitioner->friend_is_corner_neighbour(domains[test_rank], domains[p], TOP_RIGHT, true, true)){
+            start = partitioner->friend_halo_corner_start(domains[test_rank], domains[p], TOP_RIGHT, true, true);
+        }
+    }
+    }
+
+    if (test_rank == 2){
+        REQUIRE(start == 0);
+    }
+
+    // Bottom right
+    for (int p = 0; p < test_nb_procs; p++) {
+    if (p != test_rank) {
+        if (partitioner->friend_is_corner_neighbour(domains[test_rank], domains[p], BOTTOM_RIGHT, true, true)){
+            start = partitioner->friend_halo_corner_start(domains[test_rank], domains[p], BOTTOM_RIGHT, true, true);
+        }
+    }
+    }
+
+    if (test_rank == 3){
+        REQUIRE(start == 6);
+    }
+
+    // Top left
+    for (int p = 0; p < test_nb_procs; p++) {
+    if (p != test_rank) {
+        if (partitioner->friend_is_corner_neighbour(domains[test_rank], domains[p], TOP_LEFT, true, true)){
+            start = partitioner->friend_halo_corner_start(domains[test_rank], domains[p], TOP_LEFT, true, true);
+        }
+    }
+    }
+
+    if (test_rank == 0){
+        REQUIRE(start == 2);
+    }
+
+    // Bottom left
+    for (int p = 0; p < test_nb_procs; p++) {
+    if (p != test_rank) {
+        if (partitioner->friend_is_corner_neighbour(domains[test_rank], domains[p], BOTTOM_LEFT, true, true)){
+            start = partitioner->friend_halo_corner_start(domains[test_rank], domains[p], BOTTOM_LEFT, true, true);
+        }
+    }
+    }
+
+    if (test_rank == 1){
         REQUIRE(start == 8);
     }
 
