@@ -155,9 +155,9 @@ void Partitioner::haloBufferPositions(
 
 int Partitioner::halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex)
 {
-    // halo_corner_start must be called after calling the function
-    // is_corner_neighbour and verifying whether is_corner_neighbour
-    // returns True.
+    // The function is_corner_neighbour must be called and it
+    // must be verified whether is_corner_neighbour returns True,
+    // before halo_corner_start is called. 
     int start = 0;
     if (vertex == TOP_LEFT) {
         if (d2.p1.y < d1.p2.y) { // Left case
