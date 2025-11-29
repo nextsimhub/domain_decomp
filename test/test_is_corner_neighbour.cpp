@@ -60,6 +60,7 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
         domains[p].p2.y = origins[p].y + extents[p].y;
     }
 
+    // Non-periodic cases
     bool corner0, corner1, corner2, corner3;
 
     corner0 = partitioner->friend_is_corner_neighbour(domains[0], domains[3], TOP_RIGHT);
@@ -71,6 +72,19 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
     REQUIRE(corner1 == true);
     REQUIRE(corner2 == true);
     REQUIRE(corner3 == true);
+
+    // Periodic cases
+    bool corner0_periodic, corner1_periodic, corner2_periodic, corner3_periodic;
+
+    corner0_periodic = partitioner->friend_is_corner_neighbour(domains[2], domains[1], TOP_RIGHT, true, true);
+    corner1_periodic = partitioner->friend_is_corner_neighbour(domains[3], domains[0], BOTTOM_RIGHT, true, true);
+    corner2_periodic = partitioner->friend_is_corner_neighbour(domains[0], domains[3], TOP_LEFT, true, true);
+    corner3_periodic = partitioner->friend_is_corner_neighbour(domains[1], domains[2], BOTTOM_LEFT, true, true);
+
+    REQUIRE(corner0_periodic == true);
+    REQUIRE(corner1_periodic == true);
+    REQUIRE(corner2_periodic == true);
+    REQUIRE(corner3_periodic == true);
 
    // Cleanup
     delete grid;
