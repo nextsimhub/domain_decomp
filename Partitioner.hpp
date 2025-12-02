@@ -27,7 +27,6 @@ enum class LIB_EXPORT PartitionerType {
 
 class LIB_EXPORT Partitioner {
 public:
-
     // Disallow compiler-generated special functions
     Partitioner(const Partitioner&) = delete;
     Partitioner& operator=(const Partitioner&) = delete;
@@ -231,11 +230,6 @@ public:
         static Partitioner* create(MPI_Comm comm, int argc, char** argv, PartitionerType type);
     };
 
-    bool is_neighbour(const Domain d1, const Domain d2, const Edge edge, const bool is_px = false,
-        const bool is_py = false);
-    bool is_corner_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
-        const bool is_px = false, const bool is_py = false);
-
     /*!
      * @brief Check if two domains are neighbouring. If true, then domain 2 is the [edge] neighbour
      * of domain 1, relative to domain 1. e.g., if domain 2 is to the right of domain 1, the
@@ -249,50 +243,34 @@ public:
      * @param is_py are we looking for periodic neighbour in y-direction?
      * @return bool
      */
-   
+    bool is_neighbour(const Domain d1, const Domain d2, const Edge edge, const bool is_px = false,
+        const bool is_py = false);
+    bool is_corner_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
+        const bool is_px = false, const bool is_py = false);
+
     /*!
-     * @brief Compute the start location of the halo for a given pair of neighbouring domains.
+     * @brief Compute the sendPos and recvPos for halo exchange.
      *
-     * TODO: This needs to be updated to reflect changes to halo start
-     *
-     * For example, in the diagram below. If we want to compute the start location for the halo of
-     * domain 1 which is the LEFT neighbour of domain 2, halo_start should return 4 (see square
-     * bracket in diagram below).
-     *         memory             domains          halo required
-     *   4┌───────────┬─────┐ ┌──────────┬────┐  ┌──────────┬────┐
-     *    │ 5 6 7 8 9 │ 6 7 │ │          │    │  │         9│    │
-     *    │           │     │ │    1     │    │  │          │    │
-     *    │ 0 1 2 3[4]│ 4 5 │ │          │    │  │         4│    │
-     *   2├───────────┤     │ ├──────────┤  2 │  ├──────────┤    │
-     *    │ 5 6 7 8 9 │ 2 3 │ │          │    │  │          │    │
-     *    │           │     │ │    0     │    │  │          │    │
-     * Y▲ │ 0 1 2 3 4 │ 0 1 │ │          │    │  │          │    │
-     *  │ └───────────┴─────┘ └──────────┴────┘  └──────────┴────┘
-     *  │0            5     7
-     *  └───►X
-     *
-     * Another example. If we want the start location of the halo for domain 0 which is domain 1's
-     * BOTTOM neighbour. We want halo_start to return 5. (see square bracket in diagram below).
-     *         memory             domains          halo required
-     *   4┌───────────┬─────┐ ┌──────────┬────┐  ┌──────────┬────┐
-     *    │ 5 6 7 8 9 │ 6 7 │ │          │    │  │          │    │
-     *    │           │     │ │    1     │    │  │          │    │
-     *    │ 0 1 2 3 4 │ 4 5 │ │          │    │  │          │    │
-     *   2├───────────┤     │ ├──────────┤  2 │  ├──────────┤    │
-     *    │[5]6 7 8 9 │ 2 3 │ │          │    │  │5 6 7 8 9 │    │
-     *    │           │     │ │    0     │    │  │          │    │
-     * Y▲ │ 0 1 2 3 4 │ 0 1 │ │          │    │  │          │    │
-     *  │ └───────────┴─────┘ └──────────┴────┘  └──────────┴────┘
-     *  │0            5     7
-     *  └───►X
+     * See https://nextsim-dg.readthedocs.io/en/latest/halo-exchange.html for a diagram explaining
+     * how the start locations are calculated.
      *
      * @param d1 first domain
      * @param d2 second domain
      * @param edge LEFT, RIGHT, BOTTOM or TOP
-     * @return starting index of halo for the flattened domain array
+     * @param sendPos position to get data from send buffer
+     * @param recvPos position to store data in recv buffer
      */
     void haloBufferPositions(
         const Domain d1, const Domain d2, const Edge edge, int& sendPos, int& recvPos);
-    int halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex,
-        const bool is_px = false, const bool is_py = false);
+
+    /*!
+     * @brief Compute the sendPos for corner neighbours
+     *
+     * @param d1 first domain
+     * @param d2 second domain
+     * @param edge TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT
+     * @param sendPos position to get data from send buffer
+     */
+    void haloCornerBufferPositions(
+        const Domain d1, const Domain d2, const Vertex vertex, int& sendPos);
 };
