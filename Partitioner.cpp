@@ -155,64 +155,57 @@ void Partitioner::haloBufferPositions(
     }
 }
 
-int Partitioner::halo_corner_start(
-    const Domain d1, const Domain d2, const Vertex vertex, const bool is_px, const bool is_py)
+void Partitioner::haloCornerBufferPositions(
+    const Domain d1, const Domain d2, const Vertex vertex, int& send_pos)
 {
-    // create helper vars for domain 1
-    auto left = d1.p1.x;
-    auto right = d1.p2.x;
-    auto top = d1.p2.y;
-    auto bottom = d1.p1.y;
+    // TODO write unit tests for this and the haloBufferPositions functions
+    //
+    // TODO Fix this for periodic neighbours (the logic "d1.p2.y > d2.p1.y" may not be valid
+    // anymore)
 
-    // adjust for periodic boundaries if domain lies on one of the outer boundaries
-    if (is_px) {
-        if (left == 0) {
-            left = _global_ext[0];
-        }
-        if (right == _global_ext[0]) {
-            right = 0;
-        }
-    }
-    if (is_py) {
-        if (bottom == 0) {
-            bottom = _global_ext[1];
-        }
-        if (top == _global_ext[1]) {
-            top = 0;
-        }
-    }
-
-    int start = 0;
-    if (vertex == TOP_LEFT) {
-        if (d2.p1.y < top) {
-            start = (top - d2.p1.y + 1) * d2.get_width() - 1;
+    send_pos = 0;
+    if (vertex == TOP_RIGHT) {
+        // for a TOP_RIGHT vertex the corner neighbour can either be along the other domains bottom
+        // or left edge. We need to check so we know where to look in the send buffer.
+        if (d1.p2.y > d2.p1.y) {
+            // this first case is true if the corner neighbour lies on the left edge
+            int dy = d1.p2.y - d2.p1.y;
+            send_pos = 2 * d2.get_width() + d2.get_height() + dy;
         } else {
-            start = left - d2.p1.x - 1;
+            // this second case works if the corner neighbour lies on the bottom edge (or in the
+            // corner of both e.g., the bottom left corner)
+            int dx = d1.p2.y - d2.p1.y;
+            send_pos = dx;
         }
-    } else if (vertex == TOP_RIGHT) {
-        if (d2.p1.x < right) {
-            start = right - d2.p1.x;
+    } else if (vertex == TOP_LEFT) {
+        if (d1.p2.y > d2.p1.y) {
+            int dy = d1.p2.y - d2.p1.y;
+            send_pos = d2.get_width() + dy;
         } else {
-            start = (top - d2.p1.y) * d2.get_width();
-        }
-    } else if (vertex == BOTTOM_RIGHT) {
-        if (d2.p1.y < bottom) {
-            start = (bottom - d2.p1.y - 1) * d2.get_width() + (right - d2.p1.x);
-        } else {
-            start = (bottom - d2.p1.y - 1) * d2.get_width();
+            int dx = d1.p2.y - d2.p1.y;
+            send_pos = dx - 1;
         }
     } else if (vertex == BOTTOM_LEFT) {
-        if (d2.p1.y < bottom) {
-            start = (bottom - d2.p1.y - 1) * d2.get_width() + (left - d2.p1.x) - 1;
+        if (d2.p2.y > d1.p1.y) {
+            int dy = d1.p1.y - d2.p1.y;
+            send_pos = d2.get_width() + dy - 1;
         } else {
-            start = (bottom - d2.p1.y) * d2.get_width() - 1;
+            int dx = d1.p2.y - d2.p1.y;
+            send_pos = d2.get_width() + d2.get_height() + dx - 1;
+        }
+    } else if (vertex == BOTTOM_RIGHT) {
+        if (d2.p2.y > d1.p1.y) {
+            int dy = d1.p1.y - d2.p1.y;
+            send_pos = 2 * d2.get_width() + d2.get_height() + dy - 1;
+        } else {
+            int dx = d1.p2.y - d2.p1.y;
+            send_pos = d2.get_width() + d2.get_height() + dx;
         }
     } else {
         std::cerr << "ERROR: vertex must be TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT."
                   << std::endl;
         exit(EXIT_FAILURE);
     }
-    return start;
 }
 
 Partitioner::Partitioner(MPI_Comm comm)
@@ -695,8 +688,9 @@ void Partitioner::discover_neighbours()
             for (auto vertex : vertices) {
                 if (is_corner_neighbour(domains[_rank], domains[p], vertex)) {
                     _corner_neighbours[vertex].insert(std::pair<int, int>(p, 1));
-                    int start = halo_corner_start(domains[_rank], domains[p], vertex);
-                    _corner_send_pos[vertex].insert(std::pair<int, int>(p, start));
+                    int sendPos = 0;
+                    haloCornerBufferPositions(domains[_rank], domains[p], vertex, sendPos);
+                    _corner_send_pos[vertex].insert(std::pair<int, int>(p, sendPos));
                 }
             }
         }
@@ -726,8 +720,9 @@ void Partitioner::discover_neighbours()
                     continue;
                 }
                 _corner_neighbours_p[vertex].insert(std::pair<int, int>(p, 1));
-                int start = halo_corner_start(domains[_rank], domains[p], vertex, _px, _py);
-                _corner_send_pos_p[vertex].insert(std::pair<int, int>(p, start));
+                int sendPos = 0;
+                haloCornerBufferPositions(domains[_rank], domains[p], vertex, sendPos);
+                _corner_send_pos_p[vertex].insert(std::pair<int, int>(p, sendPos));
             }
         }
     }
