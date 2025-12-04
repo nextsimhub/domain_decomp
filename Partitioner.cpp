@@ -732,16 +732,3 @@ void Partitioner::discover_neighbours()
         }
     }
 }
-
-bool Partitioner::friend_is_corner_neighbour(
-    const Domain d1, const Domain d2, const Vertex vertex,
-    const bool is_px, const bool is_py)
-    {
-        return is_corner_neighbour(d1, d2, vertex, is_px, is_py);
-    };
-
-int Partitioner::friend_halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex,
-    const bool is_px, const bool is_py)
-    {
-        return halo_corner_start(d1, d2, vertex, is_px, is_py);    
-    };    

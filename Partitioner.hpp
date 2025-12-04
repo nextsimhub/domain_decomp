@@ -91,18 +91,6 @@ public:
         std::array<std::vector<int>, N_EDGE>& halo_recv,
         std::array<std::vector<int>, N_VERTEX>& corner_ids,
         std::array<std::vector<int>, N_VERTEX>& corner_send) const;
-    /*
-    Wrapper function for is_corner_neighbour
-    (To be used for unit testing only)
-    */
-    bool friend_is_corner_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
-        const bool is_px = false, const bool is_py = false);
-    /*
-    Wrapper function for halo_corner_start
-    (To be used for unit testing only)
-    */
-    int friend_halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex,
-        const bool is_px = false, const bool is_py = false);
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -229,7 +217,25 @@ protected:
     // Vector of maps of "corner" neighbours to their halo start indices after partitioning
     std::vector<std::map<int, int>> _corner_send_pos_p = std::vector<std::map<int, int>>(NNBRS);
 
-private:
+public:
+    struct LIB_EXPORT Factory {
+        /*!
+         * @brief Factory function for creating grid partitioners.
+         *
+         * @param comm MPI communicator.
+         * @param argc The number of arguments.
+         * @param argv The argument vector.
+         * @param type Type of partitioner.
+         * @return A Partitioner object.
+         */
+        static Partitioner* create(MPI_Comm comm, int argc, char** argv, PartitionerType type);
+    };
+
+    bool is_neighbour(const Domain d1, const Domain d2, const Edge edge, const bool is_px = false,
+        const bool is_py = false);
+    bool is_corner_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
+        const bool is_px = false, const bool is_py = false);
+
     /*!
      * @brief Check if two domains are neighbouring. If true, then domain 2 is the [edge] neighbour
      * of domain 1, relative to domain 1. e.g., if domain 2 is to the right of domain 1, the
@@ -243,11 +249,7 @@ private:
      * @param is_py are we looking for periodic neighbour in y-direction?
      * @return bool
      */
-    bool is_neighbour(const Domain d1, const Domain d2, const Edge edge, const bool is_px = false,
-        const bool is_py = false);
-    bool is_corner_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
-        const bool is_px = false, const bool is_py = false);
-
+   
     /*!
      * @brief Compute the start location of the halo for a given pair of neighbouring domains.
      *
@@ -293,18 +295,4 @@ private:
         const Domain d1, const Domain d2, const Edge edge, int& sendPos, int& recvPos);
     int halo_corner_start(const Domain d1, const Domain d2, const Vertex vertex,
         const bool is_px = false, const bool is_py = false);
-
-public:
-    struct LIB_EXPORT Factory {
-        /*!
-         * @brief Factory function for creating grid partitioners.
-         *
-         * @param comm MPI communicator.
-         * @param argc The number of arguments.
-         * @param argv The argument vector.
-         * @param type Type of partitioner.
-         * @return A Partitioner object.
-         */
-        static Partitioner* create(MPI_Comm comm, int argc, char** argv, PartitionerType type);
-    };
 };
