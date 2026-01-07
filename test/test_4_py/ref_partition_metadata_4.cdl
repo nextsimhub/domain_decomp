@@ -149,25 +149,25 @@ group: connectivity {
 
    top_left_neighbour_ids = 1 ;
 
-   top_left_neighbour_send = 11 ;
+   top_left_neighbour_send = 6 ;
 
    top_right_neighbours = 1, 0, 0, 0 ;
 
    top_right_neighbour_ids = 2 ;
 
-   top_right_neighbour_send = 8 ;
+   top_right_neighbour_send = 15 ;
 
    bottom_right_neighbours = 0, 1, 0, 0 ;
 
    bottom_right_neighbour_ids = 2 ;
 
-   bottom_right_neighbour_send = 4 ;
+   bottom_right_neighbour_send = 14 ;
 
    bottom_left_neighbours = 0, 0, 0, 1 ;
 
    bottom_left_neighbour_ids = 1 ;
 
-   bottom_left_neighbour_send = 8 ;
+   bottom_left_neighbour_send = 5 ;
 
    left_neighbours_periodic = 0, 0, 0, 0 ;
 
@@ -197,13 +197,13 @@ group: connectivity {
 
    top_left_neighbour_ids_periodic = 0 ;
 
-   top_left_neighbour_send_periodic = 2 ;
+   top_left_neighbour_send_periodic = 3 ;
 
    top_right_neighbours_periodic = 0, 1, 0, 0 ;
 
    top_right_neighbour_ids_periodic = 2 ;
 
-   top_right_neighbour_send_periodic = 0 ;
+   top_right_neighbour_send_periodic = 13 ;
 
    bottom_right_neighbours_periodic = 1, 0, 0, 0 ;
 
@@ -215,6 +215,6 @@ group: connectivity {
 
    bottom_left_neighbour_ids_periodic = 1 ;
 
-   bottom_left_neighbour_send_periodic = 14 ;
+   bottom_left_neighbour_send_periodic = 0 ;
   } // group connectivity
 }
