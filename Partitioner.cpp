@@ -159,9 +159,9 @@ void Partitioner::haloCornerBufferPositions(
     const Domain d1, const Domain d2, const Vertex vertex, int& send_pos)
 {
     // TODO write unit tests for this and the haloBufferPositions functions
-    //
-    // TODO Fix this for periodic neighbours (the logic "d1.p2.y > d2.p1.y" may not be valid
-    // anymore)
+
+    int globalX = _global_ext[0];
+    int globalY = _global_ext[1];
 
     send_pos = 0;
     if (vertex == TOP_RIGHT) {
@@ -169,36 +169,36 @@ void Partitioner::haloCornerBufferPositions(
         // or left edge. We need to check so we know where to look in the send buffer.
         if (d1.p2.y > d2.p1.y) {
             // this first case is true if the corner neighbour lies on the left edge
-            int dy = d1.p2.y - d2.p1.y;
+            int dy = (d1.p2.y - d2.p1.y) % globalY;
             send_pos = 2 * d2.get_width() + d2.get_height() + dy;
         } else {
             // this second case works if the corner neighbour lies on the bottom edge (or in the
             // corner of both e.g., the bottom left corner)
-            int dx = d1.p2.y - d2.p1.y;
+            int dx = (d1.p2.x - d2.p1.x) % globalX;
             send_pos = dx;
         }
     } else if (vertex == TOP_LEFT) {
         if (d1.p2.y > d2.p1.y) {
-            int dy = d1.p2.y - d2.p1.y;
+            int dy = (d1.p2.y - d2.p1.y) % globalY;
             send_pos = d2.get_width() + dy;
         } else {
-            int dx = d1.p2.y - d2.p1.y;
+            int dx = (d1.p2.x - d2.p1.x) % globalX;
             send_pos = dx - 1;
         }
     } else if (vertex == BOTTOM_LEFT) {
         if (d2.p2.y > d1.p1.y) {
-            int dy = d1.p1.y - d2.p1.y;
+            int dy = (d1.p1.y - d2.p1.y) % globalY;
             send_pos = d2.get_width() + dy - 1;
         } else {
-            int dx = d1.p2.y - d2.p1.y;
+            int dx = (d1.p2.x - d2.p1.x) % globalX;
             send_pos = d2.get_width() + d2.get_height() + dx - 1;
         }
     } else if (vertex == BOTTOM_RIGHT) {
         if (d2.p2.y > d1.p1.y) {
-            int dy = d1.p1.y - d2.p1.y;
+            int dy = (d1.p1.y - d2.p1.y) % globalY;
             send_pos = 2 * d2.get_width() + d2.get_height() + dy - 1;
         } else {
-            int dx = d1.p2.y - d2.p1.y;
+            int dx = (d1.p2.x - d2.p1.x) % globalX;
             send_pos = d2.get_width() + d2.get_height() + dx;
         }
     } else {
