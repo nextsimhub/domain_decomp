@@ -151,13 +151,13 @@ group: connectivity {
 
    top_right_neighbour_ids = 2 ;
 
-   top_right_neighbour_send = 4 ;
+   top_right_neighbour_send = 10 ;
 
    bottom_right_neighbours = 0, 1, 0 ;
 
    bottom_right_neighbour_ids = 2 ;
 
-   bottom_right_neighbour_send = 2 ;
+   bottom_right_neighbour_send = 9 ;
 
    bottom_left_neighbours = 0, 0, 0 ;
 
@@ -189,7 +189,7 @@ group: connectivity {
 
    top_left_neighbour_ids_periodic = 2 ;
 
-   top_left_neighbour_send_periodic = 5 ;
+   top_left_neighbour_send_periodic = 4 ;
 
    top_right_neighbours_periodic = 0, 0, 0 ;
 
