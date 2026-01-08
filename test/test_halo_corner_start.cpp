@@ -20,7 +20,7 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
     // Create a Zoltan partitioner
     Partitioner* partitioner = Partitioner::Factory::create(
         test_comm, global_argc, global_argv, PartitionerType::Zoltan_RCB);
-    
+
     // Partition grid
     partitioner->partition(*grid);
 
@@ -64,98 +64,111 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
 
     // Non-periodic cases
     // Top right
-    if (test_rank == 0){
+    if (test_rank == 0) {
         for (int p = 0; p < test_nb_procs; p++) {
-        if (p != test_rank) {
-            if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], TOP_RIGHT)){
-                start = partitioner->halo_corner_start(domains[test_rank], domains[p], TOP_RIGHT);
+            if (p != test_rank) {
+                if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], TOP_RIGHT)) {
+                    partitioner->haloCornerBufferPositions(
+                        domains[test_rank], domains[p], TOP_RIGHT, start);
+                }
             }
-        }
         }
         REQUIRE(start == 0);
     }
 
     // Bottom right
-    if (test_rank == 1){
+    if (test_rank == 1) {
         for (int p = 0; p < test_nb_procs; p++) {
-        if (p != test_rank) {
-            if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], BOTTOM_RIGHT)){
-                start = partitioner->halo_corner_start(domains[test_rank], domains[p], BOTTOM_RIGHT);
+            if (p != test_rank) {
+                if (partitioner->is_corner_neighbour(
+                        domains[test_rank], domains[p], BOTTOM_RIGHT)) {
+                    partitioner->haloCornerBufferPositions(
+                        domains[test_rank], domains[p], BOTTOM_RIGHT, start);
+                }
             }
-        }
         }
         REQUIRE(start == 6);
     }
 
     // Top left
-    if (test_rank == 2){
+    if (test_rank == 2) {
         for (int p = 0; p < test_nb_procs; p++) {
-        if (p != test_rank) {
-            if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], TOP_LEFT)){
-                start = partitioner->halo_corner_start(domains[test_rank], domains[p], TOP_LEFT);
+            if (p != test_rank) {
+                if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], TOP_LEFT)) {
+                    partitioner->haloCornerBufferPositions(
+                        domains[test_rank], domains[p], TOP_LEFT, start);
+                }
             }
-        }
         }
         REQUIRE(start == 2);
     }
 
     // Bottom left
-    if (test_rank == 3){
+    if (test_rank == 3) {
         for (int p = 0; p < test_nb_procs; p++) {
-        if (p != test_rank) {
-            if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], BOTTOM_LEFT)){
-                start = partitioner->halo_corner_start(domains[test_rank], domains[p], BOTTOM_LEFT);
+            if (p != test_rank) {
+                if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], BOTTOM_LEFT)) {
+                    partitioner->haloCornerBufferPositions(
+                        domains[test_rank], domains[p], BOTTOM_LEFT, start);
+                }
             }
-        }
         }
         REQUIRE(start == 8);
     }
 
     // Periodic cases
     // Top right
-    if (test_rank == 2){
+    if (test_rank == 2) {
         for (int p = 0; p < test_nb_procs; p++) {
-        if (p != test_rank) {
-            if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], TOP_RIGHT, true, true)){
-                start = partitioner->halo_corner_start(domains[test_rank], domains[p], TOP_RIGHT, true, true);
+            if (p != test_rank) {
+                if (partitioner->is_corner_neighbour(
+                        domains[test_rank], domains[p], TOP_RIGHT, true, true)) {
+                    partitioner->haloCornerBufferPositions(
+                        domains[test_rank], domains[p], TOP_RIGHT, start);
+                }
             }
-        }
         }
         REQUIRE(start == 0);
     }
 
     // Bottom right
-    if (test_rank == 3){
+    if (test_rank == 3) {
         for (int p = 0; p < test_nb_procs; p++) {
-        if (p != test_rank) {
-            if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], BOTTOM_RIGHT, true, true)){
-                start = partitioner->halo_corner_start(domains[test_rank], domains[p], BOTTOM_RIGHT, true, true);
+            if (p != test_rank) {
+                if (partitioner->is_corner_neighbour(
+                        domains[test_rank], domains[p], BOTTOM_RIGHT, true, true)) {
+                    partitioner->haloCornerBufferPositions(
+                        domains[test_rank], domains[p], BOTTOM_RIGHT, start);
+                }
             }
-        }
         }
         REQUIRE(start == 6);
     }
 
     // Top left
-    if (test_rank == 0){
+    if (test_rank == 0) {
         for (int p = 0; p < test_nb_procs; p++) {
-        if (p != test_rank) {
-            if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], TOP_LEFT, true, true)){
-                start = partitioner->halo_corner_start(domains[test_rank], domains[p], TOP_LEFT, true, true);
+            if (p != test_rank) {
+                if (partitioner->is_corner_neighbour(
+                        domains[test_rank], domains[p], TOP_LEFT, true, true)) {
+                    partitioner->haloCornerBufferPositions(
+                        domains[test_rank], domains[p], TOP_LEFT, start);
+                }
             }
-        }
         }
         REQUIRE(start == 2);
     }
 
     // Bottom left
-    if (test_rank == 1){
+    if (test_rank == 1) {
         for (int p = 0; p < test_nb_procs; p++) {
-        if (p != test_rank) {
-            if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], BOTTOM_LEFT, true, true)){
-                start = partitioner->halo_corner_start(domains[test_rank], domains[p], BOTTOM_LEFT, true, true);
+            if (p != test_rank) {
+                if (partitioner->is_corner_neighbour(
+                        domains[test_rank], domains[p], BOTTOM_LEFT, true, true)) {
+                    partitioner->haloCornerBufferPositions(
+                        domains[test_rank], domains[p], BOTTOM_LEFT, start);
+                }
             }
-        }
         }
         REQUIRE(start == 8);
     }
@@ -163,5 +176,4 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
     // Cleanup
     delete grid;
     delete partitioner;
-
 }
