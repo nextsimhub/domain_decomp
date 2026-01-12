@@ -149,19 +149,19 @@ group: connectivity {
 
    top_left_neighbour_ids = 1 ;
 
-   top_left_neighbour_send = -1 ;
+   top_left_neighbour_send = 3 ;
 
    top_right_neighbours = 1, 0, 0, 0 ;
 
    top_right_neighbour_ids = 3 ;
 
-   top_right_neighbour_send = 0 ;
+   top_right_neighbour_send = 9 ;
 
    bottom_right_neighbours = 0, 1, 0, 0 ;
 
    bottom_right_neighbour_ids = 2 ;
 
-   bottom_right_neighbour_send = 6 ;
+   bottom_right_neighbour_send = 11 ;
 
    bottom_left_neighbours = 0, 0, 0, 1 ;
 
