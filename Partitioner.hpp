@@ -216,6 +216,10 @@ protected:
     // Vector of maps of "corner" neighbours to their halo start indices after partitioning
     std::vector<std::map<int, int>> _corner_send_pos_p = std::vector<std::map<int, int>>(NNBRS);
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> b8ef5f5 (Tests updated and fixes in Partition.cpp)
 public:
     struct LIB_EXPORT Factory {
         /*!
@@ -273,4 +277,8 @@ public:
      */
     void haloCornerBufferPositions(
         const Domain d1, const Domain d2, const Vertex vertex, int& sendPos);
+<<<<<<< HEAD
+=======
+
+>>>>>>> b8ef5f5 (Tests updated and fixes in Partition.cpp)
 };
