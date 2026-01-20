@@ -1,13 +1,16 @@
 /*!
- * @file halo_corner_start.cpp
+ * @file .cpp
  * @author Nirav Shah <nvs31@cam.ac.uk>
- * @date 25 Nov 2025
+ * @date 19 January 2026
  */
 
 #include "Grid.hpp"
 #include "Partitioner.hpp"
 #include "Utils.hpp"
 #include <doctest/extensions/doctest_mpi.h>
+
+#include <iostream>
+using namespace std;
 
 extern int global_argc;
 extern char** global_argv;
@@ -20,7 +23,7 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
     // Create a Zoltan partitioner
     Partitioner* partitioner = Partitioner::Factory::create(
         test_comm, global_argc, global_argv, PartitionerType::Zoltan_RCB);
-    
+
     // Partition grid
     partitioner->partition(*grid);
 
@@ -61,33 +64,33 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
     }
 
     // Non-periodic cases
-    bool corner0, corner1, corner2, corner3;
+    bool corner_0, corner_1, corner_2, corner_3;
 
-    corner0 = partitioner->is_corner_neighbour(domains[0], domains[3], TOP_RIGHT);
-    corner1 = partitioner->is_corner_neighbour(domains[1], domains[2], BOTTOM_RIGHT);
-    corner2 = partitioner->is_corner_neighbour(domains[2], domains[1], TOP_LEFT);
-    corner3 = partitioner->is_corner_neighbour(domains[3], domains[0], BOTTOM_LEFT);
+    // RIGHT
+    if (test_rank == 0) {
+        corner_0 = partitioner->is_neighbour(domains[0], domains[2], RIGHT);
+        REQUIRE(corner_0 == true);
+    }
 
-    REQUIRE(corner0 == true);
-    REQUIRE(corner1 == true);
-    REQUIRE(corner2 == true);
-    REQUIRE(corner3 == true);
+    // BOTTOM
+    if (test_rank == 1) {
+        corner_1 = partitioner->is_neighbour(domains[1], domains[0], BOTTOM);
+        REQUIRE(corner_1 == true);
+    }
 
-    // Periodic cases
-    bool corner0_periodic, corner1_periodic, corner2_periodic, corner3_periodic;
+    // TOP
+    if (test_rank == 2) {
+        corner_2 = partitioner->is_neighbour(domains[2], domains[3], TOP);
+        REQUIRE(corner_2 == true);
+    }
 
-    corner0_periodic = partitioner->is_corner_neighbour(domains[2], domains[1], TOP_RIGHT, true, true);
-    corner1_periodic = partitioner->is_corner_neighbour(domains[3], domains[0], BOTTOM_RIGHT, true, true);
-    corner2_periodic = partitioner->is_corner_neighbour(domains[0], domains[3], TOP_LEFT, true, true);
-    corner3_periodic = partitioner->is_corner_neighbour(domains[1], domains[2], BOTTOM_LEFT, true, true);
+    // LEFT
+    if (test_rank == 3) {
+        corner_3 = partitioner->is_neighbour(domains[3], domains[1], LEFT);
+        REQUIRE(corner_3 == true);
+    }
 
-    REQUIRE(corner0_periodic == true);
-    REQUIRE(corner1_periodic == true);
-    REQUIRE(corner2_periodic == true);
-    REQUIRE(corner3_periodic == true);
-
-   // Cleanup
+    // Cleanup
     delete grid;
     delete partitioner;
-
 }

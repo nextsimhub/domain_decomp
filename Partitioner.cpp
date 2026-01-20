@@ -158,8 +158,6 @@ void Partitioner::haloBufferPositions(
 void Partitioner::haloCornerBufferPositions(
     const Domain d1, const Domain d2, const Vertex vertex, int& send_pos)
 {
-    // TODO write unit tests for this and the haloBufferPositions functions
-
     int globalX = _global_ext[0];
     int globalY = _global_ext[1];
 
