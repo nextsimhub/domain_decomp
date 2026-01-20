@@ -34,6 +34,8 @@ create_test(TARGET test_zoltan_1 SOURCES test_zoltan_partitioner_1.cpp)
 create_test(TARGET test_zoltan_2 SOURCES test_zoltan_partitioner_2.cpp)
 create_test(TARGET test_halo_corner_start SOURCES test_halo_corner_start.cpp)
 create_test(TARGET test_is_corner_neighbour SOURCES test_is_corner_neighbour.cpp)
+create_test(TARGET test_is_neighbour SOURCES test_is_neighbour.cpp)
+create_test(TARGET test_haloBufferPositions SOURCES test_haloBufferPositions.cpp)
 
 # Generate input files from respective cdl files
 add_custom_command(
