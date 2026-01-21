@@ -64,30 +64,57 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
     }
 
     // Non-periodic cases
-    bool corner_0, corner_1, corner_2, corner_3;
+    bool neighbour;
 
     // RIGHT
     if (test_rank == 0) {
-        corner_0 = partitioner->is_neighbour(domains[0], domains[2], RIGHT);
-        REQUIRE(corner_0 == true);
+        neighbour = partitioner->is_neighbour(domains[0], domains[2], RIGHT);
+        REQUIRE(neighbour);
     }
 
     // BOTTOM
     if (test_rank == 1) {
-        corner_1 = partitioner->is_neighbour(domains[1], domains[0], BOTTOM);
-        REQUIRE(corner_1 == true);
+        neighbour = partitioner->is_neighbour(domains[1], domains[0], BOTTOM);
+        REQUIRE(neighbour);
     }
 
     // TOP
     if (test_rank == 2) {
-        corner_2 = partitioner->is_neighbour(domains[2], domains[3], TOP);
-        REQUIRE(corner_2 == true);
+        neighbour = partitioner->is_neighbour(domains[2], domains[3], TOP);
+        REQUIRE(neighbour);
     }
 
     // LEFT
     if (test_rank == 3) {
-        corner_3 = partitioner->is_neighbour(domains[3], domains[1], LEFT);
-        REQUIRE(corner_3 == true);
+        neighbour = partitioner->is_neighbour(domains[3], domains[1], LEFT);
+        REQUIRE(neighbour);
+    }
+
+    // Periodic cases
+    bool periodic_neighbour;
+
+    // LEFT
+    if (test_rank == 0) {
+        periodic_neighbour = partitioner->is_neighbour(domains[0], domains[2], LEFT, true, true);
+        REQUIRE(periodic_neighbour);
+    }
+
+    // TOP
+    if (test_rank == 1) {
+        periodic_neighbour = partitioner->is_neighbour(domains[1], domains[0], TOP, true, true);
+        REQUIRE(periodic_neighbour);
+    }
+
+    // BOTTOM
+    if (test_rank == 2) {
+        periodic_neighbour = partitioner->is_neighbour(domains[2], domains[3], BOTTOM, true, true);
+        REQUIRE(neighbour);
+    }
+
+    // RIGHT
+    if (test_rank == 3) {
+        periodic_neighbour = partitioner->is_neighbour(domains[3], domains[1], RIGHT, true, true);
+        REQUIRE(periodic_neighbour);
     }
 
     // Cleanup
