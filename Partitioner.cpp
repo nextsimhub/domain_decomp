@@ -113,14 +113,14 @@ void Partitioner::haloBufferPositions(
     if (edge == TOP) {
         // dx is the offset between domains
         int dx = std::max(d1.p1.x, d2.p1.x) - d2.p1.x;
-        // in this case d1 is the TOP nieghbour of d2, which means it will need to share elements
+        // in this case d2 is the TOP nieghbour of d1, which means it will need to share elements
         // from it's BOTTOM edge, which is first in the 1D perimeter array. Therefore there is no
         // additional offset
         send_pos = dx;
     } else if (edge == BOTTOM) {
         // dx is the offset between domains
         int dx = std::max(d1.p1.x, d2.p1.x) - d2.p1.x;
-        // in this case d1 is the BOTTOM nieghbour of d2, which means it will need to share elements
+        // in this case d2 is the BOTTOM nieghbour of d1, which means it will need to share elements
         // from it's TOP edge, which comes third in the 1D perimeter array (i.e., Bottom, Right and
         // then Top). Therefore we have to account for an additional offset.
         send_pos = d2.get_height() + d2.get_width() + dx;
