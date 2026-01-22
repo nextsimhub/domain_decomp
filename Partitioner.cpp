@@ -17,6 +17,27 @@
 #include <netcdf.h>
 #include <netcdf_par.h>
 
+/*!
+ * @brief Compute modulo operation with non-negative result
+ *
+ * This function computes a % n and ensures the result is always non-negative.
+ * This is particularly useful for periodic boundary conditions where we need
+ * to wrap around coordinates that might be negative.
+ *
+ * @param a The dividend
+ * @param n The divisor (modulus)
+ * @return The non-negative remainder of a divided by n
+ *
+ * @note The standard % operator in C++ can return negative results when a is negative.
+ *       This function adjusts the result to always be in the range [0, n-1].
+ *       e.g.,
+ *       mod(-1, 5);  // 4
+ *       mod(6, 5);   // 1
+ *       mod(4, 5);   // 4
+ *       mod(-6, 5);  // 4
+ */
+int mod(int a, int n) { return ((a % n) + n) % n; }
+
 bool Partitioner::is_neighbour(
     const Domain d1, const Domain d2, const Edge edge, const bool is_px, const bool is_py)
 {
@@ -160,43 +181,52 @@ void Partitioner::haloCornerBufferPositions(
 {
     int globalX = _global_ext[0];
     int globalY = _global_ext[1];
+    int xpos, ypos;
 
     send_pos = 0;
     if (vertex == TOP_RIGHT) {
         // for a TOP_RIGHT vertex the corner neighbour can either be along the other domains bottom
         // or left edge. We need to check so we know where to look in the send buffer.
-        if (d1.p2.y >= d2.p1.y) {
+        xpos = mod((d1.p2.x), globalX);
+        ypos = mod((d1.p2.y), globalY);
+        if (ypos >= d2.p1.y) {
             // this first case is true if the corner neighbour lies on the left edge
-            int dy = (d1.p2.y - d2.p1.y) % globalY;
+            int dy = ypos - d2.p1.y;
             send_pos = 2 * d2.get_width() + d2.get_height() + dy;
         } else {
             // this second case works if the corner neighbour lies on the bottom edge (or in the
             // corner of both e.g., the bottom left corner)
-            int dx = (d1.p2.x - d2.p1.x) % globalX;
+            int dx = xpos - d2.p1.x;
             send_pos = dx;
         }
     } else if (vertex == TOP_LEFT) {
-        if (d1.p2.y >= d2.p1.y) {
-            int dy = (d1.p2.y - d2.p1.y) % globalY;
+        xpos = mod((d1.p1.x - 1), globalX);
+        ypos = mod((d1.p2.y), globalY);
+        if (ypos >= d2.p1.y) {
+            int dy = ypos - d2.p1.y;
             send_pos = d2.get_width() + dy;
         } else {
-            int dx = (d1.p2.x - d2.p1.x) % globalX;
-            send_pos = dx - 1;
+            int dx = xpos - d2.p1.x;
+            send_pos = dx;
         }
     } else if (vertex == BOTTOM_LEFT) {
-        if (d2.p2.y >= d1.p1.y) {
-            int dy = (d1.p1.y - d2.p1.y) % globalY;
-            send_pos = d2.get_width() + dy - 1;
+        xpos = mod((d1.p1.x - 1), globalX);
+        ypos = mod((d1.p1.y - 1), globalY);
+        if (d2.p2.y >= ypos) {
+            int dy = ypos - d2.p1.y;
+            send_pos = d2.get_width() + dy;
         } else {
-            int dx = (d1.p2.x - d2.p1.x) % globalX;
-            send_pos = d2.get_width() + d2.get_height() + dx - 1;
+            int dx = xpos - d2.p1.x;
+            send_pos = d2.get_width() + d2.get_height() + dx;
         }
     } else if (vertex == BOTTOM_RIGHT) {
-        if (d2.p2.y >= d1.p1.y) {
-            int dy = (d1.p1.y - d2.p1.y) % globalY;
-            send_pos = 2 * d2.get_width() + d2.get_height() + dy - 1;
+        xpos = mod((d1.p2.x), globalX);
+        ypos = mod((d1.p1.y - 1), globalY);
+        if (d2.p2.y >= ypos) {
+            int dy = ypos - d2.p1.y;
+            send_pos = 2 * d2.get_width() + d2.get_height() + dy;
         } else {
-            int dx = (d1.p2.x - d2.p1.x) % globalX;
+            int dx = xpos - d2.p1.x;
             send_pos = d2.get_width() + d2.get_height() + dx;
         }
     } else {
