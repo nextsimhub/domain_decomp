@@ -73,6 +73,9 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
 
     const bool pxOn = true, pyOn = true;
 
+    // The int in tuple<Edge, int> refers to rank. In the case of edge neighbours,
+    // it is possible that one edge may corresspond to multiple neighbour unlike
+    // corner neighbour where a given vertice can correspond to only one neighbour.
     std::map<std::tuple<Edge, int>, HaloEdgeInfo> edgeInfoExpected, edgeInfoActual;
 
     if (test_rank == 0) {
