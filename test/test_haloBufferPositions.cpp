@@ -1,5 +1,5 @@
 /*!
- * @file halo_corner_start.cpp
+ * @file test_haloBufferPositions.cpp
  * @author Nirav Shah <nvs31@cam.ac.uk>
  * @date 19 January 2026
  */
@@ -10,7 +10,6 @@
 #include <doctest/extensions/doctest_mpi.h>
 
 #include <iostream>
-using namespace std;
 
 extern int global_argc;
 extern char** global_argv;
@@ -18,7 +17,8 @@ extern char** global_argv;
 MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
 {
     // Build grid from netCDF file
-    Grid* grid = Grid::create(test_comm, "./test_3.nc");
+    Grid* grid = Grid::create(
+        test_comm, "./test_4.nc", "x", "y", { 1, 0 }, "land_mask", false, true, true);
 
     // Create a Zoltan partitioner
     Partitioner* partitioner = Partitioner::Factory::create(
@@ -62,90 +62,76 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
         domains[p].p2.y = origins[p].y + extents[p].y;
     }
 
-    // Non-periodic cases
-    int start_pos, recv_pos;
+    int start;
+    int recv;
 
-    // RIGHT
+    struct HaloEdgeInfo {
+        bool isPeriodic;
+        int startPos;
+        int recvPos;
+    };
+
+    const bool pxOn = true, pyOn = true;
+
+    std::map<std::tuple<Edge, int>, HaloEdgeInfo> edgeInfoExpected, edgeInfoActual;
+
     if (test_rank == 0) {
-        if (partitioner->is_neighbour(domains[test_rank], domains[2], RIGHT)) {
-            partitioner->haloBufferPositions(
-                domains[test_rank], domains[2], RIGHT, start_pos, recv_pos);
-        }
-        REQUIRE(start_pos == 9);
-        REQUIRE(recv_pos == 3);
+        edgeInfoExpected[{ BOTTOM, 1 }] = { true, 8, 0 };
+        edgeInfoExpected[{ RIGHT, 2 }] = { false, 13, 3 };
+        edgeInfoExpected[{ TOP, 1 }] = { false, 0, 5 };
+        edgeInfoExpected[{ LEFT, 2 }] = { true, 4, 8 };
+    } else if (test_rank == 1) {
+        edgeInfoExpected[{ BOTTOM, 0 }] = { false, 5, 0 };
+        edgeInfoExpected[{ RIGHT, 3 }] = { false, 10, 6 };
+        edgeInfoExpected[{ RIGHT, 2 }] = { false, 15, 3 };
+        edgeInfoExpected[{ TOP, 0 }] = { true, 0, 8 };
+        edgeInfoExpected[{ LEFT, 3 }] = { true, 4, 14 };
+        edgeInfoExpected[{ LEFT, 2 }] = { true, 6, 11 };
+    } else if (test_rank == 2) {
+        edgeInfoExpected[{ BOTTOM, 3 }] = { true, 6, 0 };
+        edgeInfoExpected[{ RIGHT, 1 }] = { true, 11, 6 };
+        edgeInfoExpected[{ RIGHT, 0 }] = { true, 8, 4 };
+        edgeInfoExpected[{ TOP, 3 }] = { false, 0, 9 };
+        edgeInfoExpected[{ LEFT, 1 }] = { false, 3, 15 };
+        edgeInfoExpected[{ LEFT, 0 }] = { false, 3, 13 };
+    } else if (test_rank == 3) {
+        edgeInfoExpected[{ BOTTOM, 2 }] = { false, 9, 0 };
+        edgeInfoExpected[{ RIGHT, 1 }] = { true, 14, 4 };
+        edgeInfoExpected[{ TOP, 2 }] = { true, 0, 6 };
+        edgeInfoExpected[{ LEFT, 1 }] = { false, 6, 10 };
     }
 
-    // BOTTOM
-    if (test_rank == 1) {
-        if (partitioner->is_neighbour(domains[test_rank], domains[0], BOTTOM)) {
-            partitioner->haloBufferPositions(
-                domains[test_rank], domains[0], BOTTOM, start_pos, recv_pos);
+    for (auto edge : edges) {
+        for (int p = 0; p < test_nb_procs; p++) {
+            // periodic neighbours
+            if (partitioner->is_neighbour(domains[test_rank], domains[p], edge, pxOn, pyOn)) {
+                partitioner->haloBufferPositions(domains[test_rank], domains[p], edge, start, recv);
+                edgeInfoActual[{ edge, p }] = { true, start, recv };
+            }
+
+            // non-periodic neighbours
+            if (p != test_rank) {
+                if (partitioner->is_neighbour(domains[test_rank], domains[p], edge)) {
+                    partitioner->haloBufferPositions(
+                        domains[test_rank], domains[p], edge, start, recv);
+                    edgeInfoActual[{ edge, p }] = { false, start, recv };
+                }
+            }
         }
-        REQUIRE(start_pos == 6);
-        REQUIRE(recv_pos == 0);
     }
 
-    // TOP
-    if (test_rank == 2) {
-        if (partitioner->is_neighbour(domains[test_rank], domains[3], TOP)) {
-            partitioner->haloBufferPositions(
-                domains[test_rank], domains[3], TOP, start_pos, recv_pos);
+    for (auto edge : edges) {
+        for (int p = 0; p < test_nb_procs; p++) {
+            if (p != test_rank && edgeInfoExpected.count({ edge, p }) != 0) {
+                // check computed edge info (actual) against the expected information
+                REQUIRE(edgeInfoActual[{ edge, p }].isPeriodic
+                    == edgeInfoExpected[{ edge, p }].isPeriodic);
+                REQUIRE(
+                    edgeInfoActual[{ edge, p }].startPos == edgeInfoExpected[{ edge, p }].startPos);
+                REQUIRE(
+                    edgeInfoActual[{ edge, p }].recvPos == edgeInfoExpected[{ edge, p }].recvPos);
+            }
         }
-        REQUIRE(start_pos == 0);
-        REQUIRE(recv_pos == 6);
-    }
-
-    // LEFT
-    if (test_rank == 3) {
-        if (partitioner->is_neighbour(domains[test_rank], domains[1], LEFT)) {
-            partitioner->haloBufferPositions(
-                domains[test_rank], domains[1], LEFT, start_pos, recv_pos);
-        }
-        REQUIRE(start_pos == 3);
-        REQUIRE(recv_pos == 9);
-    }
-
-    // Periodic cases
-    int periodic_start_pos, periodic_recv_pos;
-
-    // LEFT
-    if (test_rank == 0) {
-        if (partitioner->is_neighbour(domains[test_rank], domains[2], LEFT, true, true)) {
-            partitioner->haloBufferPositions(
-                domains[test_rank], domains[2], LEFT, periodic_start_pos, periodic_recv_pos);
-        }
-        REQUIRE(periodic_start_pos == 3);
-        REQUIRE(periodic_recv_pos == 9);
-    }
-
-    // TOP
-    if (test_rank == 1) {
-        if (partitioner->is_neighbour(domains[test_rank], domains[0], TOP, true, true)) {
-            partitioner->haloBufferPositions(
-                domains[test_rank], domains[0], TOP, periodic_start_pos, periodic_recv_pos);
-        }
-        REQUIRE(periodic_start_pos == 0);
-        REQUIRE(periodic_recv_pos == 6);
-    }
-
-    // BOTTOM
-    if (test_rank == 2) {
-        if (partitioner->is_neighbour(domains[test_rank], domains[3], BOTTOM, true, true)) {
-            partitioner->haloBufferPositions(
-                domains[test_rank], domains[3], BOTTOM, periodic_start_pos, periodic_recv_pos);
-        }
-        REQUIRE(periodic_start_pos == 6);
-        REQUIRE(periodic_recv_pos == 0);
-    }
-
-    // RIGHT
-    if (test_rank == 3) {
-        if (partitioner->is_neighbour(domains[test_rank], domains[1], RIGHT, true, true)) {
-            partitioner->haloBufferPositions(
-                domains[test_rank], domains[1], RIGHT, periodic_start_pos, periodic_recv_pos);
-        }
-        REQUIRE(periodic_start_pos == 9);
-        REQUIRE(periodic_recv_pos == 3);
     }
 
     // Cleanup
