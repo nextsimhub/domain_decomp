@@ -8,13 +8,14 @@
 #include "Partitioner.hpp"
 #include "Utils.hpp"
 #include <doctest/extensions/doctest_mpi.h>
+#include <list>
 
 #include <iostream>
 
 extern int global_argc;
 extern char** global_argv;
 
-MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
+MPI_TEST_CASE("Neighbour, 4 MPI ranks", 4)
 {
     // Build grid from netCDF file
     Grid* grid = Grid::create(
@@ -67,6 +68,7 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
 
     struct HaloEdgeInfo {
         bool isPeriodic;
+        int rank;
         int startPos;
         int recvPos;
     };
@@ -76,63 +78,79 @@ MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
     // The int in tuple<Edge, int> refers to rank. In the case of edge neighbours,
     // it is possible that one edge may corresspond to multiple neighbour unlike
     // corner neighbour where a given vertice can correspond to only one neighbour.
-    std::map<std::tuple<Edge, int>, HaloEdgeInfo> edgeInfoExpected, edgeInfoActual;
+    std::map<Edge, std::list<HaloEdgeInfo>> edgeInfoExpected, edgeInfoActual;
 
     if (test_rank == 0) {
-        edgeInfoExpected[{ BOTTOM, 1 }] = { true, 8, 0 };
-        edgeInfoExpected[{ RIGHT, 2 }] = { false, 13, 3 };
-        edgeInfoExpected[{ TOP, 1 }] = { false, 0, 5 };
-        edgeInfoExpected[{ LEFT, 2 }] = { true, 4, 8 };
+        edgeInfoExpected[LEFT].push_back({ true, 2, 4, 8 });
+        edgeInfoExpected[RIGHT].push_back({ false, 2, 13, 3 });
+        edgeInfoExpected[BOTTOM].push_back({ true, 1, 8, 0 });
+        edgeInfoExpected[TOP].push_back({ false, 1, 0, 5 });
     } else if (test_rank == 1) {
-        edgeInfoExpected[{ BOTTOM, 0 }] = { false, 5, 0 };
-        edgeInfoExpected[{ RIGHT, 3 }] = { false, 10, 6 };
-        edgeInfoExpected[{ RIGHT, 2 }] = { false, 15, 3 };
-        edgeInfoExpected[{ TOP, 0 }] = { true, 0, 8 };
-        edgeInfoExpected[{ LEFT, 3 }] = { true, 4, 14 };
-        edgeInfoExpected[{ LEFT, 2 }] = { true, 6, 11 };
+        edgeInfoExpected[LEFT].push_back({ true, 2, 6, 11 });
+        edgeInfoExpected[LEFT].push_back({ true, 3, 4, 14 });
+        edgeInfoExpected[RIGHT].push_back({ false, 2, 15, 3 });
+        edgeInfoExpected[RIGHT].push_back({ false, 3, 10, 6 });
+        edgeInfoExpected[BOTTOM].push_back({ false, 0, 5, 0 });
+        edgeInfoExpected[TOP].push_back({ true, 0, 0, 8 });
     } else if (test_rank == 2) {
-        edgeInfoExpected[{ BOTTOM, 3 }] = { true, 6, 0 };
-        edgeInfoExpected[{ RIGHT, 1 }] = { true, 11, 6 };
-        edgeInfoExpected[{ RIGHT, 0 }] = { true, 8, 4 };
-        edgeInfoExpected[{ TOP, 3 }] = { false, 0, 9 };
-        edgeInfoExpected[{ LEFT, 1 }] = { false, 3, 15 };
-        edgeInfoExpected[{ LEFT, 0 }] = { false, 3, 13 };
+        edgeInfoExpected[LEFT].push_back({ false, 0, 3, 13 });
+        edgeInfoExpected[LEFT].push_back({ false, 1, 3, 15 });
+        edgeInfoExpected[RIGHT].push_back({ true, 0, 8, 4 });
+        edgeInfoExpected[RIGHT].push_back({ true, 1, 11, 6 });
+        edgeInfoExpected[BOTTOM].push_back({ true, 3, 6, 0 });
+        edgeInfoExpected[TOP].push_back({ false, 3, 0, 9 });
     } else if (test_rank == 3) {
-        edgeInfoExpected[{ BOTTOM, 2 }] = { false, 9, 0 };
-        edgeInfoExpected[{ RIGHT, 1 }] = { true, 14, 4 };
-        edgeInfoExpected[{ TOP, 2 }] = { true, 0, 6 };
-        edgeInfoExpected[{ LEFT, 1 }] = { false, 6, 10 };
+        edgeInfoExpected[LEFT].push_back({ false, 1, 6, 10 });
+        edgeInfoExpected[RIGHT].push_back({ true, 1, 14, 4 });
+        edgeInfoExpected[BOTTOM].push_back({ false, 2, 9, 0 });
+        edgeInfoExpected[TOP].push_back({ true, 2, 0, 6 });
     }
+
+    bool periodic_check_neighbour; 
+    periodic_check_neighbour = (partitioner->is_neighbour(domains[3], domains[0], RIGHT, pxOn, pyOn));
+
+    bool check_neighbour;
+    check_neighbour = (partitioner->is_neighbour(domains[3], domains[0], LEFT));
 
     for (auto edge : edges) {
         for (int p = 0; p < test_nb_procs; p++) {
             // periodic neighbours
-            if (partitioner->is_neighbour(domains[test_rank], domains[p], edge, pxOn, pyOn)) {
-                partitioner->haloBufferPositions(domains[test_rank], domains[p], edge, start, recv);
-                edgeInfoActual[{ edge, p }] = { true, start, recv };
+            if (p != test_rank) {
+                if (partitioner->is_neighbour(domains[test_rank], domains[p], edge, pxOn, pyOn)) {
+                    std::cout << "Periodic" << test_rank << p << edge << std::endl;
+                    partitioner->haloBufferPositions(
+                        domains[test_rank], domains[p], edge, start, recv);
+                    edgeInfoActual[edge].push_back({ true, p, start, recv });
+                }
             }
 
             // non-periodic neighbours
             if (p != test_rank) {
                 if (partitioner->is_neighbour(domains[test_rank], domains[p], edge)) {
+                    std::cout << "Non-periodic" << test_rank << p << edge << std::endl;
                     partitioner->haloBufferPositions(
                         domains[test_rank], domains[p], edge, start, recv);
-                    edgeInfoActual[{ edge, p }] = { false, start, recv };
+                    edgeInfoActual[edge].push_back({ false, p, start, recv });
                 }
             }
         }
     }
 
     for (auto edge : edges) {
-        for (int p = 0; p < test_nb_procs; p++) {
-            if (p != test_rank && edgeInfoExpected.count({ edge, p }) != 0) {
-                // check computed edge info (actual) against the expected information
-                REQUIRE(edgeInfoActual[{ edge, p }].isPeriodic
-                    == edgeInfoExpected[{ edge, p }].isPeriodic);
-                REQUIRE(
-                    edgeInfoActual[{ edge, p }].startPos == edgeInfoExpected[{ edge, p }].startPos);
-                REQUIRE(
-                    edgeInfoActual[{ edge, p }].recvPos == edgeInfoExpected[{ edge, p }].recvPos);
+        std::cout << test_rank << edge << edgeInfoActual[edge].size()
+                  << edgeInfoExpected[edge].size() << std::endl;
+        REQUIRE(edgeInfoActual[edge].size() == edgeInfoExpected[edge].size());
+        if (edgeInfoActual[edge].empty()) {
+            REQUIRE(edgeInfoExpected[edge].empty());
+        } else {
+            for (auto edgeInfoA : edgeInfoActual[edge]) {
+                for (auto edgeInfoE : edgeInfoExpected[edge]) {
+                    if (edgeInfoA.rank == edgeInfoE.rank) {
+                        REQUIRE(edgeInfoA.isPeriodic == edgeInfoE.isPeriodic);
+                        REQUIRE(edgeInfoA.startPos == edgeInfoE.startPos);
+                        REQUIRE(edgeInfoA.recvPos == edgeInfoE.recvPos);
+                    }
+                }
             }
         }
     }
