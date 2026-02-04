@@ -45,27 +45,27 @@ bool Partitioner::is_neighbour(
         // Check if TOP neighbour i.e., the bottom of domain d2 must match the top of domain d1.
         // The logic for the other edges is essentially the same.
         if (is_py) {
-            return d1.p2.y == d2.p1.y + _global_ext[1];
+            return d1.p2.y == d2.p1.y + _global_ext[1] && d2.p1.x < d1.p2.x && d2.p2.x > d1.p1.x;
         } else {
-            return d1.p2.y == d2.p1.y;
+            return d1.p2.y == d2.p1.y && d2.p1.x < d1.p2.x && d2.p2.x > d1.p1.x;
         }
     } else if (edge == BOTTOM) {
         if (is_py) {
-            return d1.p1.y == d2.p2.y - _global_ext[1];
+            return d1.p1.y == d2.p2.y - _global_ext[1] && d2.p1.x < d1.p2.x && d2.p2.x > d1.p1.x;
         } else {
-            return d1.p1.y == d2.p2.y;
+            return d1.p1.y == d2.p2.y && d2.p1.x < d1.p2.x && d2.p2.x > d1.p1.x;
         }
     } else if (edge == LEFT) {
         if (is_px) {
-            return d1.p1.x == d2.p2.x - _global_ext[0];
+            return d1.p1.x == d2.p2.x - _global_ext[0] && d2.p1.y < d1.p2.y && d2.p2.y > d1.p1.y;
         } else {
-            return d1.p1.x == d2.p2.x;
+            return d1.p1.x == d2.p2.x && d2.p1.y < d1.p2.y && d2.p2.y > d1.p1.y;
         }
     } else if (edge == RIGHT) {
         if (is_px) {
-            return d1.p2.x == d2.p1.x + _global_ext[0];
+            return d1.p2.x == d2.p1.x + _global_ext[0] && d2.p1.y < d1.p2.y && d2.p2.y > d1.p1.y;
         } else {
-            return d1.p2.x == d2.p1.x;
+            return d1.p2.x == d2.p1.x && d2.p1.y < d1.p2.y && d2.p2.y > d1.p1.y;
         }
     } else {
         std::cerr << "ERROR: edge must be LEFT, RIGHT, BOTTOM, TOP." << std::endl;
