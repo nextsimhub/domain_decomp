@@ -1,5 +1,5 @@
 /*!
- * @file .cpp
+ * @file test_is_neighbour.cpp
  * @author Nirav Shah <nvs31@cam.ac.uk>
  * @date 19 January 2026
  */
@@ -227,5 +227,4 @@ MPI_TEST_CASE("Neighbour, 4 MPI ranks", 4)
     // Cleanup
     delete grid;
     delete partitioner;
-
 }
