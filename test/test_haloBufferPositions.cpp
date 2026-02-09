@@ -8,7 +8,6 @@
 #include "Partitioner.hpp"
 #include "Utils.hpp"
 #include <doctest/extensions/doctest_mpi.h>
-#include <list>
 
 #include <iostream>
 
@@ -78,7 +77,7 @@ MPI_TEST_CASE("Neighbour, 4 MPI ranks", 4)
     // The int in tuple<Edge, int> refers to rank. In the case of edge neighbours,
     // it is possible that one edge may corresspond to multiple neighbour unlike
     // corner neighbour where a given vertice can correspond to only one neighbour.
-    std::map<Edge, std::list<HaloEdgeInfo>> edgeInfoExpected, edgeInfoActual;
+    std::map<Edge, std::vector<HaloEdgeInfo>> edgeInfoExpected, edgeInfoActual;
 
     if (test_rank == 0) {
         edgeInfoExpected[LEFT].push_back({ true, 2, 4, 8 });
@@ -106,8 +105,9 @@ MPI_TEST_CASE("Neighbour, 4 MPI ranks", 4)
         edgeInfoExpected[TOP].push_back({ true, 2, 0, 6 });
     }
 
-    bool periodic_check_neighbour; 
-    periodic_check_neighbour = (partitioner->is_neighbour(domains[3], domains[0], RIGHT, pxOn, pyOn));
+    bool periodic_check_neighbour;
+    periodic_check_neighbour
+        = (partitioner->is_neighbour(domains[3], domains[0], RIGHT, pxOn, pyOn));
 
     bool check_neighbour;
     check_neighbour = (partitioner->is_neighbour(domains[3], domains[0], LEFT));
