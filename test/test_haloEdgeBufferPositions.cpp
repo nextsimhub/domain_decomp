@@ -74,7 +74,7 @@ MPI_TEST_CASE("test edge neighbours and metadata for edge buffers", 4)
 
     // The int in tuple<Edge, int> refers to rank. In the case of edge neighbours,
     // it is possible that one edge may corresspond to multiple neighbour unlike
-    // corner neighbour where a given vertice can correspond to only one neighbour.
+    // corner neighbour where a given corner can correspond to only one neighbour.
     std::map<Edge, std::vector<HaloEdgeInfo>> edgeInfoExpected, edgeInfoActual;
 
     if (test_rank == 0) {
