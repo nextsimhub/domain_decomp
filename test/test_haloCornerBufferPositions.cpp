@@ -1,5 +1,5 @@
 /*!
- * @file halo_corner_start.cpp
+ * @file test_haloCornerBufferPositions.cpp
  * @author Nirav Shah <nvs31@cam.ac.uk>
  * @date 20 Nov 2025
  */
