@@ -72,8 +72,8 @@ public:
         std::array<std::vector<int>, N_EDGE>& halo_sizes,
         std::array<std::vector<int>, N_EDGE>& halo_send,
         std::array<std::vector<int>, N_EDGE>& halo_recv,
-        std::array<std::vector<int>, N_VERTEX>& corner_ids,
-        std::array<std::vector<int>, N_VERTEX>& corner_send) const;
+        std::array<std::vector<int>, N_CORNER>& corner_ids,
+        std::array<std::vector<int>, N_CORNER>& corner_send) const;
     /*!
      * @brief Returns vectors containing the MPI ranks, halo sizes and halo starting indices of
      * the neighbours of this process across periodic boundaries after partitioning. The
@@ -88,8 +88,8 @@ public:
         std::array<std::vector<int>, N_EDGE>& halo_sizes,
         std::array<std::vector<int>, N_EDGE>& halo_send,
         std::array<std::vector<int>, N_EDGE>& halo_recv,
-        std::array<std::vector<int>, N_VERTEX>& corner_ids,
-        std::array<std::vector<int>, N_VERTEX>& corner_send) const;
+        std::array<std::vector<int>, N_CORNER>& corner_ids,
+        std::array<std::vector<int>, N_CORNER>& corner_send) const;
 
     /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
@@ -245,7 +245,7 @@ public:
      */
     bool is_neighbour(const Domain d1, const Domain d2, const Edge edge, const bool is_px = false,
         const bool is_py = false);
-    bool is_corner_neighbour(const Domain d1, const Domain d2, const Vertex vertex,
+    bool is_corner_neighbour(const Domain d1, const Domain d2, const Corner corner,
         const bool is_px = false, const bool is_py = false);
 
     /*!
@@ -272,5 +272,5 @@ public:
      * @param sendPos position to get data from send buffer
      */
     void haloCornerBufferPositions(
-        const Domain d1, const Domain d2, const Vertex vertex, int& sendPos);
+        const Domain d1, const Domain d2, const Corner corner, int& sendPos);
 };
