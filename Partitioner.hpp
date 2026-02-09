@@ -260,7 +260,7 @@ public:
      * @param sendPos position to get data from send buffer
      * @param recvPos position to store data in recv buffer
      */
-    void haloBufferPositions(
+    void haloEdgeBufferPositions(
         const Domain d1, const Domain d2, const Edge edge, int& sendPos, int& recvPos);
 
     /*!
