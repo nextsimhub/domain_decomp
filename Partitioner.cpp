@@ -41,9 +41,12 @@ int mod(int a, int n) { return ((a % n) + n) % n; }
 bool Partitioner::is_neighbour(
     const Domain d1, const Domain d2, const Edge edge, const bool is_px, const bool is_py)
 {
+    // For TOP & BOTTOM Edges check that the domains share a y-coordinate AND that the horizontal
+    // overlap is non-zero
+
+    // For LEFT & RIGHT Edges check that the domains share a x-coordinate AND that the vertical
+    // overlap is non-zero
     if (edge == TOP) {
-        // Check if TOP neighbour i.e., the bottom of domain d2 must match the top of domain d1.
-        // The logic for the other edges is essentially the same.
         if (is_py) {
             return d1.p2.y == d2.p1.y + _global_ext[1] && d2.p1.x < d1.p2.x && d2.p2.x > d1.p1.x;
         } else {
