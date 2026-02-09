@@ -105,13 +105,6 @@ MPI_TEST_CASE("Neighbour, 4 MPI ranks", 4)
         edgeInfoExpected[TOP].push_back({ true, 2, 0, 6 });
     }
 
-    bool periodic_check_neighbour;
-    periodic_check_neighbour
-        = (partitioner->is_neighbour(domains[3], domains[0], RIGHT, pxOn, pyOn));
-
-    bool check_neighbour;
-    check_neighbour = (partitioner->is_neighbour(domains[3], domains[0], LEFT));
-
     for (auto edge : edges) {
         for (int p = 0; p < test_nb_procs; p++) {
             // periodic neighbours
