@@ -12,7 +12,7 @@
 extern int global_argc;
 extern char** global_argv;
 
-MPI_TEST_CASE("Corner neighbour: Non-periodic, 4 MPI ranks", 4)
+MPI_TEST_CASE("test corner neighbours and metadata for corner buffers", 4)
 {
     // Build grid from netCDF file
     Grid* grid = Grid::create(

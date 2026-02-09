@@ -9,12 +9,10 @@
 #include "Utils.hpp"
 #include <doctest/extensions/doctest_mpi.h>
 
-#include <iostream>
-
 extern int global_argc;
 extern char** global_argv;
 
-MPI_TEST_CASE("Neighbour, 4 MPI ranks", 4)
+MPI_TEST_CASE("test edge neighbours and metadata for edge buffers", 4)
 {
     // Build grid from netCDF file
     Grid* grid = Grid::create(
@@ -110,7 +108,6 @@ MPI_TEST_CASE("Neighbour, 4 MPI ranks", 4)
             // periodic neighbours
             if (p != test_rank) {
                 if (partitioner->is_neighbour(domains[test_rank], domains[p], edge, pxOn, pyOn)) {
-                    std::cout << "Periodic" << test_rank << p << edge << std::endl;
                     partitioner->haloBufferPositions(
                         domains[test_rank], domains[p], edge, start, recv);
                     edgeInfoActual[edge].push_back({ true, p, start, recv });
@@ -120,7 +117,6 @@ MPI_TEST_CASE("Neighbour, 4 MPI ranks", 4)
             // non-periodic neighbours
             if (p != test_rank) {
                 if (partitioner->is_neighbour(domains[test_rank], domains[p], edge)) {
-                    std::cout << "Non-periodic" << test_rank << p << edge << std::endl;
                     partitioner->haloBufferPositions(
                         domains[test_rank], domains[p], edge, start, recv);
                     edgeInfoActual[edge].push_back({ false, p, start, recv });
@@ -130,8 +126,6 @@ MPI_TEST_CASE("Neighbour, 4 MPI ranks", 4)
     }
 
     for (auto edge : edges) {
-        std::cout << test_rank << edge << edgeInfoActual[edge].size()
-                  << edgeInfoExpected[edge].size() << std::endl;
         REQUIRE(edgeInfoActual[edge].size() == edgeInfoExpected[edge].size());
         if (edgeInfoActual[edge].empty()) {
             REQUIRE(edgeInfoExpected[edge].empty());
