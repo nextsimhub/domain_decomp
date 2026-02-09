@@ -13,8 +13,8 @@
 enum Edge { LEFT, RIGHT, BOTTOM, TOP, N_EDGE };
 static constexpr std::array<Edge, N_EDGE> edges = { LEFT, RIGHT, BOTTOM, TOP };
 
-enum Vertex { TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT, N_VERTEX };
-static constexpr std::array<Vertex, N_VERTEX> vertices
+enum Corner { TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT, N_CORNER };
+static constexpr std::array<Corner, N_CORNER> corners
     = { TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT };
 
 /*!

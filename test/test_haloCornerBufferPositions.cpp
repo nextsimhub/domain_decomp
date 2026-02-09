@@ -69,7 +69,7 @@ MPI_TEST_CASE("test corner neighbours and metadata for corner buffers", 4)
 
     const bool pxOn = true, pyOn = true;
 
-    std::map<Vertex, HaloCornerInfo> cornerInfoExpected, cornerInfoActual;
+    std::map<Corner, HaloCornerInfo> cornerInfoExpected, cornerInfoActual;
 
     if (test_rank == 0) {
         cornerInfoExpected[BOTTOM_LEFT] = { true, 3, 5 };
@@ -93,7 +93,7 @@ MPI_TEST_CASE("test corner neighbours and metadata for corner buffers", 4)
         cornerInfoExpected[TOP_LEFT] = { true, 0, 3 };
     }
 
-    for (auto corner : vertices) {
+    for (auto corner : corners) {
         for (int p = 0; p < test_nb_procs; p++) {
             // periodic neighbours
             if (partitioner->is_corner_neighbour(
@@ -113,7 +113,7 @@ MPI_TEST_CASE("test corner neighbours and metadata for corner buffers", 4)
         }
     }
 
-    for (auto corner : vertices) {
+    for (auto corner : corners) {
         // check computed corner info (actual) against the expected information
         REQUIRE(cornerInfoActual[corner].isPeriodic == cornerInfoExpected[corner].isPeriodic);
         REQUIRE(cornerInfoActual[corner].rank == cornerInfoExpected[corner].rank);
