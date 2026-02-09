@@ -20,9 +20,9 @@
 /*!
  * @brief Compute modulo operation with non-negative result
  *
- * This function computes a % n and ensures the result is always non-negative.
- * This is particularly useful for periodic boundary conditions where we need
- * to wrap around coordinates that might be negative.
+ * This function computes a % n (which is the modulo operator) and ensures the result is always
+ * non-negative. This is particularly useful for periodic boundary conditions where we need to wrap
+ * around coordinates that might be negative.
  *
  * @param a The dividend
  * @param n The divisor (modulus)
