@@ -119,7 +119,7 @@ bool Partitioner::is_corner_neighbour(
     }
 }
 
-void Partitioner::haloBufferPositions(
+void Partitioner::haloEdgeBufferPositions(
     const Domain d1, const Domain d2, const Edge edge, int& send_pos, int& recv_pos)
 {
     // send_pos is the index where we will read the halo data from processes sending their data
@@ -711,7 +711,7 @@ void Partitioner::discover_neighbours()
                         _neighbours[edge].insert(std::pair<int, int>(p, halo_size));
                         int sendPos = 0;
                         int recvPos = 0;
-                        haloBufferPositions(domains[_rank], domains[p], edge, sendPos, recvPos);
+                        haloEdgeBufferPositions(domains[_rank], domains[p], edge, sendPos, recvPos);
                         _send_pos[edge].insert(std::pair<int, int>(p, sendPos));
                         _recv_pos[edge].insert(std::pair<int, int>(p, recvPos));
                     }
@@ -739,7 +739,7 @@ void Partitioner::discover_neighbours()
                     _neighbours_p[edge].insert(std::pair<int, int>(p, halo_size));
                     int sendPos = 0;
                     int recvPos = 0;
-                    haloBufferPositions(domains[_rank], domains[p], edge, sendPos, recvPos);
+                    haloEdgeBufferPositions(domains[_rank], domains[p], edge, sendPos, recvPos);
                     _send_pos_p[edge].insert(std::pair<int, int>(p, sendPos));
                     _recv_pos_p[edge].insert(std::pair<int, int>(p, recvPos));
                 }

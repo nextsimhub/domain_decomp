@@ -1,5 +1,5 @@
 /*!
- * @file test_haloBufferPositions.cpp
+ * @file test_haloEdgeBufferPositions.cpp
  * @author Nirav Shah <nvs31@cam.ac.uk>
  * @date 19 January 2026
  */
@@ -108,7 +108,7 @@ MPI_TEST_CASE("test edge neighbours and metadata for edge buffers", 4)
             // periodic neighbours
             if (p != test_rank) {
                 if (partitioner->is_neighbour(domains[test_rank], domains[p], edge, pxOn, pyOn)) {
-                    partitioner->haloBufferPositions(
+                    partitioner->haloEdgeBufferPositions(
                         domains[test_rank], domains[p], edge, start, recv);
                     edgeInfoActual[edge].push_back({ true, p, start, recv });
                 }
@@ -117,7 +117,7 @@ MPI_TEST_CASE("test edge neighbours and metadata for edge buffers", 4)
             // non-periodic neighbours
             if (p != test_rank) {
                 if (partitioner->is_neighbour(domains[test_rank], domains[p], edge)) {
-                    partitioner->haloBufferPositions(
+                    partitioner->haloEdgeBufferPositions(
                         domains[test_rank], domains[p], edge, start, recv);
                     edgeInfoActual[edge].push_back({ false, p, start, recv });
                 }
