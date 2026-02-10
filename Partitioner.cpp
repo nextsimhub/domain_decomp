@@ -193,8 +193,8 @@ void Partitioner::haloCornerBufferPositions(
     if (vertex == TOP_RIGHT) {
         // for a TOP_RIGHT vertex the corner neighbour can either be along the other domains bottom
         // or left edge. We need to check so we know where to look in the send buffer.
-        xpos = mod((d1.p2.x), globalX);
-        ypos = mod((d1.p2.y), globalY);
+        xpos = mod(d1.p2.x, globalX);
+        ypos = mod(d1.p2.y, globalY);
         if (ypos >= d2.p1.y) {
             // this first case is true if the corner neighbour lies on the left edge
             int dy = ypos - d2.p1.y;
@@ -206,8 +206,8 @@ void Partitioner::haloCornerBufferPositions(
             send_pos = dx;
         }
     } else if (vertex == TOP_LEFT) {
-        xpos = mod((d1.p1.x - 1), globalX);
-        ypos = mod((d1.p2.y), globalY);
+        xpos = mod(d1.p1.x - 1, globalX);
+        ypos = mod(d1.p2.y, globalY);
         if (ypos >= d2.p1.y) {
             int dy = ypos - d2.p1.y;
             send_pos = d2.get_width() + dy;
@@ -216,8 +216,8 @@ void Partitioner::haloCornerBufferPositions(
             send_pos = dx;
         }
     } else if (vertex == BOTTOM_LEFT) {
-        xpos = mod((d1.p1.x - 1), globalX);
-        ypos = mod((d1.p1.y - 1), globalY);
+        xpos = mod(d1.p1.x - 1, globalX);
+        ypos = mod(d1.p1.y - 1, globalY);
         if (d2.p2.y >= ypos) {
             int dy = ypos - d2.p1.y;
             send_pos = d2.get_width() + dy;
@@ -226,8 +226,8 @@ void Partitioner::haloCornerBufferPositions(
             send_pos = d2.get_width() + d2.get_height() + dx;
         }
     } else if (vertex == BOTTOM_RIGHT) {
-        xpos = mod((d1.p2.x), globalX);
-        ypos = mod((d1.p1.y - 1), globalY);
+        xpos = mod(d1.p2.x, globalX);
+        ypos = mod(d1.p1.y - 1, globalY);
         if (d2.p2.y >= ypos) {
             int dy = ypos - d2.p1.y;
             send_pos = 2 * d2.get_width() + d2.get_height() + dy;
