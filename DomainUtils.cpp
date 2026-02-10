@@ -9,10 +9,10 @@
 #include <algorithm>
 #include <iostream>
 
-int Domain::get_width() const { return p2.x - p1.x; }
-int Domain::get_height() const { return p2.y - p1.y; }
+int Domain::getWidth() const { return p2.x - p1.x; }
+int Domain::getHeight() const { return p2.y - p1.y; }
 
-int domain_overlap(const Domain d1, const Domain d2, const Edge edge)
+int domainOverlap(const Domain d1, const Domain d2, const Edge edge)
 {
     int overlap = 0;
     if (edge == TOP || edge == BOTTOM) {
