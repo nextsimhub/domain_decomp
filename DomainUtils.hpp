@@ -42,11 +42,11 @@ struct Domain {
     /*!
      * @brief return width of domain
      */
-    int get_width() const;
+    int getWidth() const;
     /*!
      * @brief return height of domain
      */
-    int get_height() const;
+    int getHeight() const;
 };
 
 /*!
@@ -59,6 +59,6 @@ struct Domain {
  * @param d2 Second Domain
  * @param dir direction to find overlap ('x' or 'y')
  */
-int domain_overlap(const Domain d1, const Domain d2, const Edge edge);
+int domainOverlap(const Domain d1, const Domain d2, const Edge edge);
 
 #endif /* DOMAINUTILS_HPP */

@@ -68,7 +68,7 @@ void Grid::ReadGridExtents(const std::string& filename)
         NC_CHECK(nc_inq_dimid(data_nc_id, _dim_names[_dim_order[i]].c_str(), &dim_ids[i]));
         // get the extent of each dimension
         NC_CHECK(nc_inq_dimlen(data_nc_id, dim_ids[i], &tmp[i]));
-        _global_ext[_dim_order[i]] = static_cast<int>(tmp[i]);
+        _globalExt[_dim_order[i]] = static_cast<int>(tmp[i]);
     }
 
     NC_CHECK(nc_close(nc_id));
@@ -120,7 +120,7 @@ void Grid::ReadGridMask(const std::string& filename, const std::string& mask_nam
             // Position of first element
             start[_dim_order[i]] = static_cast<size_t>(_global[i]);
             // Number of elements to read
-            count[_dim_order[i]] = static_cast<size_t>(_local_ext[i]);
+            count[_dim_order[i]] = static_cast<size_t>(_localExt[i]);
         }
 
         NC_CHECK(nc_get_vara_int(data_nc_id, mask_nc_id, start, count, _land_mask.data()));
@@ -143,30 +143,30 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_n
 
     Grid::ReadGridExtents(filename);
 
-    CHECK_MPI(MPI_Comm_size(comm, &_total_num_procs));
+    CHECK_MPI(MPI_Comm_size(comm, &_totalNumProcs));
 
     // Initially we partition assuming there is no land mask
     // Start from a naive 2D decomposition
-    _num_procs = find_factors(_total_num_procs);
+    _numProcs = find_factors(_totalNumProcs);
 
     // split into chunks
     for (size_t i = 0; i < NDIMS; i++) {
-        _local_ext[i] = ceil((float)_global_ext[i] / (_num_procs[i]));
+        _localExt[i] = ceil((float)_globalExt[i] / (_numProcs[i]));
     }
 
     // need to account for residuals
-    _global[0] = (_rank / _num_procs[1]) * _local_ext[0];
-    _global[1] = (_rank % _num_procs[1]) * _local_ext[1];
+    _global[0] = (_rank / _numProcs[1]) * _localExt[0];
+    _global[1] = (_rank % _numProcs[1]) * _localExt[1];
 
-    if ((_rank / _num_procs[1]) == _num_procs[0] - 1) {
-        _local_ext[0] = _global_ext[0] - (_rank / _num_procs[1]) * _local_ext[0];
+    if ((_rank / _numProcs[1]) == _numProcs[0] - 1) {
+        _localExt[0] = _globalExt[0] - (_rank / _numProcs[1]) * _localExt[0];
     }
-    if ((_rank % _num_procs[1]) == _num_procs[1] - 1) {
-        _local_ext[1] = _global_ext[1] - (_rank % _num_procs[1]) * _local_ext[1];
+    if ((_rank % _numProcs[1]) == _numProcs[1] - 1) {
+        _localExt[1] = _globalExt[1] - (_rank % _numProcs[1]) * _localExt[1];
     }
 
     // number of objects for this process
-    _num_objects = _local_ext[0] * _local_ext[1];
+    _num_objects = _localExt[0] * _localExt[1];
 
     if (!ignore_mask) {
 
@@ -178,9 +178,9 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_n
             // and land points a zero value
             if (_land_mask[i] > 0) {
                 // find index position in the global grid
-                int temp_i = i % _local_ext[0] + _global[0];
-                int temp_j = i / _local_ext[0] + _global[1];
-                _global_id.push_back(temp_j * _global_ext[0] + temp_i);
+                int temp_i = i % _localExt[0] + _global[0];
+                int temp_j = i / _localExt[0] + _global[1];
+                _global_id.push_back(temp_j * _globalExt[0] + temp_i);
                 // store local id for mapping
                 _local_id.push_back(i);
                 _num_nonzero_objects++;
@@ -189,9 +189,9 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_n
     } else {
         _num_nonzero_objects = _num_objects;
         for (int i = 0; i < _num_objects; i++) {
-            int temp_i = i % _local_ext[0];
-            int temp_j = i / _local_ext[0];
-            _global_id.push_back(temp_j * _global_ext[0] + _global[0] + temp_i);
+            int temp_i = i % _localExt[0];
+            int temp_j = i / _localExt[0];
+            _global_id.push_back(temp_j * _globalExt[0] + _global[0] + temp_i);
             _local_id.push_back(i);
         }
     }
@@ -205,11 +205,11 @@ bool Grid::get_px() const { return _px; }
 
 bool Grid::get_py() const { return _py; }
 
-std::vector<int> Grid::get_num_procs() const { return _num_procs; }
+std::vector<int> Grid::getNumProcs() const { return _numProcs; }
 
-std::vector<int> Grid::get_global_ext() const { return _global_ext; }
+std::vector<int> Grid::getGlobalExt() const { return _globalExt; }
 
-std::vector<int> Grid::get_local_ext() const { return _local_ext; }
+std::vector<int> Grid::getLocalExt() const { return _localExt; }
 
 std::vector<int> Grid::get_global() const { return _global; }
 
@@ -219,10 +219,10 @@ const int* Grid::get_sparse_to_dense() const { return _local_id.data(); }
 
 const int* Grid::get_nonzero_object_ids() const { return _global_id.data(); }
 
-void Grid::get_bounding_box(int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const
+void Grid::get_bounding_box(int& global0, int& global1, int& localExt0, int& localExt1) const
 {
-    global_0 = _global[0];
-    global_1 = _global[1];
-    local_ext_0 = _local_ext[0];
-    local_ext_1 = _local_ext[1];
+    global0 = _global[0];
+    global1 = _global[1];
+    localExt0 = _localExt[0];
+    localExt1 = _localExt[1];
 }

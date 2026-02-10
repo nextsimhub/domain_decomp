@@ -24,12 +24,12 @@ MPI_TEST_CASE("ZoltanPartitioner: non-default dimension naming, 1 MPI rank", 1)
     // Partition grid
     partitioner->partition(*grid);
 
-    int global_0, global_1, local_ext_0, local_ext_1;
-    partitioner->get_bounding_box(global_0, global_1, local_ext_0, local_ext_1);
-    REQUIRE(local_ext_0 == 6);
-    REQUIRE(local_ext_1 == 4);
-    REQUIRE(global_0 == 0);
-    REQUIRE(global_1 == 0);
+    int global0, global1, localExt0, localExt1;
+    partitioner->getBoundingBox(global0, global1, localExt0, localExt1);
+    REQUIRE(localExt0 == 6);
+    REQUIRE(localExt1 == 4);
+    REQUIRE(global0 == 0);
+    REQUIRE(global1 == 0);
 
     // Cleanup
     delete grid;
@@ -48,16 +48,16 @@ MPI_TEST_CASE("ZoltanPartitioner: non-default dimension naming, 2 MPI ranks", 2)
     // Partition grid
     partitioner->partition(*grid);
 
-    int global_0, global_1, local_ext_0, local_ext_1;
-    partitioner->get_bounding_box(global_0, global_1, local_ext_0, local_ext_1);
-    REQUIRE(local_ext_0 == 3);
-    REQUIRE(local_ext_1 == 4);
+    int global0, global1, localExt0, localExt1;
+    partitioner->getBoundingBox(global0, global1, localExt0, localExt1);
+    REQUIRE(localExt0 == 3);
+    REQUIRE(localExt1 == 4);
     if (test_rank == 0) {
-        REQUIRE(global_0 == 0);
-        REQUIRE(global_1 == 0);
+        REQUIRE(global0 == 0);
+        REQUIRE(global1 == 0);
     } else {
-        REQUIRE(global_0 == 3);
-        REQUIRE(global_1 == 0);
+        REQUIRE(global0 == 3);
+        REQUIRE(global1 == 0);
     }
 
     // Cleanup
@@ -77,19 +77,19 @@ MPI_TEST_CASE("ZoltanPartitioner: non-default dimension naming, 3 MPI ranks", 3)
     // Partition grid
     partitioner->partition(*grid);
 
-    int global_0, global_1, local_ext_0, local_ext_1;
-    partitioner->get_bounding_box(global_0, global_1, local_ext_0, local_ext_1);
-    REQUIRE(local_ext_0 == 2);
-    REQUIRE(local_ext_1 == 4);
+    int global0, global1, localExt0, localExt1;
+    partitioner->getBoundingBox(global0, global1, localExt0, localExt1);
+    REQUIRE(localExt0 == 2);
+    REQUIRE(localExt1 == 4);
     if (test_rank == 0) {
-        REQUIRE(global_0 == 0);
-        REQUIRE(global_1 == 0);
+        REQUIRE(global0 == 0);
+        REQUIRE(global1 == 0);
     } else if (test_rank == 1) {
-        REQUIRE(global_0 == 2);
-        REQUIRE(global_1 == 0);
+        REQUIRE(global0 == 2);
+        REQUIRE(global1 == 0);
     } else {
-        REQUIRE(global_0 == 4);
-        REQUIRE(global_1 == 0);
+        REQUIRE(global0 == 4);
+        REQUIRE(global1 == 0);
     }
 
     // Cleanup
@@ -109,28 +109,28 @@ MPI_TEST_CASE("ZoltanPartitioner: non-default dimension naming, 4 MPI ranks", 4)
     // Partition grid
     partitioner->partition(*grid);
 
-    int global_0, global_1, local_ext_0, local_ext_1;
-    partitioner->get_bounding_box(global_0, global_1, local_ext_0, local_ext_1);
+    int global0, global1, localExt0, localExt1;
+    partitioner->getBoundingBox(global0, global1, localExt0, localExt1);
     if (test_rank == 0) {
-        REQUIRE(local_ext_0 == 1);
-        REQUIRE(local_ext_1 == 4);
-        REQUIRE(global_0 == 0);
-        REQUIRE(global_1 == 0);
+        REQUIRE(localExt0 == 1);
+        REQUIRE(localExt1 == 4);
+        REQUIRE(global0 == 0);
+        REQUIRE(global1 == 0);
     } else if (test_rank == 1) {
-        REQUIRE(local_ext_0 == 2);
-        REQUIRE(local_ext_1 == 4);
-        REQUIRE(global_0 == 1);
-        REQUIRE(global_1 == 0);
+        REQUIRE(localExt0 == 2);
+        REQUIRE(localExt1 == 4);
+        REQUIRE(global0 == 1);
+        REQUIRE(global1 == 0);
     } else if (test_rank == 2) {
-        REQUIRE(local_ext_0 == 1);
-        REQUIRE(local_ext_1 == 4);
-        REQUIRE(global_0 == 3);
-        REQUIRE(global_1 == 0);
+        REQUIRE(localExt0 == 1);
+        REQUIRE(localExt1 == 4);
+        REQUIRE(global0 == 3);
+        REQUIRE(global1 == 0);
     } else {
-        REQUIRE(local_ext_0 == 2);
-        REQUIRE(local_ext_1 == 4);
-        REQUIRE(global_0 == 4);
-        REQUIRE(global_1 == 0);
+        REQUIRE(localExt0 == 2);
+        REQUIRE(localExt1 == 4);
+        REQUIRE(global0 == 4);
+        REQUIRE(global1 == 0);
     }
 
     // Cleanup
