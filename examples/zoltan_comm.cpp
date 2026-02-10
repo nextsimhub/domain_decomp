@@ -83,9 +83,9 @@ int main(int argc, char* argv[])
     partitioner->partition(*grid);
 
     // Retrieve neighbours
-    array<vector<int>, N_EDGE> ids, halos, halo_send, halo_recv;
+    array<vector<int>, N_EDGE> ids, halos, haloSend, haloRecv;
     array<vector<int>, N_CORNER> cornerIds, haloCornerStarts;
-    partitioner->get_neighbour_info(ids, halos, halo_send, halo_recv, cornerIds, haloCornerStarts);
+    partitioner->getNeighbourInfo(ids, halos, haloSend, haloRecv, cornerIds, haloCornerStarts);
 
     // MPI ranks of neighbours in order: top, bottom, left, right
     vector<int> ids_tblr(ids[3]);
@@ -107,11 +107,11 @@ int main(int argc, char* argv[])
     MPI_Comm_rank(comm_dist_graph, &mpi_rank);
 
     // Get information on my partition
-    int global_0, global_1, local_ext_0, local_ext_1;
-    partitioner->get_bounding_box(global_0, global_1, local_ext_0, local_ext_1);
+    int global0, global1, localExt0, localExt1;
+    partitioner->getBoundingBox(global0, global1, localExt0, localExt1);
 
     // Define data array
-    vector<double> data((local_ext_0 + 2) * (local_ext_1 + 2), mpi_rank);
+    vector<double> data((localExt0 + 2) * (localExt1 + 2), mpi_rank);
 
     // Define counts and displacements for MPI halo exchange
     vector<int> scounts(ids_tblr.size());
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
 
     // Define MPI derived datatypes
     const int ndims { 2 };
-    int sizes[ndims] = { local_ext_0 + 2, local_ext_1 + 2 };
+    int sizes[ndims] = { localExt0 + 2, localExt1 + 2 };
 
     // Send subarray types
     vector<MPI_Datatype> subar_top(ids[3].size());
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
     for (int i = 0; i < static_cast<int>(ids[2].size()); i++) {
         int subsizes[ndims] = { 1, halos[2][i] };
 
-        int send_bottom_start[ndims] = { local_ext_0, offset + 1 };
+        int send_bottom_start[ndims] = { localExt0, offset + 1 };
         MPI_Type_create_subarray(
             ndims, sizes, subsizes, send_bottom_start, MPI_ORDER_C, MPI_DOUBLE, &subar_bottom[i]);
         MPI_Type_commit(&subar_bottom[i]);
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
         scounts[cnt] = 1;
         sdispls[cnt] = 0;
 
-        int recv_bottom_start[ndims] = { local_ext_0 + 1, offset + 1 };
+        int recv_bottom_start[ndims] = { localExt0 + 1, offset + 1 };
         MPI_Type_create_subarray(
             ndims, sizes, subsizes, recv_bottom_start, MPI_ORDER_C, MPI_DOUBLE, &ghost_bottom[i]);
         MPI_Type_commit(&ghost_bottom[i]);
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
     for (int i = 0; i < static_cast<int>(ids[1].size()); i++) {
         int subsizes[ndims] = { halos[1][i], 1 };
 
-        int send_right_start[ndims] = { offset + 1, local_ext_1 };
+        int send_right_start[ndims] = { offset + 1, localExt1 };
         MPI_Type_create_subarray(
             ndims, sizes, subsizes, send_right_start, MPI_ORDER_C, MPI_DOUBLE, &subar_right[i]);
         MPI_Type_commit(&subar_right[i]);
@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
         scounts[cnt] = 1;
         sdispls[cnt] = 0;
 
-        int recv_right_start[ndims] = { offset + 1, local_ext_1 + 1 };
+        int recv_right_start[ndims] = { offset + 1, localExt1 + 1 };
         MPI_Type_create_subarray(
             ndims, sizes, subsizes, recv_right_start, MPI_ORDER_C, MPI_DOUBLE, &ghost_right[i]);
         MPI_Type_commit(&ghost_right[i]);
