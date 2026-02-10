@@ -59,8 +59,8 @@ static void get_geometry_list(void* data, int num_gid_entries, int num_lid_entri
 
     // Use grid coordinates
     for (int i = 0; i < num_obj; i++) {
-        geom_vec[2 * i] = grid->get_nonzero_object_ids()[i] % grid->get_global_ext()[0];
-        geom_vec[2 * i + 1] = grid->get_nonzero_object_ids()[i] / grid->get_global_ext()[0];
+        geom_vec[2 * i] = grid->get_nonzero_object_ids()[i] % grid->getGlobalExt()[0];
+        geom_vec[2 * i + 1] = grid->get_nonzero_object_ids()[i] / grid->getGlobalExt()[0];
     }
 
     return;
@@ -93,28 +93,28 @@ ZoltanPartitioner* ZoltanPartitioner::create(MPI_Comm comm, int argc, char** arg
 void ZoltanPartitioner::partition(Grid& grid)
 {
     // Load initial grid state
-    _num_procs = grid.get_num_procs();
-    _global_ext = grid.get_global_ext();
-    grid.get_bounding_box(_global[0], _global[1], _local_ext[0], _local_ext[1]);
+    _numProcs = grid.getNumProcs();
+    _globalExt = grid.getGlobalExt();
+    grid.get_bounding_box(_global[0], _global[1], _localExt[0], _localExt[1]);
     _px = grid.get_px();
     _py = grid.get_py();
 
-    if (_total_num_procs == 1) {
+    if (_totalNumProcs == 1) {
         for (int idx = 0; idx < 2; idx++) {
-            _global_new[idx] = _global[idx];
-            _local_ext_new[idx] = _local_ext[idx];
+            _globalNew[idx] = _global[idx];
+            _localExtNew[idx] = _localExt[idx];
         }
 
         if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
             const int* land_mask = grid.get_land_mask();
-            _proc_id.resize(grid.get_num_objects(), -1);
+            _procId.resize(grid.get_num_objects(), -1);
             for (int i = 0; i < grid.get_num_objects(); i++) {
                 if (land_mask[i] > 0) {
-                    _proc_id[i] = _rank;
+                    _procId[i] = _rank;
                 }
             }
         } else {
-            _proc_id.resize(grid.get_num_objects(), _rank);
+            _procId.resize(grid.get_num_objects(), _rank);
         }
 
         return;
@@ -175,22 +175,22 @@ void ZoltanPartitioner::partition(Grid& grid)
         double maxs[3];
         _zoltan->RCB_Box(_rank, ndim, mins[0], mins[1], mins[2], maxs[0], maxs[1], maxs[2]);
         for (int idx = 0; idx < 2; idx++) {
-            _global_new[idx] = (mins[idx] == -DBL_MAX) ? 0 : std::ceil(mins[idx]);
-            int global_lower = (maxs[idx] == DBL_MAX) ? _global_ext[idx] : std::ceil(maxs[idx]);
-            _local_ext_new[idx] = global_lower - _global_new[idx];
+            _globalNew[idx] = (mins[idx] == -DBL_MAX) ? 0 : std::ceil(mins[idx]);
+            int global_lower = (maxs[idx] == DBL_MAX) ? _globalExt[idx] : std::ceil(maxs[idx]);
+            _localExtNew[idx] = global_lower - _globalNew[idx];
         }
     } else {
         for (int idx = 0; idx < 2; idx++) {
-            _global_new[idx] = _global[idx];
-            _local_ext_new[idx] = _local_ext[idx];
+            _globalNew[idx] = _global[idx];
+            _localExtNew[idx] = _localExt[idx];
         }
     }
 
     // Adapt to blocking
-    std::vector<int> global_ext_orig = grid.get_global_ext();
+    std::vector<int> globalExtOrig = grid.getGlobalExt();
     for (int idx = 0; idx < 2; idx++) {
-        if (_global_new[idx] + _local_ext_new[idx] > global_ext_orig[idx]) {
-            _local_ext_new[idx] = global_ext_orig[idx] - _global_new[idx];
+        if (_globalNew[idx] + _localExtNew[idx] > globalExtOrig[idx]) {
+            _localExtNew[idx] = globalExtOrig[idx] - _globalNew[idx];
         }
     }
 
@@ -200,21 +200,21 @@ void ZoltanPartitioner::partition(Grid& grid)
     // Find the process IDs of each grid point I own
     if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
         const int* land_mask = grid.get_land_mask();
-        _proc_id.resize(grid.get_num_objects(), -1);
+        _procId.resize(grid.get_num_objects(), -1);
         for (int i = 0; i < grid.get_num_objects(); i++) {
             if (land_mask[i] > 0) {
-                _proc_id[i] = _rank;
+                _procId[i] = _rank;
             }
         }
 
         const int* sparse_to_dense = grid.get_sparse_to_dense();
         for (int i = 0; i < num_export; i++) {
-            _proc_id[sparse_to_dense[export_local_ids[i]]] = export_procs[i];
+            _procId[sparse_to_dense[export_local_ids[i]]] = export_procs[i];
         }
     } else {
-        _proc_id.resize(grid.get_num_objects(), _rank);
+        _procId.resize(grid.get_num_objects(), _rank);
         for (int i = 0; i < num_export; i++) {
-            _proc_id[export_local_ids[i]] = export_procs[i];
+            _procId[export_local_ids[i]] = export_procs[i];
         }
     }
 

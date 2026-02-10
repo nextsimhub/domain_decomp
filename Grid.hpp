@@ -104,14 +104,14 @@ public:
      *
      * @return vector containing number of processes in each dimension of the grid
      */
-    std::vector<int> get_num_procs() const;
+    std::vector<int> getNumProcs() const;
 
     /*!
      * @brief Returns the local extent
      *
      * @return vector containing local extent in each dimension of the grid
      */
-    std::vector<int> get_local_ext() const;
+    std::vector<int> getLocalExt() const;
 
     /*!
      * @brief Returns the global position of the domain in the grid (bottom left corner of domain)
@@ -125,7 +125,7 @@ public:
      *
      * @return vector containing global extent in each dimension of the grid
      */
-    std::vector<int> get_global_ext() const;
+    std::vector<int> getGlobalExt() const;
 
     /*!
      * @brief Returns the global land mask dimensioned (dim0, dim1), where dim0 is
@@ -169,12 +169,12 @@ public:
     /*!
      * @brief Returns the bounding box for this process.
      *
-     * @param global_0 Global coordinate in the 1st dimension of the upper left corner.
-     * @param global_1 Global coordinate in the 2nd dimension of the upper left corner.
-     * @param local_ext_0 Local extent in the 1st dimension of the grid.
-     * @param local_ext_1 Local extent in the 2nd dimension of the grid.
+     * @param global0 Global coordinate in the 1st dimension of the upper left corner.
+     * @param global1 Global coordinate in the 2nd dimension of the upper left corner.
+     * @param localExt0 Local extent in the 1st dimension of the grid.
+     * @param localExt1 Local extent in the 2nd dimension of the grid.
      */
-    void get_bounding_box(int& global_0, int& global_1, int& local_ext_0, int& local_ext_1) const;
+    void get_bounding_box(int& global0, int& global1, int& localExt0, int& localExt1) const;
 
 private:
     // Construct a ditributed grid from a NetCDF file describing the global domain
@@ -205,25 +205,25 @@ public:
 private:
     MPI_Comm _comm; // MPI communicator
     int _rank = -1; // Process rank
-    int _total_num_procs = -1; // Total number of processes in communicator
+    int _totalNumProcs = -1; // Total number of processes in communicator
 
     // Total number of processes in each dimension
-    std::vector<int> _num_procs = std::vector<int>(NDIMS, -1);
+    std::vector<int> _numProcs = std::vector<int>(NDIMS, -1);
 
     // Global extents in each dimension
-    std::vector<int> _global_ext = std::vector<int>(NDIMS, 0);
+    std::vector<int> _globalExt = std::vector<int>(NDIMS, 0);
 
     // Local extents in each dimension
-    std::vector<int> _local_ext = std::vector<int>(NDIMS, 0);
+    std::vector<int> _localExt = std::vector<int>(NDIMS, 0);
 
     // Global coordinates of upper left corner
     std::vector<int> _global = std::vector<int>(NDIMS, -1);
 
     // Local extents in each dimension (after partitioning)
-    std::vector<int> _local_ext_new = std::vector<int>(NDIMS, 0);
+    std::vector<int> _localExtNew = std::vector<int>(NDIMS, 0);
 
     // Global coordinates of upper left corner (after partitioning)
-    std::vector<int> _global_new = std::vector<int>(NDIMS, -1);
+    std::vector<int> _globalNew = std::vector<int>(NDIMS, -1);
 
     // dimension names
     const std::vector<std::string> _dim_names;

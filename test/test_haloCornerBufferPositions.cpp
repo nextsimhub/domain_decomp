@@ -24,8 +24,8 @@ MPI_TEST_CASE("test corner neighbours and metadata for corner buffers", 4)
     // Partition grid
     partitioner->partition(*grid);
 
-    int global_0, global_1, local_ext_0, local_ext_1;
-    partitioner->get_bounding_box(global_0, global_1, local_ext_0, local_ext_1);
+    int global0, global1, localExt0, localExt1;
+    partitioner->getBoundingBox(global0, global1, localExt0, localExt1);
 
     // Gather bounding boxes for all processes
     std::vector<Point> origins(test_nb_procs);
@@ -34,8 +34,8 @@ MPI_TEST_CASE("test corner neighbours and metadata for corner buffers", 4)
     std::vector<int> tmp0(test_nb_procs);
     std::vector<int> tmp1(test_nb_procs);
 
-    CHECK_MPI(MPI_Allgather(&global_0, 1, MPI_INT, tmp0.data(), 1, MPI_INT, test_comm));
-    CHECK_MPI(MPI_Allgather(&global_1, 1, MPI_INT, tmp1.data(), 1, MPI_INT, test_comm));
+    CHECK_MPI(MPI_Allgather(&global0, 1, MPI_INT, tmp0.data(), 1, MPI_INT, test_comm));
+    CHECK_MPI(MPI_Allgather(&global1, 1, MPI_INT, tmp1.data(), 1, MPI_INT, test_comm));
 
     // origin points mark the bottom-left corner of each domain
     for (int p = 0; p < test_nb_procs; p++) {
@@ -43,8 +43,8 @@ MPI_TEST_CASE("test corner neighbours and metadata for corner buffers", 4)
         origins[p].y = tmp1[p];
     }
 
-    CHECK_MPI(MPI_Allgather(&local_ext_0, 1, MPI_INT, tmp0.data(), 1, MPI_INT, test_comm));
-    CHECK_MPI(MPI_Allgather(&local_ext_1, 1, MPI_INT, tmp1.data(), 1, MPI_INT, test_comm));
+    CHECK_MPI(MPI_Allgather(&localExt0, 1, MPI_INT, tmp0.data(), 1, MPI_INT, test_comm));
+    CHECK_MPI(MPI_Allgather(&localExt1, 1, MPI_INT, tmp1.data(), 1, MPI_INT, test_comm));
 
     // extents can be used to find the top-right corner of each domain
     for (int p = 0; p < test_nb_procs; p++) {
@@ -96,7 +96,7 @@ MPI_TEST_CASE("test corner neighbours and metadata for corner buffers", 4)
     for (auto corner : corners) {
         for (int p = 0; p < test_nb_procs; p++) {
             // periodic neighbours
-            if (partitioner->is_corner_neighbour(
+            if (partitioner->isCornerNeighbour(
                     domains[test_rank], domains[p], corner, pxOn, pyOn)) {
                 partitioner->haloCornerBufferPositions(
                     domains[test_rank], domains[p], corner, start);
@@ -104,7 +104,7 @@ MPI_TEST_CASE("test corner neighbours and metadata for corner buffers", 4)
             }
             // non-periodic neighbours
             if (p != test_rank) {
-                if (partitioner->is_corner_neighbour(domains[test_rank], domains[p], corner)) {
+                if (partitioner->isCornerNeighbour(domains[test_rank], domains[p], corner)) {
                     partitioner->haloCornerBufferPositions(
                         domains[test_rank], domains[p], corner, start);
                     cornerInfoActual[corner] = { false, p, start };
