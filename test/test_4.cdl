@@ -1,0 +1,20 @@
+netcdf test_4 {
+dimensions:
+	x = 7 ;
+	y = 7 ;
+variables:
+	int land_mask(y, x) ;
+
+// global attributes:
+		:title = "With overlap on right and left corner neighbours" ;
+data:
+
+ land_mask =
+  1, 1, 1, 1, 0, 0, 0,
+  1, 1, 1, 1, 0, 0, 0,
+  1, 1, 1, 1, 0, 0, 0,
+  1, 1, 1, 1, 1, 1, 1,
+  0, 0, 0, 1, 1, 1, 1,
+  0, 0, 0, 1, 1, 1, 1,
+  0, 0, 0, 1, 1, 1, 1 ;
+}

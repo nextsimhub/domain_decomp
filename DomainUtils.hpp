@@ -13,6 +13,10 @@
 enum Edge { LEFT, RIGHT, BOTTOM, TOP, N_EDGE };
 static constexpr std::array<Edge, N_EDGE> edges = { LEFT, RIGHT, BOTTOM, TOP };
 
+enum Corner { TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT, N_CORNER };
+static constexpr std::array<Corner, N_CORNER> corners
+    = { TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT };
+
 /*!
  * @brief 2D point structs. Points can be used to construct Domains.
  */
@@ -38,11 +42,11 @@ struct Domain {
     /*!
      * @brief return width of domain
      */
-    int get_width() const;
+    int getWidth() const;
     /*!
      * @brief return height of domain
      */
-    int get_height() const;
+    int getHeight() const;
 };
 
 /*!
@@ -55,6 +59,6 @@ struct Domain {
  * @param d2 Second Domain
  * @param dir direction to find overlap ('x' or 'y')
  */
-int domain_overlap(const Domain d1, const Domain d2, const Edge edge);
+int domainOverlap(const Domain d1, const Domain d2, const Edge edge);
 
 #endif /* DOMAINUTILS_HPP */

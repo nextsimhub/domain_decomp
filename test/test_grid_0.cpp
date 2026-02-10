@@ -13,8 +13,8 @@ MPI_TEST_CASE("Grid: all land, 1 MPI rank", 1)
     // Build grid from netCDF file
     Grid* grid = Grid::create(test_comm, "./test_0.nc");
 
-    REQUIRE(grid->get_global_ext()[0] == 6);
-    REQUIRE(grid->get_global_ext()[1] == 4);
+    REQUIRE(grid->getGlobalExt()[0] == 6);
+    REQUIRE(grid->getGlobalExt()[1] == 4);
     REQUIRE(grid->get_num_nonzero_objects() == 0);
     REQUIRE(grid->get_num_objects() == 24);
 
@@ -32,8 +32,8 @@ MPI_TEST_CASE("Grid: all land, 2 MPI ranks", 2)
     // Build grid from netCDF file
     Grid* grid = Grid::create(test_comm, "./test_0.nc");
 
-    REQUIRE(grid->get_global_ext()[0] == 6);
-    REQUIRE(grid->get_global_ext()[1] == 4);
+    REQUIRE(grid->getGlobalExt()[0] == 6);
+    REQUIRE(grid->getGlobalExt()[1] == 4);
     REQUIRE(grid->get_num_nonzero_objects() == 0);
     REQUIRE(grid->get_num_objects() == 12);
 
