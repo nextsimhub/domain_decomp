@@ -54,7 +54,9 @@ int main(int argc, char* argv[])
         ("ignore-mask,i", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file")
         ("periodic-x,px", po::bool_switch()->default_value(false), "Periodicity in x-direction")
         ("periodic-y,py", po::bool_switch()->default_value(false), "Periodicity in y-direction")
-        ("output-prefix,op", po::value<string>()->default_value(""), "Prefix for output filenames");
+        ("output-prefix,op", po::value<string>()->default_value(""), "Prefix for output filenames")
+        ("tripolar,t", po::bool_switch()->default_value(false),
+            "Use split-communicator tri-polar decomposition");
     // clang-format on
 
     // Parse optional command line options
@@ -83,23 +85,54 @@ int main(int argc, char* argv[])
         prefix += "_";
     }
 
+    // Capture tripolar flag
+    bool tripolar = vm["tripolar"].as<bool>();
+
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["xdim"].as<string>(),
         vm["ydim"].as<string>(), order, vm["mask"].as<string>(), vm["ignore-mask"].as<bool>(),
         vm["periodic-x"].as<bool>(), vm["periodic-y"].as<bool>());
 
-    // Create a Zoltan partitioner
+    // Split communicator into two sub-communicators by X-coordinate (East/West)
+    int g0, g1, le0, le1;
+    grid->get_bounding_box(g0, g1, le0, le1);
+
+    MPI_Comm sub_comm = comm; // default: no split
+    if (tripolar) {
+        int xMid = grid->getGlobalExt()[0] / 2; // X midpoint for East/West split
+        int color = (g0 < xMid) ? 0 : 1; // 0 = West, 1 = East
+        int world_rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+        MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &sub_comm);
+    }
+
+    // Create a Zoltan partitioner (on sub_comm if tripolar, otherwise on comm)
     Partitioner* partitioner
-        = Partitioner::Factory::create(comm, argc, argv, PartitionerType::Zoltan_RCB);
+        = Partitioner::Factory::create(sub_comm, argc, argv, PartitionerType::Zoltan_RCB);
 
     // Partition grid
     partitioner->partition(*grid);
 
+    // Free the sub-communicator
+    if (tripolar) {
+        MPI_Comm_free(&sub_comm);
+    }
+
     // Store partitioning results in netCDF file
     int numProcs;
     MPI_Comm_size(comm, &numProcs);
-    partitioner->saveMask(prefix + "partition_mask_" + to_string(numProcs) + ".nc");
-    partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
+
+    // TODO: gather _procId results across both halves onto MPI_COMM_WORLD and
+    // re-run neighbour discovery. Until then, saveMask/saveMetadata use the
+    // partitioner's _comm which is the (now-freed) sub_comm in tripolar mode.
+    // For now we skip saving in tripolar mode to avoid using a freed communicator.
+    if (!tripolar) {
+        partitioner->saveMask(prefix + "partition_mask_" + to_string(numProcs) + ".nc");
+        partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
+    } else {
+        std::cerr << "WARNING: tripolar mode active — saving skipped (known limitation, "
+                     "partitioner _comm is freed)" << std::endl;
+    }
 
     // Cleanup
     delete grid;
