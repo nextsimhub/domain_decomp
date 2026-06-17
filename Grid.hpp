@@ -32,9 +32,11 @@ class LIB_EXPORT Grid {
     const std::string data_id = "data";
 
 public:
-    // Disallow compiler-generated special functions
-    Grid(const Grid&) = delete;
+    // Disallow compiler-generated assignment
     Grid& operator=(const Grid&) = delete;
+
+    // Copy constructor (member data copied, const members initialised in ctor list)
+    Grid(const Grid& other);
 
     /*!
      * @brief Destructor.
@@ -176,6 +178,26 @@ public:
      */
     void get_bounding_box(int& global0, int& global1, int& localExt0, int& localExt1) const;
 
+    /*!
+     *  @brief Set the global coordinates of the upper left corner.
+     *
+     *  @param global Global coordinates in each dimension.
+     */
+    void set_global(const std::vector<int>& global);
+
+    /*!
+     * @brief Set the global extents in each dimension.
+     *
+     * @param globalExt Global extents in each dimension.
+     */
+    void set_globalExt(const std::vector<int>& globalExt);
+
+    /*!
+     * @brief Recompute _global_id and _local_id based on the current values of
+     *        _global, _localExt, _globalExt, and _land_mask.
+     */
+    void recompute_ids();
+
 private:
     // Construct a ditributed grid from a NetCDF file describing the global domain
     Grid(MPI_Comm comm, const std::string& filename, const std::string& dim0_id = "x",
@@ -235,6 +257,7 @@ private:
     int _num_nonzero_objects = 0; // Number of non-land grid points
     bool _px = false; // Periodicity in the x-direction
     bool _py = false; // Periodicity in the y-direction
+    bool _ignore_mask = false; // Flag indicating whether the land mask is active
     std::vector<int> _land_mask = {}; // Land mask values
     std::vector<int> _local_id = {}; // Map from sparse to dense index
     std::vector<int> _global_id = {}; // Unique non-land grid point IDs

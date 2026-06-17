@@ -137,6 +137,7 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_n
     , _dim_order(dim_order)
     , _px(px)
     , _py(py)
+    , _ignore_mask(ignore_mask)
 {
 
     CHECK_MPI(MPI_Comm_rank(comm, &_rank));
@@ -225,4 +226,66 @@ void Grid::get_bounding_box(int& global0, int& global1, int& localExt0, int& loc
     global1 = _global[1];
     localExt0 = _localExt[0];
     localExt1 = _localExt[1];
+}
+
+// Copy constructor
+Grid::Grid(const Grid& other)
+    : _comm(other._comm)
+    , _rank(other._rank)
+    , _totalNumProcs(other._totalNumProcs)
+    , _numProcs(other._numProcs)
+    , _globalExt(other._globalExt)
+    , _localExt(other._localExt)
+    , _global(other._global)
+    , _localExtNew(other._localExtNew)
+    , _globalNew(other._globalNew)
+    , _dim_names(other._dim_names)
+    , _dim_order(other._dim_order)
+    , _num_objects(other._num_objects)
+    , _num_nonzero_objects(other._num_nonzero_objects)
+    , _px(other._px)
+    , _py(other._py)
+    , _ignore_mask(other._ignore_mask)
+    , _land_mask(other._land_mask)
+    , _local_id(other._local_id)
+    , _global_id(other._global_id)
+{
+}
+
+void Grid::set_global(const std::vector<int>& global)
+{
+    _global = global;
+}
+
+void Grid::set_globalExt(const std::vector<int>& globalExt)
+{
+    _globalExt = globalExt;
+}
+
+void Grid::recompute_ids()
+{
+    _global_id.clear();
+    _local_id.clear();
+    _num_nonzero_objects = 0;
+    _num_objects = _localExt[0] * _localExt[1];
+
+    if (!_ignore_mask) {
+        for (int i = 0; i < _num_objects; i++) {
+            if (_land_mask[i] > 0) {
+                int temp_i = i % _localExt[0] + _global[0];
+                int temp_j = i / _localExt[0] + _global[1];
+                _global_id.push_back(temp_j * _globalExt[0] + temp_i);
+                _local_id.push_back(i);
+                _num_nonzero_objects++;
+            }
+        }
+    } else {
+        _num_nonzero_objects = _num_objects;
+        for (int i = 0; i < _num_objects; i++) {
+            int temp_i = i % _localExt[0];
+            int temp_j = i / _localExt[0];
+            _global_id.push_back(temp_j * _globalExt[0] + _global[0] + temp_i);
+            _local_id.push_back(i);
+        }
+    }
 }

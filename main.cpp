@@ -93,6 +93,9 @@ int main(int argc, char* argv[])
         vm["ydim"].as<string>(), order, vm["mask"].as<string>(), vm["ignore-mask"].as<bool>(),
         vm["periodic-x"].as<bool>(), vm["periodic-y"].as<bool>());
 
+    // only used for tripolar case
+    Grid* subgrid = new Grid(*grid);
+
     // Split communicator into two sub-communicators by X-coordinate (East/West)
     int g0, g1, le0, le1;
     grid->get_bounding_box(g0, g1, le0, le1);
@@ -111,7 +114,17 @@ int main(int argc, char* argv[])
         = Partitioner::Factory::create(sub_comm, argc, argv, PartitionerType::Zoltan_RCB);
 
     // Partition grid
-    partitioner->partition(*grid);
+    if (tripolar) {
+        // Create a copy of the grid on each rank
+        // overwrite global position and extents for subgrids
+        subgrid->set_global({ 0, g1 });
+        auto globalExt = grid->getGlobalExt();
+        subgrid->set_globalExt({ globalExt[0] / 2, globalExt[1] });
+        subgrid->recompute_ids();
+        partitioner->partition(*subgrid);
+    } else {
+        partitioner->partition(*grid);
+    }
 
     // Free the sub-communicator
     if (tripolar) {
@@ -131,11 +144,13 @@ int main(int argc, char* argv[])
         partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
     } else {
         std::cerr << "WARNING: tripolar mode active — saving skipped (known limitation, "
-                     "partitioner _comm is freed)" << std::endl;
+                     "partitioner _comm is freed)"
+                  << std::endl;
     }
 
     // Cleanup
     delete grid;
+    delete subgrid;
     delete partitioner;
 
     // Finalize MPI
