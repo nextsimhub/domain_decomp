@@ -321,6 +321,28 @@ void Partitioner::saveMask(const std::string& filename) const
     NC_CHECK(nc_close(nc_id));
 }
 
+struct DimInfo {
+    std::vector<int> numNeighbours;
+    std::vector<int> dims;
+    std::vector<int> offsets;
+};
+
+template <typename T, std::size_t N>
+static DimInfo compute_dims(
+    const std::array<T, N>& items, const std::array<std::vector<int>, N>& data, MPI_Comm comm)
+{
+    DimInfo info;
+    info.numNeighbours.resize(items.size());
+    info.dims.resize(items.size(), 0);
+    info.offsets.resize(items.size(), 0);
+    for (std::size_t i = 0; i < items.size(); i++) {
+        info.numNeighbours[i] = (int)data[items[i]].size();
+        CHECK_MPI(MPI_Allreduce(&info.numNeighbours[i], &info.dims[i], 1, MPI_INT, MPI_SUM, comm));
+        CHECK_MPI(MPI_Exscan(&info.numNeighbours[i], &info.offsets[i], 1, MPI_INT, MPI_SUM, comm));
+    }
+    return info;
+}
+
 void Partitioner::saveMetadata(const std::string& filename) const
 {
     // Use C API for parallel I/O
@@ -328,150 +350,133 @@ void Partitioner::saveMetadata(const std::string& filename) const
     nc_mode = NC_MPIIO | NC_NETCDF4;
     NC_CHECK(nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
 
-    // Create 2 dimensions
-    // The values to be written are associated with the netCDF variable by
-    // assuming that the last dimension of the netCDF variable varies fastest in
-    // the C interface
-    const int NDIMS = 2; // TODO: Why redeclared?
-    int dimid_global[NDIMS];
-    for (int idx = 0; idx < NDIMS; idx++) {
-        NC_CHECK(
-            nc_def_dim(nc_id, globalExtentNames[idx].c_str(), _globalExt[idx], &dimid_global[idx]));
+    // utility lambdas for netcdf operations
+    // define a new dimension
+    auto def_dim = [&](const std::string& name, int len, int& dimid) {
+        NC_CHECK(nc_def_dim(nc_id, name.c_str(), len, &dimid));
+    };
+
+    // write an array to netcdf file
+    auto write_array = [&](int gid, int vid, size_t start, size_t count, const int* data) {
+        NC_CHECK(nc_var_par_access(gid, vid, NC_COLLECTIVE));
+        NC_CHECK(nc_put_vara_int(gid, vid, &start, &count, data));
+    };
+
+    // write a scalar to netcdf file
+    auto write_scalar = [&](int gid, int vid, size_t start, int val) {
+        NC_CHECK(nc_var_par_access(gid, vid, NC_COLLECTIVE));
+        NC_CHECK(nc_put_var1_int(gid, vid, &start, &val));
+    };
+
+    // ---- Global dimensions (NX, NY) ----
+    int dimid_global[Partitioner::NDIMS];
+    for (int idx = 0; idx < Partitioner::NDIMS; idx++) {
+        def_dim(globalExtentNames[idx], _globalExt[idx], dimid_global[idx]);
     }
 
-    // Prepare neighbour data
+    // ---- Prepare neighbour data ----
     std::array<std::vector<int>, N_EDGE> ids, halos, haloSend, haloRecv;
     std::array<std::vector<int>, N_CORNER> corner_ids, cornerSend;
     getNeighbourInfo(ids, halos, haloSend, haloRecv, corner_ids, cornerSend);
 
-    std::vector<int> num_neighbours(N_EDGE), dims(N_EDGE, 0), offsets(N_EDGE, 0);
-    for (auto edge : edges) {
-        num_neighbours[edge] = (int)ids[edge].size();
-        CHECK_MPI(MPI_Allreduce(&num_neighbours[edge], &dims[edge], 1, MPI_INT, MPI_SUM, _comm));
-        CHECK_MPI(MPI_Exscan(&num_neighbours[edge], &offsets[edge], 1, MPI_INT, MPI_SUM, _comm));
-    }
+    // ---- Compute edge dimensions (MPI Allreduce/Exscan) ----
+    DimInfo edge_info = compute_dims(edges, ids, _comm);
+    DimInfo corner_info = compute_dims(corners, corner_ids, _comm);
 
-    std::vector<int> numCornerNeighbours(N_CORNER), corner_dims(N_CORNER, 0),
-        corner_offsets(N_CORNER, 0);
-    for (auto corner : corners) {
-        numCornerNeighbours[corner] = (int)corner_ids[corner].size();
-        CHECK_MPI(MPI_Allreduce(
-            &numCornerNeighbours[corner], &corner_dims[corner], 1, MPI_INT, MPI_SUM, _comm));
-        CHECK_MPI(MPI_Exscan(
-            &numCornerNeighbours[corner], &corner_offsets[corner], 1, MPI_INT, MPI_SUM, _comm));
-    }
-
-    // Define dimensions in netCDF file
+    // ---- Define netCDF dimensions ----
     int dimid;
-    std::vector<int> dimids(N_EDGE);
+    std::vector<int> edge_dimids(N_EDGE);
+    std::vector<int> corner_dimids(N_CORNER);
+
     NC_CHECK(nc_def_dim(nc_id, "P", _totalNumProcs, &dimid));
     for (auto edge : edges) {
-        NC_CHECK(nc_def_dim(nc_id, dir_chars[edge].c_str(), dims[edge], &dimids[edge]));
+        def_dim(dir_chars[edge], edge_info.dims[edge], edge_dimids[edge]);
     }
-
-    std::vector<int> corner_dimids(N_CORNER);
     for (auto corner : corners) {
-        NC_CHECK(nc_def_dim(
-            nc_id, corner_dir_chars[corner].c_str(), corner_dims[corner], &corner_dimids[corner]));
+        def_dim(corner_dir_chars[corner], corner_info.dims[corner], corner_dimids[corner]);
     }
 
-    // Define groups in netCDF file
-    int bbox_gid, connectivity_gid;
+    // ---- Define groups ----
+    int bbox_gid, c_grid;
     NC_CHECK(nc_def_grp(nc_id, "bounding_boxes", &bbox_gid));
-    NC_CHECK(nc_def_grp(nc_id, "connectivity", &connectivity_gid));
+    NC_CHECK(nc_def_grp(nc_id, "connectivity", &c_grid));
 
-    // Define variables in netCDF file
-    int top_vid[NDIMS];
-    int cnt_vid[NDIMS];
-    int num_vid[N_EDGE];
-    for (int idx = 0; idx < NDIMS; idx++) {
-        // Bounding boxes group
-        NC_CHECK(nc_def_var(
-            bbox_gid, ("domain_" + dim_chars[idx]).c_str(), NC_INT, 1, &dimid, &top_vid[idx]));
-        NC_CHECK(nc_def_var(bbox_gid, ("domain_extent_" + dim_chars[idx]).c_str(), NC_INT, 1,
-            &dimid, &cnt_vid[idx]));
+    // ---- Define variables: bounding boxes ----
+    int top_vid[Partitioner::NDIMS];
+    int cnt_vid[Partitioner::NDIMS];
+    auto def_bbox_var = [&](const std::string& prefix, const auto idx, int& vid) {
+        NC_CHECK(nc_def_var(bbox_gid, (prefix + dim_chars[idx]).c_str(), NC_INT, 1, &dimid, &vid));
+    };
+    for (int idx = 0; idx < Partitioner::NDIMS; idx++) {
+        def_bbox_var("domain_", idx, top_vid[idx]);
+        def_bbox_var("domain_extent_", idx, cnt_vid[idx]);
     }
 
-    int ids_vid[N_EDGE];
-    int halos_vid[N_EDGE];
-    int haloSend_vid[N_EDGE];
-    int haloRecv_vid[N_EDGE];
-    for (auto edge : edges) {
-        // Connectivity group
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbours").c_str(), NC_INT, 1,
-            &dimid, &num_vid[edge]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_ids").c_str(), NC_INT,
-            1, &dimids[edge], &ids_vid[edge]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_halos").c_str(),
-            NC_INT, 1, &dimids[edge], &halos_vid[edge]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_halo_send").c_str(),
-            NC_INT, 1, &dimids[edge], &haloSend_vid[edge]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_halo_recv").c_str(),
-            NC_INT, 1, &dimids[edge], &haloRecv_vid[edge]));
-    }
+    // ---- Define variables: edge connectivity ----
+    int num_vid[N_EDGE], ids_vid[N_EDGE], halos_vid[N_EDGE];
+    int haloSend_vid[N_EDGE], haloRecv_vid[N_EDGE];
 
-    int num_corner_vid[N_CORNER];
-    int ids_corner_vid[N_CORNER];
-    int cornerSend_vid[N_CORNER];
-    for (auto corner : corners) {
-        // Connectivity group
-        NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[corner] + "_neighbours").c_str(),
-            NC_INT, 1, &dimid, &num_corner_vid[corner]));
-        NC_CHECK(nc_def_var(connectivity_gid, (corner_dir_names[corner] + "_neighbour_ids").c_str(),
-            NC_INT, 1, &corner_dimids[corner], &ids_corner_vid[corner]));
+    // lambda to define netcdf variables (for edges)
+    auto def_edge_var = [&](const auto edge, const std::string& name, const int* dimArr,
+                            auto* vid) {
         NC_CHECK(
-            nc_def_var(connectivity_gid, (corner_dir_names[corner] + "_neighbour_send").c_str(),
-                NC_INT, 1, &corner_dimids[corner], &cornerSend_vid[corner]));
+            nc_def_var(c_grid, (dir_names[edge] + name).c_str(), NC_INT, 1, dimArr, &vid[edge]));
+    };
+    for (auto edge : edges) {
+        def_edge_var(edge, "_neighbours", &dimid, num_vid);
+        const auto* edgeDimId = &edge_dimids[edge];
+        def_edge_var(edge, "_neighbour_ids", edgeDimId, ids_vid);
+        def_edge_var(edge, "_neighbour_halos", edgeDimId, halos_vid);
+        def_edge_var(edge, "_neighbour_halo_send", edgeDimId, haloSend_vid);
+        def_edge_var(edge, "_neighbour_halo_recv", edgeDimId, haloRecv_vid);
     }
 
-    // Write metadata to file
+    // ---- Define variables: corner connectivity ----
+    int num_corner_vid[N_CORNER], ids_corner_vid[N_CORNER];
+    int cornerSend_vid[N_CORNER];
+    // lambda to define netcdf variables (for corners)
+    auto def_corner_var
+        = [&](const auto corner, const std::string& name, const int* dimArr, int* vid) {
+              NC_CHECK(nc_def_var(c_grid, (corner_dir_names[corner] + name).c_str(), NC_INT, 1,
+                  dimArr, &vid[corner]));
+          };
+    for (auto corner : corners) {
+        def_corner_var(corner, "_neighbours", &dimid, num_corner_vid);
+        const auto* cornerDimId = &corner_dimids[corner];
+        def_corner_var(corner, "_neighbour_ids", cornerDimId, ids_corner_vid);
+        def_corner_var(corner, "_neighbour_send", cornerDimId, cornerSend_vid);
+    }
+
+    // ---- Write ----
     NC_CHECK(nc_enddef(nc_id));
 
-    // Store data
-    for (int idx = 0; idx < NDIMS; idx++) {
+    // Bounding boxes: one value per process
+    for (int idx = 0; idx < Partitioner::NDIMS; idx++) {
         size_t start = _rank;
-        NC_CHECK(nc_var_par_access(bbox_gid, top_vid[idx], NC_COLLECTIVE));
-        NC_CHECK(nc_put_var1_int(bbox_gid, top_vid[idx], &start, &_globalNew[idx]));
-        NC_CHECK(nc_var_par_access(bbox_gid, cnt_vid[idx], NC_COLLECTIVE));
-        NC_CHECK(nc_put_var1_int(bbox_gid, cnt_vid[idx], &start, &_localExtNew[idx]));
+        write_scalar(bbox_gid, top_vid[idx], start, _globalNew[idx]);
+        write_scalar(bbox_gid, cnt_vid[idx], start, _localExtNew[idx]);
     }
+
+    // Edge connectivity
     for (auto edge : edges) {
-        // Numbers of neighbours
         size_t start = _rank;
-        NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[edge], NC_COLLECTIVE));
-        NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[edge], &start, &num_neighbours[edge]));
-        // IDs and halos
-        start = offsets[edge];
-        size_t count = num_neighbours[edge];
-        NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid[edge], NC_COLLECTIVE));
-        NC_CHECK(
-            nc_put_vara_int(connectivity_gid, ids_vid[edge], &start, &count, ids[edge].data()));
-        NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid[edge], NC_COLLECTIVE));
-        NC_CHECK(
-            nc_put_vara_int(connectivity_gid, halos_vid[edge], &start, &count, halos[edge].data()));
-        NC_CHECK(nc_var_par_access(connectivity_gid, haloSend_vid[edge], NC_COLLECTIVE));
-        NC_CHECK(nc_put_vara_int(
-            connectivity_gid, haloSend_vid[edge], &start, &count, haloSend[edge].data()));
-        NC_CHECK(nc_put_vara_int(
-            connectivity_gid, haloRecv_vid[edge], &start, &count, haloRecv[edge].data()));
+        size_t count = edge_info.numNeighbours[edge];
+        write_scalar(c_grid, num_vid[edge], start, edge_info.numNeighbours[edge]);
+        start = edge_info.offsets[edge];
+        write_array(c_grid, ids_vid[edge], start, count, ids[edge].data());
+        write_array(c_grid, halos_vid[edge], start, count, halos[edge].data());
+        write_array(c_grid, haloSend_vid[edge], start, count, haloSend[edge].data());
+        write_array(c_grid, haloRecv_vid[edge], start, count, haloRecv[edge].data());
     }
 
+    // Corner connectivity
     for (auto corner : corners) {
-        // Numbers of "corner" neighbours
         size_t start = _rank;
-        NC_CHECK(nc_var_par_access(connectivity_gid, num_corner_vid[corner], NC_COLLECTIVE));
-        NC_CHECK(nc_put_var1_int(
-            connectivity_gid, num_corner_vid[corner], &start, &numCornerNeighbours[corner]));
-
-        // "Corner" IDs and halos
-        start = corner_offsets[corner];
-        size_t count = numCornerNeighbours[corner];
-        NC_CHECK(nc_var_par_access(connectivity_gid, ids_corner_vid[corner], NC_COLLECTIVE));
-        NC_CHECK(nc_put_vara_int(
-            connectivity_gid, ids_corner_vid[corner], &start, &count, corner_ids[corner].data()));
-        NC_CHECK(nc_var_par_access(connectivity_gid, cornerSend_vid[corner], NC_COLLECTIVE));
-        NC_CHECK(nc_put_vara_int(
-            connectivity_gid, cornerSend_vid[corner], &start, &count, cornerSend[corner].data()));
+        size_t count = corner_info.numNeighbours[corner];
+        write_scalar(c_grid, num_corner_vid[corner], start, corner_info.numNeighbours[corner]);
+        start = corner_info.offsets[corner];
+        write_array(c_grid, ids_corner_vid[corner], start, count, corner_ids[corner].data());
+        write_array(c_grid, cornerSend_vid[corner], start, count, cornerSend[corner].data());
     }
 
     NC_CHECK(nc_close(nc_id));
