@@ -281,33 +281,6 @@ void Partitioner::getNeighbourInfo(std::array<std::vector<int>, N_EDGE>& ids,
     }
 }
 
-void Partitioner::getNeighbourInfoPeriodic(std::array<std::vector<int>, N_EDGE>& ids,
-    std::array<std::vector<int>, N_EDGE>& haloSizes, std::array<std::vector<int>, N_EDGE>& haloSend,
-    std::array<std::vector<int>, N_EDGE>& haloRecv,
-    std::array<std::vector<int>, N_CORNER>& cornerIds,
-    std::array<std::vector<int>, N_CORNER>& cornerSend) const
-{
-    for (auto edge : edges) {
-        if (((edge == LEFT || edge == RIGHT) && _px) || ((edge == TOP || edge == BOTTOM) && _py)) {
-
-            for (auto it = _neighbours_p[edge].begin(); it != _neighbours_p[edge].end(); ++it) {
-                ids[edge].push_back(it->first);
-                haloSizes[edge].push_back(it->second);
-                haloSend[edge].push_back(_sendPos_p[edge].at(it->first));
-                haloRecv[edge].push_back(_recvPos_p[edge].at(it->first));
-            }
-        }
-    }
-
-    for (auto corner : corners) {
-        for (auto it = _cornerNeighbours_p[corner].begin(); it != _cornerNeighbours_p[corner].end();
-             ++it) {
-            cornerIds[corner].push_back(it->first);
-            cornerSend[corner].push_back(_cornerSendPos_p[corner].at(it->first));
-        }
-    }
-}
-
 void Partitioner::saveMask(const std::string& filename) const
 {
     // Use C API for parallel I/O
@@ -388,29 +361,6 @@ void Partitioner::saveMetadata(const std::string& filename) const
             &numCornerNeighbours[corner], &corner_offsets[corner], 1, MPI_INT, MPI_SUM, _comm));
     }
 
-    // Prepare periodic neighbour data
-    std::array<std::vector<int>, N_EDGE> ids_p, halos_p, haloSend_p, haloRecv_p;
-    std::array<std::vector<int>, N_CORNER> corner_ids_p, cornerSend_p;
-    getNeighbourInfoPeriodic(ids_p, halos_p, haloSend_p, haloRecv_p, corner_ids_p, cornerSend_p);
-    std::vector<int> num_neighbours_p(N_EDGE), dims_p(N_EDGE, 0), offsets_p(N_EDGE, 0);
-    for (auto edge : edges) {
-        num_neighbours_p[edge] = (int)ids_p[edge].size();
-        CHECK_MPI(
-            MPI_Allreduce(&num_neighbours_p[edge], &dims_p[edge], 1, MPI_INT, MPI_SUM, _comm));
-        CHECK_MPI(
-            MPI_Exscan(&num_neighbours_p[edge], &offsets_p[edge], 1, MPI_INT, MPI_SUM, _comm));
-    }
-
-    std::vector<int> numCornerNeighbours_p(N_CORNER), corner_dims_p(N_CORNER, 0),
-        corner_offsets_p(N_CORNER, 0);
-    for (auto corner : corners) {
-        numCornerNeighbours_p[corner] = (int)corner_ids_p[corner].size();
-        CHECK_MPI(MPI_Allreduce(
-            &numCornerNeighbours_p[corner], &corner_dims_p[corner], 1, MPI_INT, MPI_SUM, _comm));
-        CHECK_MPI(MPI_Exscan(
-            &numCornerNeighbours_p[corner], &corner_offsets_p[corner], 1, MPI_INT, MPI_SUM, _comm));
-    }
-
     // Define dimensions in netCDF file
     int dimid;
     std::vector<int> dimids(N_EDGE);
@@ -423,19 +373,6 @@ void Partitioner::saveMetadata(const std::string& filename) const
     for (auto corner : corners) {
         NC_CHECK(nc_def_dim(
             nc_id, corner_dir_chars[corner].c_str(), corner_dims[corner], &corner_dimids[corner]));
-    }
-
-    // Define periodic dimensions in netCDF file
-    std::vector<int> dimids_p(N_EDGE);
-    for (auto edge : edges) {
-        NC_CHECK(nc_def_dim(
-            nc_id, (dir_chars[edge] + "_periodic").c_str(), dims_p[edge], &dimids_p[edge]));
-    }
-
-    std::vector<int> corner_dimids_p(N_CORNER);
-    for (auto edge : edges) {
-        NC_CHECK(nc_def_dim(nc_id, (corner_dir_chars[edge] + "_periodic").c_str(),
-            corner_dims_p[edge], &corner_dimids_p[edge]));
     }
 
     // Define groups in netCDF file
@@ -487,44 +424,6 @@ void Partitioner::saveMetadata(const std::string& filename) const
                 NC_INT, 1, &corner_dimids[corner], &cornerSend_vid[corner]));
     }
 
-    int num_vid_p[N_EDGE];
-    int ids_vid_p[N_EDGE];
-    int halos_vid_p[N_EDGE];
-    int haloSend_vid_p[N_EDGE];
-    int haloRecv_vid_p[N_EDGE];
-    for (auto edge : edges) {
-        // Periodic members of connectivity group
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbours_periodic").c_str(),
-            NC_INT, 1, &dimid, &num_vid_p[edge]));
-        NC_CHECK(nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_ids_periodic").c_str(),
-            NC_INT, 1, &dimids_p[edge], &ids_vid_p[edge]));
-        NC_CHECK(
-            nc_def_var(connectivity_gid, (dir_names[edge] + "_neighbour_halos_periodic").c_str(),
-                NC_INT, 1, &dimids_p[edge], &halos_vid_p[edge]));
-        NC_CHECK(nc_def_var(connectivity_gid,
-            (dir_names[edge] + "_neighbour_halo_send_periodic").c_str(), NC_INT, 1, &dimids_p[edge],
-            &haloSend_vid_p[edge]));
-        NC_CHECK(nc_def_var(connectivity_gid,
-            (dir_names[edge] + "_neighbour_halo_recv_periodic").c_str(), NC_INT, 1, &dimids_p[edge],
-            &haloRecv_vid_p[edge]));
-    }
-
-    int num_corner_vid_p[N_CORNER];
-    int ids_corner_vid_p[N_CORNER];
-    int cornerSend_vid_p[N_CORNER];
-    for (auto corner : corners) {
-        // Connectivity group
-        NC_CHECK(nc_def_var(connectivity_gid,
-            (corner_dir_names[corner] + "_neighbours_periodic").c_str(), NC_INT, 1, &dimid,
-            &num_corner_vid_p[corner]));
-        NC_CHECK(nc_def_var(connectivity_gid,
-            (corner_dir_names[corner] + "_neighbour_ids_periodic").c_str(), NC_INT, 1,
-            &corner_dimids_p[corner], &ids_corner_vid_p[corner]));
-        NC_CHECK(nc_def_var(connectivity_gid,
-            (corner_dir_names[corner] + "_neighbour_send_periodic").c_str(), NC_INT, 1,
-            &corner_dimids_p[corner], &cornerSend_vid_p[corner]));
-    }
-
     // Write metadata to file
     NC_CHECK(nc_enddef(nc_id));
 
@@ -541,10 +440,6 @@ void Partitioner::saveMetadata(const std::string& filename) const
         size_t start = _rank;
         NC_CHECK(nc_var_par_access(connectivity_gid, num_vid[edge], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(connectivity_gid, num_vid[edge], &start, &num_neighbours[edge]));
-        // Numbers of neighbours for periodic dimensions
-        NC_CHECK(nc_var_par_access(connectivity_gid, num_vid_p[edge], NC_COLLECTIVE));
-        NC_CHECK(
-            nc_put_var1_int(connectivity_gid, num_vid_p[edge], &start, &num_neighbours_p[edge]));
         // IDs and halos
         start = offsets[edge];
         size_t count = num_neighbours[edge];
@@ -559,19 +454,6 @@ void Partitioner::saveMetadata(const std::string& filename) const
             connectivity_gid, haloSend_vid[edge], &start, &count, haloSend[edge].data()));
         NC_CHECK(nc_put_vara_int(
             connectivity_gid, haloRecv_vid[edge], &start, &count, haloRecv[edge].data()));
-        // IDs and halos for periodic dimensions
-        start = offsets_p[edge];
-        count = num_neighbours_p[edge];
-        NC_CHECK(nc_var_par_access(connectivity_gid, ids_vid_p[edge], NC_COLLECTIVE));
-        NC_CHECK(
-            nc_put_vara_int(connectivity_gid, ids_vid_p[edge], &start, &count, ids_p[edge].data()));
-        NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid_p[edge], NC_COLLECTIVE));
-        NC_CHECK(nc_put_vara_int(
-            connectivity_gid, halos_vid_p[edge], &start, &count, halos_p[edge].data()));
-        NC_CHECK(nc_put_vara_int(
-            connectivity_gid, haloSend_vid_p[edge], &start, &count, haloSend_p[edge].data()));
-        NC_CHECK(nc_put_vara_int(
-            connectivity_gid, haloRecv_vid_p[edge], &start, &count, haloRecv_p[edge].data()));
     }
 
     for (auto corner : corners) {
@@ -580,10 +462,6 @@ void Partitioner::saveMetadata(const std::string& filename) const
         NC_CHECK(nc_var_par_access(connectivity_gid, num_corner_vid[corner], NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(
             connectivity_gid, num_corner_vid[corner], &start, &numCornerNeighbours[corner]));
-        // Numbers of corner neighbours for periodic dimensions
-        NC_CHECK(nc_var_par_access(connectivity_gid, num_corner_vid_p[corner], NC_COLLECTIVE));
-        NC_CHECK(nc_put_var1_int(
-            connectivity_gid, num_corner_vid_p[corner], &start, &numCornerNeighbours_p[corner]));
 
         // "Corner" IDs and halos
         start = corner_offsets[corner];
@@ -594,16 +472,6 @@ void Partitioner::saveMetadata(const std::string& filename) const
         NC_CHECK(nc_var_par_access(connectivity_gid, cornerSend_vid[corner], NC_COLLECTIVE));
         NC_CHECK(nc_put_vara_int(
             connectivity_gid, cornerSend_vid[corner], &start, &count, cornerSend[corner].data()));
-
-        // "Corner" IDs and halos for periodic dimensions
-        start = corner_offsets_p[corner];
-        count = numCornerNeighbours_p[corner];
-        NC_CHECK(nc_var_par_access(connectivity_gid, ids_corner_vid_p[corner], NC_COLLECTIVE));
-        NC_CHECK(nc_put_vara_int(connectivity_gid, ids_corner_vid_p[corner], &start, &count,
-            corner_ids_p[corner].data()));
-        NC_CHECK(nc_var_par_access(connectivity_gid, halos_vid_p[corner], NC_COLLECTIVE));
-        NC_CHECK(nc_put_vara_int(connectivity_gid, cornerSend_vid_p[corner], &start, &count,
-            cornerSend_p[corner].data()));
     }
 
     NC_CHECK(nc_close(nc_id));
@@ -725,34 +593,30 @@ void Partitioner::discover_neighbours()
             }
         }
 
-        // When finding neighours *across periodic boundaries*, we need to check against the
+        // When finding neighbours *across periodic boundaries*, we need to check against the
         // current rank, too, because a subdomain can be a periodic neighbour of itself.
-        // check periodic edge neighours
+        // check periodic edge neighbours
         for (auto edge : edges) {
             if (isNeighbour(domains[_rank], domains[p], edge, _px, _py)) {
                 int haloSize = domainOverlap(domains[_rank], domains[p], edge);
                 if (haloSize > 0) {
-                    _neighbours_p[edge].insert(std::pair<int, int>(p, haloSize));
+                    _neighbours[edge].insert(std::pair<int, int>(p, haloSize));
                     int sendPos = 0;
                     int recvPos = 0;
                     haloEdgeBufferPositions(domains[_rank], domains[p], edge, sendPos, recvPos);
-                    _sendPos_p[edge].insert(std::pair<int, int>(p, sendPos));
-                    _recvPos_p[edge].insert(std::pair<int, int>(p, recvPos));
+                    _sendPos[edge].insert(std::pair<int, int>(p, sendPos));
+                    _recvPos[edge].insert(std::pair<int, int>(p, recvPos));
                 }
             }
         }
 
-        // check periodic corner neighours
+        // check periodic corner neighbours
         for (auto corner : corners) {
             if (isCornerNeighbour(domains[_rank], domains[p], corner, _px, _py)) {
-                if (_cornerNeighbours[corner].size() > 0) {
-                    // skip if we have already counted as a non-periodic neighbour
-                    continue;
-                }
-                _cornerNeighbours_p[corner].insert(std::pair<int, int>(p, 1));
+                _cornerNeighbours[corner].insert(std::pair<int, int>(p, 1));
                 int sendPos = 0;
                 haloCornerBufferPositions(domains[_rank], domains[p], corner, sendPos);
-                _cornerSendPos_p[corner].insert(std::pair<int, int>(p, sendPos));
+                _cornerSendPos[corner].insert(std::pair<int, int>(p, sendPos));
             }
         }
     }
