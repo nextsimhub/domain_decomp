@@ -12,6 +12,9 @@ dimensions:
 	BR = 1 ;
 	BL = UNLIMITED ; // (0 currently)
 
+// global attributes:
+		:command = "../decomp -g test_1.nc -x x -y y -m mask -o yx" ;
+
 group: bounding_boxes {
   variables:
   	int domain_x(P) ;
