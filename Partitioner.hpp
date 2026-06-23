@@ -37,6 +37,16 @@ public:
     virtual ~Partitioner() {};
 
     /*!
+     * @brief Store command line that produced the metadata.
+     *
+     * @param command The full command string (e.g., "decomp -x xdim -y ydim -g grid.nc ...")
+     *
+     * Note: it is not possible to store the MPI launch part e.g., "mpirun -n 8 decomp ..." as this
+     * is stripped by the launcher. Only the decomp arguments are received by decomp.
+     */
+    void setCommand(const std::string& command);
+
+    /*!
      * @brief Partitions a 2D grid into rectangular boxes, one per process.
      *
      * Partitions a 2D grid into rectangular boxes, one per process, taking into
@@ -181,6 +191,9 @@ protected:
 
     // Vector of maps of "corner" neighbours to their halo start indices after partitioning
     std::vector<std::map<int, int>> _cornerSendPos = std::vector<std::map<int, int>>(NNBRS);
+
+    // Full command line that produced the metadata
+    std::string _command = "";
 
 public:
     struct LIB_EXPORT Factory {
