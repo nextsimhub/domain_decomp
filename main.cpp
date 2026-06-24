@@ -101,9 +101,10 @@ int main(int argc, char* argv[])
     grid->get_bounding_box(g0, g1, le0, le1);
 
     MPI_Comm sub_comm = comm; // default: no split
+    int color = 0;
     if (tripolar) {
         int xMid = grid->getGlobalExt()[0] / 2; // X midpoint for East/West split
-        int color = (g0 < xMid) ? 0 : 1; // 0 = West, 1 = East
+        color = (g0 < xMid) ? 0 : 1; // 0 = West, 1 = East
         int world_rank;
         MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
         MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &sub_comm);
@@ -136,12 +137,11 @@ int main(int argc, char* argv[])
     MPI_Comm_size(comm, &numProcs);
 
     if (tripolar) {
+        partitioner->initialize(*grid);
         auto globalExt = subpartitioner->getGlobalNew();
         partitioner->setGlobalNew({ globalExt[0] + g0, globalExt[1] });
         auto localExt = subpartitioner->getLocalExtNew();
         partitioner->setLocalExtNew(localExt);
-        partitioner->setTotalNumProcs(numProcs);
-        partitioner->setGlobalExt(grid->getGlobalExt());
     }
 
     // Find my neighbours
@@ -152,14 +152,21 @@ int main(int argc, char* argv[])
         MPI_Comm_free(&sub_comm);
     }
 
-    // TODO: gather _procId results across both halves onto MPI_COMM_WORLD and
-    // re-run neighbour discovery. Until then, saveMask/saveMetadata use the
-    // partitioner's _comm which is the (now-freed) sub_comm in tripolar mode.
-    // For now we skip saving in tripolar mode to avoid using a freed communicator.
-    if (!tripolar) {
+    if (tripolar) {
+        auto procId = subpartitioner->getProcId();
+        if (color == 1) {
+            int offset = numProcs / 2;
+            for (auto& v : procId) {
+                if (v > -1) {
+                    v += offset;
+                }
+            }
+        }
+        partitioner->setProcId(procId);
         partitioner->saveMask(prefix + "partition_mask_" + to_string(numProcs) + ".nc");
         partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
     } else {
+        partitioner->saveMask(prefix + "partition_mask_" + to_string(numProcs) + ".nc");
         partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
     }
 
