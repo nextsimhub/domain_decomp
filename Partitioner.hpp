@@ -123,14 +123,84 @@ public:
      */
     void saveMetadata(const std::string& filename) const;
 
+    /*!
+     * @brief Sets the total number of processes.
+     *
+     * @param totalNumProcs Total number of processes in communicator.
+     */
+    void setTotalNumProcs(int totalNumProcs);
+
+    /*!
+     * @brief Sets the MPI communicator.
+     *
+     * @param comm MPI communicator.
+     */
+    void setComm(MPI_Comm comm);
+
+    /*!
+     * @brief Returns the local extents in each dimension after partitioning.
+     *
+     * @return A vector of size NDIMS containing the local extents.
+     */
+    std::vector<int> getLocalExtNew() const;
+
+    /*!
+     * @brief Sets the local extents in each dimension after partitioning.
+     *
+     * @param localExtNew A vector of size NDIMS containing the local extents.
+     */
+    void setLocalExtNew(const std::vector<int>& localExtNew);
+
+    /*!
+     * @brief Returns the global coordinates of the upper left corner after partitioning.
+     *
+     * @return A vector of size NDIMS containing the global coordinates.
+     */
+    std::vector<int> getGlobalNew() const;
+
+    /*!
+     * @brief Sets the global coordinates of the upper left corner after partitioning.
+     *
+     * @param globalNew A vector of size NDIMS containing the global coordinates.
+     */
+    void setGlobalNew(const std::vector<int>& globalNew);
+
+    /*!
+     * @brief Returns the global coordinates of the upper left corner.
+     *
+     * @return A vector of size NDIMS containing the global coordinates.
+     */
+    std::vector<int> getGlobal() const;
+
+    /*!
+     * @brief Sets the global coordinates of the upper left corner.
+     *
+     * @param global A vector of size NDIMS containing the global coordinates.
+     */
+    void setGlobal(const std::vector<int>& global);
+
+    /*!
+     * @brief Returns the global extents in each dimension.
+     *
+     * @return A vector of size NDIMS containing the global extents.
+     */
+    std::vector<int> getGlobalExt() const;
+
+    /*!
+     * @brief Sets the global extents in each dimension.
+     *
+     * @param globalExt A vector of size NDIMS containing the global extents.
+     */
+    void setGlobalExt(const std::vector<int>& globalExt);
+
+    // Discover the neighbours and halo sizes of the process after partitioning
+    void discover_neighbours();
+
 protected:
     // Construct a partitioner
     // We are using the named constructor idiom so that objects can only be
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
     Partitioner(MPI_Comm comm);
-
-    // Discover the neighbours and halo sizes of the process after partitioning
-    void discover_neighbours();
 
 protected:
     MPI_Comm _comm; // MPI communicator

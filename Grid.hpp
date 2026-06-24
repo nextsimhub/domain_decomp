@@ -179,6 +179,13 @@ public:
     void get_bounding_box(int& global0, int& global1, int& localExt0, int& localExt1) const;
 
     /*!
+     * @brief Set the MPI communicator.
+     *
+     * @param comm MPI communicator.
+     */
+    void set_comm(MPI_Comm comm);
+
+    /*!
      *  @brief Set the global coordinates of the upper left corner.
      *
      *  @param global Global coordinates in each dimension.
