@@ -203,6 +203,18 @@ public:
      */
     void setGlobalExt(const std::vector<int>& globalExt);
 
+    /*!     * @brief Returns the process IDs of the latest 2D domain decomposition.
+     *
+     * @return A vector containing the partition ID of each point in the grid.
+     */
+    std::vector<int> getProcId() const;
+
+    /*!     * @brief Sets the process IDs of the latest 2D domain decomposition.
+     *
+     * @param procId A vector containing the partition ID of each point in the grid.
+     */
+    void setProcId(const std::vector<int>& procId);
+
     // Discover the neighbours and halo sizes of the process after partitioning
     void discover_neighbours();
 

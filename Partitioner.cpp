@@ -668,6 +668,16 @@ void Partitioner::setGlobalExt(const std::vector<int>& globalExt)
     _globalExt = globalExt;
 }
 
+std::vector<int> Partitioner::getProcId() const
+{
+    return _procId;
+}
+
+void Partitioner::setProcId(const std::vector<int>& procId)
+{
+    _procId = procId;
+}
+
 void Partitioner::discover_neighbours()
 {
     /*
