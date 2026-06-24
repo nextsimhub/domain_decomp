@@ -46,6 +46,16 @@ public:
     virtual void partition(Grid& grid) = 0;
 
     /*!
+     * @brief Initializes the partitioner with grid parameters.
+     *
+     * Sets the method variables (grid extents, bounding box, periodicity) from
+     * the provided grid.
+     *
+     * @param grid Reference to the grid object.
+     */
+    virtual void initialize(Grid& grid) = 0;
+
+    /*!
      * @brief Returns the new bounding box for this process after partitioning.
      *
      * @param global0 Global coordinate in the 1st dimension of the upper left
