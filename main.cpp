@@ -111,29 +111,46 @@ int main(int argc, char* argv[])
 
     // Create a Zoltan partitioner (on sub_comm if tripolar, otherwise on comm)
     Partitioner* partitioner
-        = Partitioner::Factory::create(sub_comm, argc, argv, PartitionerType::Zoltan_RCB);
+        = Partitioner::Factory::create(comm, argc, argv, PartitionerType::Zoltan_RCB);
+
+    Partitioner* subpartitioner;
 
     // Partition grid
     if (tripolar) {
         // Create a copy of the grid on each rank
         // overwrite global position and extents for subgrids
+        subpartitioner
+            = Partitioner::Factory::create(sub_comm, argc, argv, PartitionerType::Zoltan_RCB);
         subgrid->set_global({ 0, g1 });
         auto globalExt = grid->getGlobalExt();
         subgrid->set_globalExt({ globalExt[0] / 2, globalExt[1] });
+        subgrid->set_comm(sub_comm);
         subgrid->recompute_ids();
-        partitioner->partition(*subgrid);
+        subpartitioner->partition(*subgrid);
     } else {
         partitioner->partition(*grid);
-    }
-
-    // Free the sub-communicator
-    if (tripolar) {
-        MPI_Comm_free(&sub_comm);
     }
 
     // Store partitioning results in netCDF file
     int numProcs;
     MPI_Comm_size(comm, &numProcs);
+
+    if (tripolar) {
+        auto globalExt = subpartitioner->getGlobalNew();
+        partitioner->setGlobalNew({ globalExt[0] + g0, globalExt[1] });
+        auto localExt = subpartitioner->getLocalExtNew();
+        partitioner->setLocalExtNew(localExt);
+        partitioner->setTotalNumProcs(numProcs);
+        partitioner->setGlobalExt(grid->getGlobalExt());
+    }
+
+    // Find my neighbours
+    partitioner->discover_neighbours();
+
+    // Free the sub-communicator
+    if (tripolar) {
+        MPI_Comm_free(&sub_comm);
+    }
 
     // TODO: gather _procId results across both halves onto MPI_COMM_WORLD and
     // re-run neighbour discovery. Until then, saveMask/saveMetadata use the
@@ -143,9 +160,7 @@ int main(int argc, char* argv[])
         partitioner->saveMask(prefix + "partition_mask_" + to_string(numProcs) + ".nc");
         partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
     } else {
-        std::cerr << "WARNING: tripolar mode active — saving skipped (known limitation, "
-                     "partitioner _comm is freed)"
-                  << std::endl;
+        partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
     }
 
     // Cleanup

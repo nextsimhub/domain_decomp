@@ -4,8 +4,8 @@
  * @date 05 Nov 2024
  */
 
-#include "ZoltanPartitioner.hpp"
 #include "Utils.hpp"
+#include "ZoltanPartitioner.hpp"
 
 #include <algorithm>
 #include <cfloat>
@@ -193,9 +193,6 @@ void ZoltanPartitioner::partition(Grid& grid)
             _localExtNew[idx] = globalExtOrig[idx] - _globalNew[idx];
         }
     }
-
-    // Find my neighbours
-    discover_neighbours();
 
     // Find the process IDs of each grid point I own
     if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {
