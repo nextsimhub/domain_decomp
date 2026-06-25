@@ -618,65 +618,32 @@ Partitioner* Partitioner::Factory::create(
         throw std::runtime_error("Invalid partitioner!");
 }
 
-void Partitioner::setTotalNumProcs(int totalNumProcs)
-{
-    _totalNumProcs = totalNumProcs;
-}
+void Partitioner::setTotalNumProcs(int totalNumProcs) { _totalNumProcs = totalNumProcs; }
 
-void Partitioner::setComm(MPI_Comm comm)
-{
-    _comm = comm;
-}
+void Partitioner::setComm(MPI_Comm comm) { _comm = comm; }
 
-std::vector<int> Partitioner::getLocalExtNew() const
-{
-    return _localExtNew;
-}
+std::vector<int> Partitioner::getLocalExtNew() const { return _localExtNew; }
 
 void Partitioner::setLocalExtNew(const std::vector<int>& localExtNew)
 {
     _localExtNew = localExtNew;
 }
 
-std::vector<int> Partitioner::getGlobalNew() const
-{
-    return _globalNew;
-}
+std::vector<int> Partitioner::getGlobalNew() const { return _globalNew; }
 
-void Partitioner::setGlobalNew(const std::vector<int>& globalNew)
-{
-    _globalNew = globalNew;
-}
+void Partitioner::setGlobalNew(const std::vector<int>& globalNew) { _globalNew = globalNew; }
 
-std::vector<int> Partitioner::getGlobal() const
-{
-    return _global;
-}
+std::vector<int> Partitioner::getGlobal() const { return _global; }
 
-void Partitioner::setGlobal(const std::vector<int>& global)
-{
-    _global = global;
-}
+void Partitioner::setGlobal(const std::vector<int>& global) { _global = global; }
 
-std::vector<int> Partitioner::getGlobalExt() const
-{
-    return _globalExt;
-}
+std::vector<int> Partitioner::getGlobalExt() const { return _globalExt; }
 
-void Partitioner::setGlobalExt(const std::vector<int>& globalExt)
-{
-    _globalExt = globalExt;
-}
+void Partitioner::setGlobalExt(const std::vector<int>& globalExt) { _globalExt = globalExt; }
 
-std::vector<int> Partitioner::getProcId() const
-{
-    return _procId;
-}
+std::vector<int> Partitioner::getProcId() const { return _procId; }
 
-void Partitioner::setProcId(const std::vector<int>& procId)
-{
-    _procId = procId;
-}
+void Partitioner::setProcId(const std::vector<int>& procId) { _procId = procId; }
 
 void Partitioner::discover_neighbours()
 {

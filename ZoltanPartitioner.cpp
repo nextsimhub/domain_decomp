@@ -4,8 +4,8 @@
  * @date 05 Nov 2024
  */
 
-#include "Utils.hpp"
 #include "ZoltanPartitioner.hpp"
+#include "Utils.hpp"
 
 #include <algorithm>
 #include <cfloat>

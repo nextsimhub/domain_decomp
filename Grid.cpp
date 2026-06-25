@@ -252,20 +252,11 @@ Grid::Grid(const Grid& other)
 {
 }
 
-void Grid::set_global(const std::vector<int>& global)
-{
-    _global = global;
-}
+void Grid::set_global(const std::vector<int>& global) { _global = global; }
 
-void Grid::set_comm(MPI_Comm comm)
-{
-    _comm = comm;
-}
+void Grid::set_comm(MPI_Comm comm) { _comm = comm; }
 
-void Grid::set_globalExt(const std::vector<int>& globalExt)
-{
-    _globalExt = globalExt;
-}
+void Grid::set_globalExt(const std::vector<int>& globalExt) { _globalExt = globalExt; }
 
 void Grid::recompute_ids()
 {
