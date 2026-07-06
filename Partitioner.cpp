@@ -242,7 +242,7 @@ void Partitioner::haloCornerBufferPositions(
     }
 }
 
-void Partitioner::setCommand(const std::string& command) { _command = command; }
+void Partitioner::setArgs(const std::string& args) { _args = args; }
 
 Partitioner::Partitioner(MPI_Comm comm)
 {
@@ -452,9 +452,9 @@ void Partitioner::saveMetadata(const std::string& filename) const
     // ---- Write ----
     NC_CHECK(nc_enddef(nc_id));
 
-    // Write command as a global string attribute
-    if (!_command.empty()) {
-        NC_CHECK(nc_put_att_text(nc_id, NC_GLOBAL, "command", _command.size(), _command.c_str()));
+    // Write args as a global string attribute
+    if (!_args.empty()) {
+        NC_CHECK(nc_put_att_text(nc_id, NC_GLOBAL, "args", _args.size(), _args.c_str()));
     }
 
     // Bounding boxes: one value per process

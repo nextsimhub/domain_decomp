@@ -92,20 +92,20 @@ int main(int argc, char* argv[])
     Partitioner* partitioner
         = Partitioner::Factory::create(comm, argc, argv, PartitionerType::Zoltan_RCB);
 
-    // Build the full command string from argc/argv
-    std::string command;
-    for (int i = 0; i < argc; i++) {
-        if (i > 0) command += " ";
-        command += argv[i];
+    // Build the arguments string from argc/argv (skip argv[0], the binary name)
+    std::string args;
+    for (int i = 1; i < argc; i++) {
+        if (i > 1) args += " ";
+        args += argv[i];
     }
 
     // Partition grid
     partitioner->partition(*grid);
 
-    // Store command and partitioning results in netCDF file
+    // Store args and partitioning results in netCDF file
     int numProcs;
     MPI_Comm_size(comm, &numProcs);
-    partitioner->setCommand(command);
+    partitioner->setArgs(args);
     partitioner->saveMask(prefix + "partition_mask_" + to_string(numProcs) + ".nc");
     partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
 
