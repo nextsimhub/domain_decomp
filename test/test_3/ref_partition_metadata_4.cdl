@@ -13,7 +13,7 @@ dimensions:
 	BL = 1 ;
 
 // global attributes:
-		:command = "../decomp -g test_3.nc -x x -y y -m mask -o yx" ;
+		:args = "-g test_3.nc -x x -y y -m mask -o yx" ;
 
 group: bounding_boxes {
   variables:

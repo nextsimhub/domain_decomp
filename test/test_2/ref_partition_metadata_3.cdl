@@ -13,7 +13,7 @@ dimensions:
 	BL = UNLIMITED ; // (0 currently)
 
 // global attributes:
-		:command = "../decomp -g test_2.nc -x m -y n -m land_mask -o yx" ;
+		:args = "-g test_2.nc -x m -y n -m land_mask -o yx" ;
 
 group: bounding_boxes {
   variables:
