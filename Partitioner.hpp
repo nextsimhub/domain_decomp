@@ -41,8 +41,6 @@ public:
      *
      * @param args The arguments string (e.g., "-x xdim -y ydim -g grid.nc ...")
      *
-     * Note: it is not possible to store the MPI launch part e.g., "mpirun -n 8 decomp ..." as this
-     * is stripped by the launcher. Only the arguments passed to decomp are stored.
      */
     void setArgs(const std::string& args);
 
