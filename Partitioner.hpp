@@ -37,6 +37,14 @@ public:
     virtual ~Partitioner() {};
 
     /*!
+     * @brief Store command line arguments that produced the metadata.
+     *
+     * @param args The arguments string (e.g., "-x xdim -y ydim -g grid.nc ...")
+     *
+     */
+    void setArgs(const std::string& args);
+
+    /*!
      * @brief Partitions a 2D grid into rectangular boxes, one per process.
      *
      * Partitions a 2D grid into rectangular boxes, one per process, taking into
@@ -181,6 +189,9 @@ protected:
 
     // Vector of maps of "corner" neighbours to their halo start indices after partitioning
     std::vector<std::map<int, int>> _cornerSendPos = std::vector<std::map<int, int>>(NNBRS);
+
+    // Command line arguments that produced the metadata
+    std::string _args = "";
 
 public:
     struct LIB_EXPORT Factory {

@@ -12,6 +12,9 @@ dimensions:
 	BR = 2 ;
 	BL = 2 ;
 
+// global attributes:
+		:args = "-g test_4.nc -x x -y y -m land_mask -o yx --py" ;
+
 group: bounding_boxes {
   variables:
   	int domain_x(P) ;
