@@ -93,11 +93,14 @@ int main(int argc, char* argv[])
         = Partitioner::Factory::create(comm, argc, argv, PartitionerType::Zoltan_RCB);
 
     // Build the arguments string from argc/argv (skip argv[0], the binary name)
-    std::string args;
-    for (int i = 1; i < argc; i++) {
-        if (i > 1) args += " ";
-        args += argv[i];
-    }
+    const std::string args = [&]() {
+       std::string out;
+       for (int i = 1; i < argc; i++ ) {
+           if (i > 1) out += " ";
+           out += argv[i];
+       }
+       return out;
+    }();
 
     // Partition grid
     partitioner->partition(*grid);
