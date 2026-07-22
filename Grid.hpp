@@ -74,16 +74,17 @@ public:
      * @param ignore_mask Should the land mask be ignored
      * @param px Is the domain periodic in the x-direction
      * @param py Is the domain periodic in the y-direction
+     * @param tripolar True if the grid assumes tripolar grid topology (exclusive wrt px & py)
      * @return A distributed 2D grid object partitioned evenly in terms of grid
      * points.
      */
     // We are using the named constructor idiom so that objects can only be
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
     static Grid* create(MPI_Comm comm, const std::string& filename, bool ignore_mask = false,
-        bool px = false, bool py = false);
+        bool px = false, bool py = false, bool tripolar = false);
     static Grid* create(MPI_Comm comm, const std::string& filename, const std::string xdim_name,
         const std::string ydim_name, const std::vector<int> dim_order, const std::string mask_name,
-        bool ignore_mask = false, bool px = false, bool py = false);
+        bool ignore_mask = false, bool px = false, bool py = false, bool tripolar = false);
 
     /*!
      * @brief Returns the total number of objects in the local domain.
@@ -149,6 +150,12 @@ public:
     bool get_py() const;
 
     /*!
+     * @brief Return true if grid has tripolar topology
+       @return true if topology is tripolar
+    */
+    bool get_tripolar() const;
+
+    /*!
      * @brief Returns the index mapping of sparse to dense representation, where
      * dim0 is the 1st dimension and dim1 is the 2nd, with dim1 varying the
      * fastest in terms of storage.
@@ -182,7 +189,7 @@ private:
         const std::string& dim1_id = "y",
         const std::vector<int>& dim_order = std::vector<int>({ 1, 0 }),
         const std::string& mask_id = "mask", bool ignore_mask = false, bool px = false,
-        bool py = false);
+        bool py = false, bool tripolar = false);
 
     /*!
      * @brief Read dims from netcdf grid file.
@@ -235,6 +242,7 @@ private:
     int _num_nonzero_objects = 0; // Number of non-land grid points
     bool _px = false; // Periodicity in the x-direction
     bool _py = false; // Periodicity in the y-direction
+    bool _tripolar; // Assume tripolar topology
     std::vector<int> _land_mask = {}; // Land mask values
     std::vector<int> _local_id = {}; // Map from sparse to dense index
     std::vector<int> _global_id = {}; // Unique non-land grid point IDs
