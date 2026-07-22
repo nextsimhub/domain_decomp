@@ -1,0 +1,132 @@
+netcdf partition_metadata_2 {
+dimensions:
+	NX = 6 ;
+	NY = 4 ;
+	P = 2 ;
+	L = 2 ;
+	R = 2 ;
+	B = 2 ;
+	T = 2 ;
+	TL = 2 ;
+	TR = 2 ;
+	BR = 2 ;
+	BL = 2 ;
+
+group: bounding_boxes {
+  variables:
+  	int domain_x(P) ;
+  	int domain_extent_x(P) ;
+  	int domain_y(P) ;
+  	int domain_extent_y(P) ;
+  data:
+
+   domain_x = 0, 3 ;
+
+   domain_extent_x = 3, 3 ;
+
+   domain_y = 0, 0 ;
+
+   domain_extent_y = 4, 4 ;
+  } // group bounding_boxes
+
+group: connectivity {
+  variables:
+  	int left_neighbours(P) ;
+  	int left_neighbour_ids(L) ;
+  	int left_neighbour_halos(L) ;
+  	int left_neighbour_halo_send(L) ;
+  	int left_neighbour_halo_recv(L) ;
+  	int right_neighbours(P) ;
+  	int right_neighbour_ids(R) ;
+  	int right_neighbour_halos(R) ;
+  	int right_neighbour_halo_send(R) ;
+  	int right_neighbour_halo_recv(R) ;
+  	int bottom_neighbours(P) ;
+  	int bottom_neighbour_ids(B) ;
+  	int bottom_neighbour_halos(B) ;
+  	int bottom_neighbour_halo_send(B) ;
+  	int bottom_neighbour_halo_recv(B) ;
+  	int top_neighbours(P) ;
+  	int top_neighbour_ids(T) ;
+  	int top_neighbour_halos(T) ;
+  	int top_neighbour_halo_send(T) ;
+  	int top_neighbour_halo_recv(T) ;
+  	int top_left_neighbours(P) ;
+  	int top_left_neighbour_ids(TL) ;
+  	int top_left_neighbour_send(TL) ;
+  	int top_right_neighbours(P) ;
+  	int top_right_neighbour_ids(TR) ;
+  	int top_right_neighbour_send(TR) ;
+  	int bottom_right_neighbours(P) ;
+  	int bottom_right_neighbour_ids(BR) ;
+  	int bottom_right_neighbour_send(BR) ;
+  	int bottom_left_neighbours(P) ;
+  	int bottom_left_neighbour_ids(BL) ;
+  	int bottom_left_neighbour_send(BL) ;
+  data:
+
+   left_neighbours = 1, 1 ;
+
+   left_neighbour_ids = 1, 0 ;
+
+   left_neighbour_halos = 4, 4 ;
+
+   left_neighbour_halo_send = 3, 3 ;
+
+   left_neighbour_halo_recv = 10, 10 ;
+
+   right_neighbours = 1, 1 ;
+
+   right_neighbour_ids = 1, 0 ;
+
+   right_neighbour_halos = 4, 4 ;
+
+   right_neighbour_halo_send = 10, 10 ;
+
+   right_neighbour_halo_recv = 3, 3 ;
+
+   bottom_neighbours = 1, 1 ;
+
+   bottom_neighbour_ids = 0, 1 ;
+
+   bottom_neighbour_halos = 3, 3 ;
+
+   bottom_neighbour_halo_send = 7, 7 ;
+
+   bottom_neighbour_halo_recv = 0, 0 ;
+
+   top_neighbours = 1, 1 ;
+
+   top_neighbour_ids = 0, 1 ;
+
+   top_neighbour_halos = 3, 3 ;
+
+   top_neighbour_halo_send = 0, 0 ;
+
+   top_neighbour_halo_recv = 7, 7 ;
+
+   top_left_neighbours = 1, 1 ;
+
+   top_left_neighbour_ids = 1, 0 ;
+
+   top_left_neighbour_send = 3, 3 ;
+
+   top_right_neighbours = 1, 1 ;
+
+   top_right_neighbour_ids = 1, 0 ;
+
+   top_right_neighbour_send = 10, 10 ;
+
+   bottom_right_neighbours = 1, 1 ;
+
+   bottom_right_neighbour_ids = 1, 0 ;
+
+   bottom_right_neighbour_send = 13, 13 ;
+
+   bottom_left_neighbours = 1, 1 ;
+
+   bottom_left_neighbour_ids = 1, 0 ;
+
+   bottom_left_neighbour_send = 6, 6 ;
+  } // group connectivity
+}
