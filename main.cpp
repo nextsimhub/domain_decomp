@@ -54,7 +54,8 @@ int main(int argc, char* argv[])
         ("ignore-mask,i", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file")
         ("periodic-x,px", po::bool_switch()->default_value(false), "Periodicity in x-direction")
         ("periodic-y,py", po::bool_switch()->default_value(false), "Periodicity in y-direction")
-        ("output-prefix,op", po::value<string>()->default_value(""), "Prefix for output filenames");
+        ("output-prefix,op", po::value<string>()->default_value(""), "Prefix for output filenames")
+        ("tripolar", po::bool_switch()->default_value(false), "Use tripolar grid topology");
     // clang-format on
 
     // Parse optional command line options
@@ -86,7 +87,7 @@ int main(int argc, char* argv[])
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["xdim"].as<string>(),
         vm["ydim"].as<string>(), order, vm["mask"].as<string>(), vm["ignore-mask"].as<bool>(),
-        vm["periodic-x"].as<bool>(), vm["periodic-y"].as<bool>());
+        vm["periodic-x"].as<bool>(), vm["periodic-y"].as<bool>(), vm["tripolar"].as<bool>());
 
     // Create a Zoltan partitioner
     Partitioner* partitioner
