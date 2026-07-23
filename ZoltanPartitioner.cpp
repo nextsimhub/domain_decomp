@@ -117,6 +117,8 @@ void ZoltanPartitioner::partition(Grid& grid)
             _procId.resize(grid.get_num_objects(), _rank);
         }
 
+        discover_neighbours();
+
         return;
     }
 
