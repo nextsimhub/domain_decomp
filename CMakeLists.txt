@@ -10,6 +10,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 set(PROJECT_NAME nextSIMutils)
 set(LIB_NAME domain_decomp)
 set(EXEC_NAME decomp)
+set(INTERNAL_CORE_NAME decomp_core)
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 project(${PROJECT_NAME} VERSION ${VERSION_MAJOR}.${VERSION_MINOR} LANGUAGES CXX)
@@ -113,12 +114,28 @@ install(EXPORT ${PROJECT_NAME}
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
   )
 
-# Executable
-add_executable(${EXEC_NAME}
-  ${PROJECT_SOURCE_DIR}/DomainUtils.cpp
+# We want to reuse the same compiled files in multiple targets,
+# e.g. executable, library  and test executables
+# we compile them once to a static internal library and link against it.
+add_library(${INTERNAL_CORE_NAME} STATIC
   ${PROJECT_SOURCE_DIR}/Grid.cpp
+  ${PROJECT_SOURCE_DIR}/DomainUtils.cpp
   ${PROJECT_SOURCE_DIR}/Partitioner.cpp
   ${PROJECT_SOURCE_DIR}/ZoltanPartitioner.cpp
+)
+
+target_include_directories(${INTERNAL_CORE_NAME}
+  PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
+  PRIVATE ${netCDF_INCLUDE_DIR} ${Zoltan_INCLUDE_DIRS}
+)
+
+target_link_libraries(${INTERNAL_CORE_NAME}
+  PUBLIC MPI::MPI_CXX
+  PRIVATE netcdf ${Zoltan_LIBRARIES}
+)
+
+# Executable
+add_executable(${EXEC_NAME}
   ${PROJECT_SOURCE_DIR}/main.cpp)
 # Create an alias to be used within the project and by other projects
 add_executable(${PROJECT_NAME}::${EXEC_NAME} ALIAS ${EXEC_NAME})
@@ -127,8 +144,7 @@ target_include_directories(${EXEC_NAME}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${netCDF_INCLUDE_DIR} ${Zoltan_INCLUDE_DIRS}
   )
 target_link_libraries(${EXEC_NAME}
-  PUBLIC MPI::MPI_CXX
-  PRIVATE netcdf ${Zoltan_LIBRARIES} Boost::program_options
+  PRIVATE ${INTERNAL_CORE_NAME} Boost::program_options
   )
 target_link_directories(${EXEC_NAME}
   PRIVATE ${netCDF_LIB_DIR}
