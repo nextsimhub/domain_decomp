@@ -44,6 +44,18 @@ for TEST in test_1 test_2 test_1_px test_1_py test_1_px_py; do
   echo -e "\033[0;32mTest passed\033[0m"
 done
 
+for TEST in test_1_px_py; do
+  echo "Running integration test '${TEST}' (1 process)"
+  ${MPIEXEC} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} \
+    ../decomp -g ${FNAMES[${TEST}]} ${FLAGS[${TEST}]} >/dev/null
+
+  for filename in partition_mask_1 partition_metadata_1; do
+    ncdump "${filename}.nc" >"${filename}.cdl"
+    diff "${filename}.cdl" "${CMAKE_CURRENT_SOURCE_DIR}/${TEST}/ref_${filename}.cdl"
+  done
+  echo -e "\033[0;32mTest passed\033[0m"
+done
+
 for TEST in test_3 test_4 test_4_px test_4_py test_4_px_py; do
   echo "Running integration corner test '${TEST}'"
   ${MPIEXEC} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} \
