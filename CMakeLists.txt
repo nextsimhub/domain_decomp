@@ -140,6 +140,7 @@ if(BUILD_TESTS)
   include(CTest)
   enable_testing()
   add_subdirectory(test)
+  add_subdirectory(unit_test)
 endif()
 
 # Examples
