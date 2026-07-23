@@ -1,9 +1,7 @@
 
 
 add_executable(unit_tests main.cpp)
-target_link_libraries(
-  unit_tests
-  PRIVATE doctest::doctest ${PROJECT_NAME}::${LIB_NAME})
+target_link_libraries(unit_tests PRIVATE doctest::doctest ${INTERNAL_CORE_NAME})
 target_include_directories(
   unit_tests
   PRIVATE ${CMAKE_SOURCE_DIR} ${DOCTEST_INCLUDE_DIR})
