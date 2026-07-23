@@ -23,7 +23,14 @@ static constexpr std::array<Corner, N_CORNER> corners
 struct Point {
 
     int x, y;
+
+    // Define arithmetic on Points
+    Point operator+(const Point& other) const { return { x + other.x, y + other.y }; }
+    Point operator-(const Point& other) const { return { x - other.x, y - other.y }; }
+    Point operator*(const int scalar) const { return { x * scalar, y * scalar }; }
+    Point operator-() const { return { -x, -y }; }
 };
+inline Point operator*(const int scalar, const Point& p) { return p * scalar; }
 
 /*!
  * @brief After grid decomposition, we are left with 2D domains.
@@ -47,6 +54,24 @@ struct Domain {
      * @brief return height of domain
      */
     int getHeight() const;
+
+    /**
+     * @brief Create a domain from two points
+     *
+     * Unlike the constructor, the points do not need to be in particular order.
+     * i.e p1.y > p2.y is OK.
+     *
+     * Two points uniquely define a patch, the function will return a 'normalised'
+     * representation of the domain where the invariant:
+     *  `p1.x <= p2.x and p1.y <= p2.y` holds
+     *
+     * Degenerate domains (Lines and points) are allowed
+     *
+     * @param p1 First point
+     * @param p2 Second point
+     * @return Domain defined by the two points
+     */
+    static Domain fromTwoPoints(const Point& p1, const Point& p2);
 };
 
 /*!
@@ -60,5 +85,14 @@ struct Domain {
  * @param dir direction to find overlap ('x' or 'y')
  */
 int domainOverlap(const Domain d1, const Domain d2, const Edge edge);
+
+/*!
+ * @brief Applies point symmetry to a domain
+ *
+ * @param p Point of the symmetry
+ * @param d Domain to be reflected
+ * @return Domain reflected about point p
+ */
+Domain pointReflection(Point p, Domain d);
 
 #endif /* DOMAINUTILS_HPP */

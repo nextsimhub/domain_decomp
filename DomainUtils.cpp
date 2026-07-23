@@ -25,3 +25,23 @@ int domainOverlap(const Domain d1, const Domain d2, const Edge edge)
     }
     return overlap;
 }
+
+Domain Domain::fromTwoPoints(const Point& p1, const Point& p2)
+{
+    Domain d;
+    // Lower left corner
+    d.p1.x = std::min(p1.x, p2.x);
+    d.p1.y = std::min(p1.y, p2.y);
+
+    // Upper right corner
+    d.p2.x = std::max(p1.x, p2.x);
+    d.p2.y = std::max(p1.y, p2.y);
+    return d;
+}
+
+Domain pointReflection(Point c, Domain d)
+{
+    const auto p1_reflected = 2 * c - d.p1;
+    const auto p2_reflected = 2 * c - d.p2;
+    return Domain::fromTwoPoints(p1_reflected, p2_reflected);
+}
