@@ -46,6 +46,16 @@ public:
     virtual void partition(Grid& grid) = 0;
 
     /*!
+     * @brief Initializes the partitioner with grid parameters.
+     *
+     * Sets the method variables (grid extents, bounding box, periodicity) from
+     * the provided grid.
+     *
+     * @param grid Reference to the grid object.
+     */
+    virtual void initialize(Grid& grid) = 0;
+
+    /*!
      * @brief Returns the new bounding box for this process after partitioning.
      *
      * @param global0 Global coordinate in the 1st dimension of the upper left
@@ -123,14 +133,96 @@ public:
      */
     void saveMetadata(const std::string& filename) const;
 
+    /*!
+     * @brief Sets the total number of processes.
+     *
+     * @param totalNumProcs Total number of processes in communicator.
+     */
+    void setTotalNumProcs(int totalNumProcs);
+
+    /*!
+     * @brief Sets the MPI communicator.
+     *
+     * @param comm MPI communicator.
+     */
+    void setComm(MPI_Comm comm);
+
+    /*!
+     * @brief Returns the local extents in each dimension after partitioning.
+     *
+     * @return A vector of size NDIMS containing the local extents.
+     */
+    std::vector<int> getLocalExtNew() const;
+
+    /*!
+     * @brief Sets the local extents in each dimension after partitioning.
+     *
+     * @param localExtNew A vector of size NDIMS containing the local extents.
+     */
+    void setLocalExtNew(const std::vector<int>& localExtNew);
+
+    /*!
+     * @brief Returns the global coordinates of the upper left corner after partitioning.
+     *
+     * @return A vector of size NDIMS containing the global coordinates.
+     */
+    std::vector<int> getGlobalNew() const;
+
+    /*!
+     * @brief Sets the global coordinates of the upper left corner after partitioning.
+     *
+     * @param globalNew A vector of size NDIMS containing the global coordinates.
+     */
+    void setGlobalNew(const std::vector<int>& globalNew);
+
+    /*!
+     * @brief Returns the global coordinates of the upper left corner.
+     *
+     * @return A vector of size NDIMS containing the global coordinates.
+     */
+    std::vector<int> getGlobal() const;
+
+    /*!
+     * @brief Sets the global coordinates of the upper left corner.
+     *
+     * @param global A vector of size NDIMS containing the global coordinates.
+     */
+    void setGlobal(const std::vector<int>& global);
+
+    /*!
+     * @brief Returns the global extents in each dimension.
+     *
+     * @return A vector of size NDIMS containing the global extents.
+     */
+    std::vector<int> getGlobalExt() const;
+
+    /*!
+     * @brief Sets the global extents in each dimension.
+     *
+     * @param globalExt A vector of size NDIMS containing the global extents.
+     */
+    void setGlobalExt(const std::vector<int>& globalExt);
+
+    /*!     * @brief Returns the process IDs of the latest 2D domain decomposition.
+     *
+     * @return A vector containing the partition ID of each point in the grid.
+     */
+    std::vector<int> getProcId() const;
+
+    /*!     * @brief Sets the process IDs of the latest 2D domain decomposition.
+     *
+     * @param procId A vector containing the partition ID of each point in the grid.
+     */
+    void setProcId(const std::vector<int>& procId);
+
+    // Discover the neighbours and halo sizes of the process after partitioning
+    void discover_neighbours();
+
 protected:
     // Construct a partitioner
     // We are using the named constructor idiom so that objects can only be
     // created in the heap to ensure it's dtor is executed before MPI_Finalize()
     Partitioner(MPI_Comm comm);
-
-    // Discover the neighbours and halo sizes of the process after partitioning
-    void discover_neighbours();
 
 protected:
     MPI_Comm _comm; // MPI communicator

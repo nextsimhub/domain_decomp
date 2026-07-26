@@ -54,7 +54,9 @@ int main(int argc, char* argv[])
         ("ignore-mask,i", po::bool_switch()->default_value(false), "Ignore mask in netCDF grid file")
         ("periodic-x,px", po::bool_switch()->default_value(false), "Periodicity in x-direction")
         ("periodic-y,py", po::bool_switch()->default_value(false), "Periodicity in y-direction")
-        ("output-prefix,op", po::value<string>()->default_value(""), "Prefix for output filenames");
+        ("output-prefix,op", po::value<string>()->default_value(""), "Prefix for output filenames")
+        ("tripolar,t", po::bool_switch()->default_value(false),
+            "Use split-communicator tri-polar decomposition");
     // clang-format on
 
     // Parse optional command line options
@@ -83,26 +85,94 @@ int main(int argc, char* argv[])
         prefix += "_";
     }
 
+    // Capture tripolar flag
+    bool tripolar = vm["tripolar"].as<bool>();
+
     // Build grid from netCDF file
     Grid* grid = Grid::create(comm, vm["grid"].as<string>(), vm["xdim"].as<string>(),
         vm["ydim"].as<string>(), order, vm["mask"].as<string>(), vm["ignore-mask"].as<bool>(),
         vm["periodic-x"].as<bool>(), vm["periodic-y"].as<bool>());
 
-    // Create a Zoltan partitioner
+    // only used for tripolar case
+    Grid* subgrid = new Grid(*grid);
+
+    // Split communicator into two sub-communicators by X-coordinate (East/West)
+    int g0, g1, le0, le1;
+    grid->get_bounding_box(g0, g1, le0, le1);
+
+    MPI_Comm sub_comm = comm; // default: no split
+    int color = 0;
+    if (tripolar) {
+        int xMid = grid->getGlobalExt()[0] / 2; // X midpoint for East/West split
+        color = (g0 < xMid) ? 0 : 1; // 0 = West, 1 = East
+        int world_rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+        MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &sub_comm);
+    }
+
+    // Create a Zoltan partitioner (on sub_comm if tripolar, otherwise on comm)
     Partitioner* partitioner
         = Partitioner::Factory::create(comm, argc, argv, PartitionerType::Zoltan_RCB);
 
+    Partitioner* subpartitioner;
+
     // Partition grid
-    partitioner->partition(*grid);
+    if (tripolar) {
+        // Create a copy of the grid on each rank
+        // overwrite global position and extents for subgrids
+        subpartitioner
+            = Partitioner::Factory::create(sub_comm, argc, argv, PartitionerType::Zoltan_RCB);
+        subgrid->set_global({ 0, g1 });
+        auto globalExt = grid->getGlobalExt();
+        subgrid->set_globalExt({ globalExt[0] / 2, globalExt[1] });
+        subgrid->set_comm(sub_comm);
+        subgrid->recompute_ids();
+        subpartitioner->partition(*subgrid);
+    } else {
+        partitioner->partition(*grid);
+    }
 
     // Store partitioning results in netCDF file
     int numProcs;
     MPI_Comm_size(comm, &numProcs);
-    partitioner->saveMask(prefix + "partition_mask_" + to_string(numProcs) + ".nc");
-    partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
+
+    if (tripolar) {
+        partitioner->initialize(*grid);
+        auto globalExt = subpartitioner->getGlobalNew();
+        partitioner->setGlobalNew({ globalExt[0] + g0, globalExt[1] });
+        auto localExt = subpartitioner->getLocalExtNew();
+        partitioner->setLocalExtNew(localExt);
+    }
+
+    // Find my neighbours
+    partitioner->discover_neighbours();
+
+    // Free the sub-communicator
+    if (tripolar) {
+        MPI_Comm_free(&sub_comm);
+    }
+
+    if (tripolar) {
+        auto procId = subpartitioner->getProcId();
+        if (color == 1) {
+            int offset = numProcs / 2;
+            for (auto& v : procId) {
+                if (v > -1) {
+                    v += offset;
+                }
+            }
+        }
+        partitioner->setProcId(procId);
+        partitioner->saveMask(prefix + "partition_mask_" + to_string(numProcs) + ".nc");
+        partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
+    } else {
+        partitioner->saveMask(prefix + "partition_mask_" + to_string(numProcs) + ".nc");
+        partitioner->saveMetadata(prefix + "partition_metadata_" + to_string(numProcs) + ".nc");
+    }
 
     // Cleanup
     delete grid;
+    delete subgrid;
     delete partitioner;
 
     // Finalize MPI

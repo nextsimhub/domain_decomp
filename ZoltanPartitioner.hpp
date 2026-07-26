@@ -43,6 +43,16 @@ public:
     static ZoltanPartitioner* create(MPI_Comm comm, int argc, char** argv);
 
     /*!
+     * @brief Initializes the partitioner with grid parameters.
+     *
+     * Sets the method variables (grid extents, bounding box, periodicity) from
+     * the provided grid.
+     *
+     * @param grid Reference to the grid object.
+     */
+    void initialize(Grid& grid) override;
+
+    /*!
      * @brief Partitions a 2D grid into rectangular boxes, one per process.
      *
      * Partitions a 2D grid into rectangular boxes, one per process, taking into

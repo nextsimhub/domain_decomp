@@ -90,7 +90,7 @@ ZoltanPartitioner* ZoltanPartitioner::create(MPI_Comm comm, int argc, char** arg
     return new ZoltanPartitioner(comm, argc, argv);
 }
 
-void ZoltanPartitioner::partition(Grid& grid)
+void ZoltanPartitioner::initialize(Grid& grid)
 {
     // Load initial grid state
     _numProcs = grid.getNumProcs();
@@ -98,6 +98,11 @@ void ZoltanPartitioner::partition(Grid& grid)
     grid.get_bounding_box(_global[0], _global[1], _localExt[0], _localExt[1]);
     _px = grid.get_px();
     _py = grid.get_py();
+}
+
+void ZoltanPartitioner::partition(Grid& grid)
+{
+    initialize(grid);
 
     if (_totalNumProcs == 1) {
         for (int idx = 0; idx < 2; idx++) {
@@ -195,9 +200,6 @@ void ZoltanPartitioner::partition(Grid& grid)
             _localExtNew[idx] = globalExtOrig[idx] - _globalNew[idx];
         }
     }
-
-    // Find my neighbours
-    discover_neighbours();
 
     // Find the process IDs of each grid point I own
     if (grid.get_num_objects() != grid.get_num_nonzero_objects()) {

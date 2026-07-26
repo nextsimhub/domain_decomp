@@ -2,3 +2,4 @@ build
 Testing
 *.DS_Store
 *.nc
+.cache/
