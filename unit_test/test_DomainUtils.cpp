@@ -65,10 +65,10 @@ TEST_CASE("Point arithmetic")
     }
 }
 
-TEST_CASE("Domain construction")
+TEST_SUITE("Domain construction")
 {
 
-    SUBCASE("Points in Normalised order")
+    TEST_CASE("Points in Normalised order")
     {
         const Point p1 { 1, 2 };
         const Point p2 { 3, 4 };
@@ -77,7 +77,7 @@ TEST_CASE("Domain construction")
         CHECK(d.p2 == Point { 3, 4 });
     }
 
-    SUBCASE("Point 1 right of Point 2")
+    TEST_CASE("Point 1 right of Point 2")
     {
         const Point p1 { 3, 2 };
         const Point p2 { 1, 4 };
@@ -86,7 +86,7 @@ TEST_CASE("Domain construction")
         CHECK(d.p2 == Point { 3, 4 });
     }
 
-    SUBCASE("Point 1 above Point 2")
+    TEST_CASE("Point 1 above Point 2")
     {
         const Point p1 { 1, 4 };
         const Point p2 { 3, 2 };
@@ -95,7 +95,7 @@ TEST_CASE("Domain construction")
         CHECK(d.p2 == Point { 3, 4 });
     }
 
-    SUBCASE("Point 1 right and above Point 2")
+    TEST_CASE("Point 1 right and above Point 2")
     {
         const Point p1 { 3, 4 };
         const Point p2 { 1, 2 };
@@ -115,9 +115,10 @@ TEST_CASE("Domain Getters")
     CHECK(d.getHeight() == 2);
 }
 
-TEST_CASE("Domain status")
+TEST_SUITE("Domain status")
 {
-    SUBCASE("Empty domain")
+
+    TEST_CASE("Empty domain")
     {
         const Point p1 { 0, 0 };
         const Point p2 { -1, -1 };
@@ -129,7 +130,7 @@ TEST_CASE("Domain status")
         CHECK(!d.isArea());
     }
 
-    SUBCASE("Point domain")
+    TEST_CASE("Point domain")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 0, 0 };
@@ -141,7 +142,7 @@ TEST_CASE("Domain status")
         CHECK(!d.isArea());
     }
 
-    SUBCASE("Line domain - vertical")
+    TEST_CASE("Line domain - vertical")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 0, 4 };
@@ -153,7 +154,7 @@ TEST_CASE("Domain status")
         CHECK(!d.isArea());
     }
 
-    SUBCASE("Line domain - horizontal")
+    TEST_CASE("Line domain - horizontal")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 4, 0 };
@@ -165,7 +166,7 @@ TEST_CASE("Domain status")
         CHECK(!d.isArea());
     }
 
-    SUBCASE("Normal domain")
+    TEST_CASE("Normal domain")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 4, 4 };
@@ -178,10 +179,10 @@ TEST_CASE("Domain status")
     }
 }
 
-TEST_CASE("Domain - Point symmetry reflection")
+TEST_SUITE("Domain - Point symmetry reflection")
 {
 
-    SUBCASE("Full domain in positive quadrant")
+    TEST_CASE("Full domain in positive quadrant")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 2, 1 };
@@ -194,7 +195,7 @@ TEST_CASE("Domain - Point symmetry reflection")
         CHECK(reflected.p2 == Point { 4, 4 });
     }
 
-    SUBCASE("Full domain across quadrants")
+    TEST_CASE("Full domain across quadrants")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 2, 1 };
@@ -207,7 +208,7 @@ TEST_CASE("Domain - Point symmetry reflection")
         CHECK(reflected.p2 == Point { 0, 0 });
     }
 
-    SUBCASE("Identity map")
+    TEST_CASE("Identity map")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 4, 2 };
@@ -220,7 +221,7 @@ TEST_CASE("Domain - Point symmetry reflection")
         CHECK(reflected.p2 == Point { 4, 2 });
     }
 
-    SUBCASE("Point domain")
+    TEST_CASE("Point domain")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 0, 0 };
@@ -233,7 +234,7 @@ TEST_CASE("Domain - Point symmetry reflection")
         CHECK(reflected.p2 == Point { 4, 2 });
     }
 
-    SUBCASE("Line domain - vertical")
+    TEST_CASE("Line domain - vertical")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 0, 4 };
@@ -246,7 +247,7 @@ TEST_CASE("Domain - Point symmetry reflection")
         CHECK(reflected.p2 == Point { 2, 2 });
     }
 
-    SUBCASE("Line domain - horizontal")
+    TEST_CASE("Line domain - horizontal")
     {
         const Point p1 { 0, 0 };
         const Point p2 { 4, 0 };
@@ -259,7 +260,7 @@ TEST_CASE("Domain - Point symmetry reflection")
         CHECK(reflected.p2 == Point { 6, 0 });
     }
 
-    SUBCASE("Empty domain")
+    TEST_CASE("Empty domain")
     {
         const Point p1 { 0, 0 };
         const Point p2 { -1, -1 };
@@ -287,9 +288,10 @@ bool equalDomains(const Domain& d1, const Domain& d2)
 }
 }
 
-TEST_CASE("Domain intersection")
+TEST_SUITE("Domain intersection")
 {
-    SUBCASE("2D intersection")
+
+    TEST_CASE("2D intersection")
     {
         const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
         const Domain d2 { Point { 2, 2 }, Point { 6, 6 } };
@@ -300,7 +302,7 @@ TEST_CASE("Domain intersection")
         CHECK(equalDomains(intersectionDomain, expectedIntersection));
     }
 
-    SUBCASE("2D disjoint intersection")
+    TEST_CASE("2D disjoint intersection")
     {
         const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
         const Domain d2 { Point { 7, 2 }, Point { 9, 6 } };
@@ -310,7 +312,7 @@ TEST_CASE("Domain intersection")
         CHECK(intersectionDomain.isEmpty());
     }
 
-    SUBCASE("Intersection with an empty set")
+    TEST_CASE("Intersection with an empty set")
     {
         const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
         const Domain d2 { Point { 7, 2 }, Point { 6, 6 } };
@@ -322,7 +324,7 @@ TEST_CASE("Domain intersection")
         CHECK(intersectionDomain.isEmpty());
     }
 
-    SUBCASE("Intersection with line overlap - vertical")
+    TEST_CASE("Intersection with line overlap - vertical")
     {
         const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
         const Domain d2 { Point { 6, 2 }, Point { 7, 6 } };
@@ -334,7 +336,7 @@ TEST_CASE("Domain intersection")
         CHECK(equalDomains(intersectionDomain, expectedIntersection));
     }
 
-    SUBCASE("Intersection with line overlap - horizontal")
+    TEST_CASE("Intersection with line overlap - horizontal")
     {
         const Domain d1 { Point { 0, 0 }, Point { 5, 2 } };
         const Domain d2 { Point { 1, -2 }, Point { 3, 0 } };
@@ -346,7 +348,7 @@ TEST_CASE("Domain intersection")
         CHECK(equalDomains(intersectionDomain, expectedIntersection));
     }
 
-    SUBCASE("Intersection with point overlap")
+    TEST_CASE("Intersection with point overlap")
     {
         const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
         const Domain d2 { Point { -3, -2 }, Point { 0, 0 } };
