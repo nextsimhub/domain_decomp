@@ -1,6 +1,6 @@
 
 
-add_executable(unit_tests main.cpp)
+add_executable(unit_tests main.cpp test_DomainUtils.cpp)
 target_link_libraries(unit_tests PRIVATE doctest::doctest ${INTERNAL_CORE_NAME})
 target_include_directories(
   unit_tests

@@ -29,6 +29,10 @@ struct Point {
     Point operator-(const Point& other) const { return { x - other.x, y - other.y }; }
     Point operator*(const int scalar) const { return { x * scalar, y * scalar }; }
     Point operator-() const { return { -x, -y }; }
+
+    // Implement equality
+    bool operator==(const Point& other) const { return x == other.x && y == other.y; }
+    bool operator!=(const Point& other) const { return !(*this == other); }
 };
 inline Point operator*(const int scalar, const Point& p) { return p * scalar; }
 
