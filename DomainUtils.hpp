@@ -76,6 +76,31 @@ struct Domain {
      * @return Domain defined by the two points
      */
     static Domain fromTwoPoints(const Point& p1, const Point& p2);
+
+    /**
+     * @brief Non-normalised domain represents an empty domain (empty set)
+     */
+    bool isEmpty() const { return p1.x > p2.x || p1.y > p2.y; }
+
+    /**
+     *  @brief We support degenerate domains that collapse to a point
+     */
+    bool isPoint() const { return p1.x == p2.x && p1.y == p2.y; }
+
+    /**
+     * @brief We support degenerate domains that collapse to a line
+     */
+    bool isLine() const
+    {
+        const bool isVerticalLine = p1.x == p2.x && p1.y != p2.y;
+        const bool isHorizontalLine = p1.x != p2.x && p1.y == p2.y;
+
+        return isVerticalLine || isHorizontalLine;
+    }
+    /**
+     * @brief For completeness we check is a domain represents an area (patch)
+     */
+    bool isArea() const { return !isEmpty() && !isPoint() && !isLine(); }
 };
 
 /*!
@@ -93,10 +118,38 @@ int domainOverlap(const Domain d1, const Domain d2, const Edge edge);
 /*!
  * @brief Applies point symmetry to a domain
  *
+ * For a degenerate domain, returns a degenerate domain.
+ * Makes no guarantees about the points inside.
+ * Reflection of an empty set is an empty set is our logic here.
+ *
  * @param p Point of the symmetry
  * @param d Domain to be reflected
  * @return Domain reflected about point p
  */
 Domain pointReflection(Point p, Domain d);
+
+/*!
+ *
+ * @brief Domain intersection
+ *
+ * Takes two domains and returns the intersection of the two.
+ * The domains include their boundaries, so two domains that share
+ * a section of an edge or a point will return a degenerate "line"
+ * or "point" domain.
+ *
+ * The intersection of disjoint domains returns a degenerate domain that
+ * represents an empty set.
+ *
+ * The intention is to use this function to compute neighbourhood relation
+ * between the domains.
+ *
+ * The operation should be commutative and associative, but we don't test
+ * this property at the moment (albeit we have a bug if it not holds).
+ *
+ * @param d1 First domain
+ * @param d2 Second domain
+ *
+ */
+Domain intersection(Domain d1, Domain d2);
 
 #endif /* DOMAINUTILS_HPP */
