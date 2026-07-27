@@ -123,6 +123,7 @@ protected:
     static const int NNBRS = 2 * NDIMS; // Number of neighbours (two per dimension)
     bool _px = false; // Periodic boundary in the x-direction
     bool _py = false; // Periodic boundary in the y-direction
+    bool _tripolar = false; // True for tripolar grid topology
 
     // Letters used for each dimension
     std::vector<std::string> dim_chars = { "x", "y" };

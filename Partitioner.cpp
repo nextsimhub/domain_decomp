@@ -566,6 +566,9 @@ void Partitioner::discover_neighbours()
         domains[p].p2.y = origins[p].y + extents[p].y;
     }
 
+    const bool usePeriodicX = _px || _tripolar;
+    const bool usePeriodicY = _py;
+
     for (int p = 0; p < _totalNumProcs; p++) {
 
         // When finding neighbours *within* the domain, we don't check against the current rank
@@ -602,7 +605,7 @@ void Partitioner::discover_neighbours()
         // current rank, too, because a subdomain can be a periodic neighbour of itself.
         // check periodic edge neighbours
         for (auto edge : edges) {
-            if (isNeighbour(domains[_rank], domains[p], edge, _px, _py)) {
+            if (isNeighbour(domains[_rank], domains[p], edge, usePeriodicX, usePeriodicY)) {
                 int haloSize = domainOverlap(domains[_rank], domains[p], edge);
                 if (haloSize > 0) {
                     _neighbours[edge].insert(std::pair<int, int>(p, haloSize));
@@ -617,11 +620,74 @@ void Partitioner::discover_neighbours()
 
         // check periodic corner neighbours
         for (auto corner : corners) {
-            if (isCornerNeighbour(domains[_rank], domains[p], corner, _px, _py)) {
+            if (isCornerNeighbour(domains[_rank], domains[p], corner, usePeriodicX, usePeriodicY)) {
                 _cornerNeighbours[corner].insert(std::pair<int, int>(p, 1));
                 int sendPos = 0;
                 haloCornerBufferPositions(domains[_rank], domains[p], corner, sendPos);
                 _cornerSendPos[corner].insert(std::pair<int, int>(p, sendPos));
+            }
+        }
+    }
+
+    // For tripolar topology apply special treatment to the top edge
+    // To correctly resolve the neighbourhood relations, we just need to create
+    // an 'image' of the domain on the other side of the tripolar top edge.
+    // This is just a point symmetry through the "middle point" of the top edge
+    //
+    // The only difficulty comes from calculating the send and receive buffer
+    // positions.
+    //
+    // For `send` buffers these are calculated on the 'target' domain.
+    // Hence we need to use the image of the current domain to get correct orientation.
+    //
+    // For the `recv` buffers, these are calculated on the 'current' domain.
+    // Hence we use the image of the target
+    //
+    if (_tripolar) {
+        const Domain& thisDomain = domains[_rank];
+        const Point symmetryPoint = { _globalExt[0] / 2, _globalExt[1] };
+
+        // Resolve Edge Neighbours
+        for (int p = 0; p < _totalNumProcs; p++) {
+            const Domain image = pointReflection(symmetryPoint, domains[p]);
+            const Domain selfImage = pointReflection(symmetryPoint, thisDomain);
+
+            // Now we can check for the neighbourhood relation with the image
+            if (isNeighbour(thisDomain, image, TOP)) {
+                const int haloSize = domainOverlap(thisDomain, image, TOP);
+
+                if (haloSize > 0) {
+                    _neighbours[TOP].insert(std::pair<int, int>(p, haloSize));
+
+                    int sendPos, recvPos, dontCare;
+
+                    // Calculate the receive position on self
+                    haloEdgeBufferPositions(thisDomain, image, TOP, dontCare, recvPos);
+
+                    // Calculate the send position on the image
+                    haloEdgeBufferPositions(selfImage, domains[p], BOTTOM, sendPos, dontCare);
+
+                    _sendPos[TOP].insert(std::pair<int, int>(p, sendPos));
+                    _recvPos[TOP].insert(std::pair<int, int>(p, recvPos));
+                }
+            }
+
+            if (isCornerNeighbour(thisDomain, image, TOP_LEFT)) {
+                _cornerNeighbours[TOP_LEFT].insert(std::pair<int, int>(p, 1));
+
+                int sendPos;
+                haloCornerBufferPositions(selfImage, domains[p], BOTTOM_RIGHT, sendPos);
+
+                _cornerSendPos[TOP_LEFT].insert(std::pair<int, int>(p, sendPos));
+            }
+
+            if (isCornerNeighbour(thisDomain, image, TOP_RIGHT)) {
+                _cornerNeighbours[TOP_RIGHT].insert(std::pair<int, int>(p, 1));
+
+                int sendPos;
+                haloCornerBufferPositions(selfImage, domains[p], BOTTOM_LEFT, sendPos);
+
+                _cornerSendPos[TOP_RIGHT].insert(std::pair<int, int>(p, sendPos));
             }
         }
     }
