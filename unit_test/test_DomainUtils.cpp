@@ -273,19 +273,27 @@ TEST_SUITE("Domain - Point symmetry reflection")
     }
 }
 
-namespace {
-bool equalDomains(const Domain& d1, const Domain& d2)
+TEST_SUITE("Domain equality")
 {
+    TEST_CASE("Normal domains")
+    {
+        const Domain d1 { Point { 0, 0 }, Point { 4, 4 } };
+        const Domain d2 { Point { 0, 0 }, Point { 4, 4 } };
+        const Domain d3 { Point { 1, 1 }, Point { 4, 4 } };
 
-    // Empty domains are equal to each other
-    // and never equal to a non empty domain
-    if (d1.isEmpty() || d2.isEmpty()) {
-        return d1.isEmpty() && d2.isEmpty();
+        CHECK(d1 == d2);
+        CHECK(d1 != d3);
     }
 
-    // Representation is unique so we can just compare the points
-    return d1.p1 == d2.p1 && d1.p2 == d2.p2;
-}
+    TEST_CASE("Empty domains")
+    {
+        const Domain empty { Point { 0, 0 }, Point { -1, -1 } };
+        const Domain empty2 { Point { 0, 0 }, Point { -2, -2 } };
+        const Domain d2 { Point { 1, 1 }, Point { 2, 2 } };
+
+        CHECK(empty == empty2);
+        CHECK(empty != d2);
+    }
 }
 
 TEST_SUITE("Domain intersection")
@@ -299,7 +307,7 @@ TEST_SUITE("Domain intersection")
         const Domain expectedIntersection { Point { 2, 2 }, Point { 6, 4 } };
         const Domain intersectionDomain = intersection(d1, d2);
 
-        CHECK(equalDomains(intersectionDomain, expectedIntersection));
+        CHECK(intersectionDomain == expectedIntersection);
     }
 
     TEST_CASE("2D disjoint intersection")
@@ -333,7 +341,7 @@ TEST_SUITE("Domain intersection")
         const Domain intersectionDomain = intersection(d1, d2);
 
         CHECK(intersectionDomain.isLine());
-        CHECK(equalDomains(intersectionDomain, expectedIntersection));
+        CHECK(intersectionDomain == expectedIntersection);
     }
 
     TEST_CASE("Intersection with line overlap - horizontal")
@@ -345,7 +353,7 @@ TEST_SUITE("Domain intersection")
         const Domain intersectionDomain = intersection(d1, d2);
 
         CHECK(intersectionDomain.isLine());
-        CHECK(equalDomains(intersectionDomain, expectedIntersection));
+        CHECK(intersectionDomain == expectedIntersection);
     }
 
     TEST_CASE("Intersection with point overlap")
@@ -357,6 +365,6 @@ TEST_SUITE("Domain intersection")
         const Domain intersectionDomain = intersection(d1, d2);
 
         CHECK(intersectionDomain.isPoint());
-        CHECK(equalDomains(intersectionDomain, expectedIntersection));
+        CHECK(intersectionDomain == expectedIntersection);
     }
 }

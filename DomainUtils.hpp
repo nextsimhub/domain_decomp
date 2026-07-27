@@ -101,6 +101,24 @@ struct Domain {
      * @brief For completeness we check is a domain represents an area (patch)
      */
     bool isArea() const { return !isEmpty() && !isPoint() && !isLine(); }
+
+    /**
+     * @brief Define domain equality
+     *
+     * Empty domains are always equal to each other
+     */
+    bool operator==(const Domain& other) const
+    {
+        // Empty domains are equal to each other
+        // and never equal to a non empty domain
+        if (this->isEmpty() || other.isEmpty()) {
+            return this->isEmpty() && other.isEmpty();
+        }
+
+        // Representation is unique so we can just compare the points
+        return this->p1 == other.p1 && this->p2 == other.p2;
+    }
+    bool operator!=(const Domain& other) const { return !(*this == other); }
 };
 
 /*!
