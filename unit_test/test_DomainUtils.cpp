@@ -368,3 +368,195 @@ TEST_SUITE("Domain intersection")
         CHECK(intersectionDomain == expectedIntersection);
     }
 }
+
+TEST_SUITE("Domain Connections")
+{
+    TEST_CASE("Valid connections - Edges")
+    {
+        const Domain d1 { Point {
+                              0,
+                              0,
+                          },
+            Point { 4, 4 } };
+
+        SUBCASE("Bottom edge")
+        {
+            const Domain shared { Point { 1, 0 }, Point { 3, 0 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::EDGE);
+            CHECK(connection.getEdge() == BOTTOM);
+        }
+
+        SUBCASE("Top edge")
+        {
+            const Domain shared { Point { 1, 4 }, Point { 3, 4 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::EDGE);
+            CHECK(connection.getEdge() == TOP);
+        }
+
+        SUBCASE("Left edge")
+        {
+            const Domain shared { Point { 0, 1 }, Point { 0, 3 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::EDGE);
+            CHECK(connection.getEdge() == LEFT);
+        }
+
+        SUBCASE("Right edge")
+        {
+            const Domain shared { Point { 4, 1 }, Point { 4, 3 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::EDGE);
+            CHECK(connection.getEdge() == RIGHT);
+        }
+    }
+
+    TEST_CASE("Valid connections - Corners")
+    {
+        const Domain d1 { Point {
+                              0,
+                              0,
+                          },
+            Point { 4, 4 } };
+
+        SUBCASE("Bottom left corner")
+        {
+            const Domain shared { Point { 0, 0 }, Point { 0, 0 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::CORNER);
+            CHECK(connection.getCorner() == BOTTOM_LEFT);
+        }
+
+        SUBCASE("Bottom right corner")
+        {
+            const Domain shared { Point { 4, 0 }, Point { 4, 0 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::CORNER);
+            CHECK(connection.getCorner() == BOTTOM_RIGHT);
+        }
+
+        SUBCASE("Top left corner")
+        {
+            const Domain shared { Point { 0, 4 }, Point { 0, 4 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::CORNER);
+            CHECK(connection.getCorner() == TOP_LEFT);
+        }
+
+        SUBCASE("Top right corner")
+        {
+            const Domain shared { Point { 4, 4 }, Point { 4, 4 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::CORNER);
+            CHECK(connection.getCorner() == TOP_RIGHT);
+        }
+    }
+
+    TEST_CASE("Points on edges that are not corners")
+    {
+        // This should not appear. We identify it as a no connection
+        const Domain d1 { Point {
+                              0,
+                              0,
+                          },
+            Point { 4, 4 } };
+
+        SUBCASE("Bottom edge")
+        {
+            const Domain shared { Point { 1, 0 }, Point { 1, 0 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::INVALID);
+        }
+        SUBCASE("Top edge")
+        {
+            const Domain shared { Point { 1, 4 }, Point { 1, 4 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::INVALID);
+        }
+        SUBCASE("Left edge")
+        {
+            const Domain shared { Point { 0, 1 }, Point { 0, 1 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::INVALID);
+        }
+        SUBCASE("Right edge")
+        {
+            const Domain shared { Point { 4, 1 }, Point { 4, 1 } };
+            const Connection connection = identifyNeighbourConnectionType(d1, shared);
+            CHECK(connection.getType() == ConnectionType::INVALID);
+        }
+    }
+
+    TEST_CASE("Shared edge extending outside domain")
+    {
+        const Domain d1 { Point {
+                              0,
+                              0,
+                          },
+            Point { 4, 4 } };
+
+        // We test only bottom edge
+        const Domain shared { Point { 1, 0 }, Point { 5, 0 } };
+        const Connection connection = identifyNeighbourConnectionType(d1, shared);
+        CHECK(connection.getType() == ConnectionType::INVALID);
+    }
+
+    TEST_CASE("Shared domain is an area")
+    {
+        const Domain d1 { Point {
+                              0,
+                              0,
+                          },
+            Point { 4, 4 } };
+        const Domain shared { Point { 1, 1 }, Point { 3, 3 } };
+        const Connection connection = identifyNeighbourConnectionType(d1, shared);
+        CHECK(connection.getType() == ConnectionType::INVALID);
+    }
+
+    TEST_CASE("Domain is not an area")
+    {
+        const Domain shared { Point { 0, 0 }, Point { 1, 1 } };
+
+        SUBCASE("Empty")
+        {
+            const Domain d1 { Point {
+                                  5,
+                                  5,
+                              },
+                Point { 4, 4 } };
+            CHECK_THROWS(identifyNeighbourConnectionType(d1, shared));
+        }
+        SUBCASE("Point")
+        {
+            const Domain d1 { Point {
+                                  0,
+                                  0,
+                              },
+                Point { 0, 0 } };
+            CHECK_THROWS(identifyNeighbourConnectionType(d1, shared));
+        }
+        SUBCASE("Line")
+        {
+            const Domain d1 { Point {
+                                  0,
+                                  0,
+                              },
+                Point { 0, 4 } };
+            CHECK_THROWS(identifyNeighbourConnectionType(d1, shared));
+        }
+    }
+
+    TEST_CASE("Shared domain is empty")
+    {
+        const Domain d1 { Point {
+                              0,
+                              0,
+                          },
+            Point { 4, 4 } };
+        const Domain shared { Point { 5, 5 }, Point { 4, 4 } };
+
+        const Connection connection = identifyNeighbourConnectionType(d1, shared);
+        CHECK(connection.getType() == ConnectionType::INVALID);
+    }
+}

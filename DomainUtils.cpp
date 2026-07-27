@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <tuple>
+#include <vector>
 
 int Domain::getWidth() const { return p2.x - p1.x; }
 int Domain::getHeight() const { return p2.y - p1.y; }
@@ -87,3 +88,80 @@ Domain intersection(Domain d1, Domain d2)
 
     return { Point { x_start, y_start }, Point { x_end, y_end } };
 }
+
+// TODO: There should be maybe more elegant way to check this
+static bool sameDomainDimension(const Domain d1, const Domain d2)
+{
+    const bool d1_isPoint = d1.isPoint();
+    const bool d2_isPoint = d2.isPoint();
+    if (d1_isPoint && d2_isPoint) {
+        return true;
+    }
+
+    const bool d1_isLine = d1.isLine();
+    const bool d2_isLine = d2.isLine();
+    if (d1_isLine && d2_isLine) {
+        return true;
+    }
+
+    const bool d1_isArea = d1.isArea();
+    const bool d2_isArea = d2.isArea();
+    if (d1_isArea && d2_isArea) {
+        return true;
+    }
+
+    return false;
+}
+
+Connection identifyNeighbourConnectionType(const Domain from, const Domain shared)
+{
+    const Point lowerLeft = from.p1;
+    const Point upperRight = from.p2;
+    const Point lowerRight = { upperRight.x, lowerLeft.y };
+    const Point upperLeft = { lowerLeft.x, upperRight.y };
+
+    // We create a set of all candidates connections
+    const std::array<std::pair<Domain, Connection>, 8> candidates_list {
+        std::make_pair(Domain { lowerLeft, lowerRight }, Connection::viaEdge(BOTTOM)),
+        std::make_pair(Domain { upperLeft, upperRight }, Connection::viaEdge(TOP)),
+        std::make_pair(Domain { lowerLeft, upperLeft }, Connection::viaEdge(LEFT)),
+        std::make_pair(Domain { lowerRight, upperRight }, Connection::viaEdge(RIGHT)),
+        std::make_pair(Domain { lowerLeft, lowerLeft }, Connection::viaCorner(BOTTOM_LEFT)),
+        std::make_pair(Domain { lowerRight, lowerRight }, Connection::viaCorner(BOTTOM_RIGHT)),
+        std::make_pair(Domain { upperLeft, upperLeft }, Connection::viaCorner(TOP_LEFT)),
+        std::make_pair(Domain { upperRight, upperRight }, Connection::viaCorner(TOP_RIGHT)),
+    };
+
+    if (shared.isEmpty()) {
+        return Connection::invalid();
+    }
+
+    if (!from.isArea()) {
+        throw std::invalid_argument("The 'from' domain must be an area (patch) domain.");
+    }
+
+    // We check the entire list because we are paranoid
+    // There should ever be only one valid connection
+    // If we identify more we need to raise an error
+    std::vector<Connection> validConnections;
+    for (const auto& candidate_connection : candidates_list) {
+        // Upack the pair
+        const auto candidate = candidate_connection.first;
+        const auto connection_type = candidate_connection.second;
+
+        const bool isContained = (intersection(candidate, shared) == shared);
+        const bool sameDimension = sameDomainDimension(candidate, shared);
+
+        if (isContained && sameDimension) {
+            validConnections.push_back(connection_type);
+        }
+    }
+
+    if (validConnections.size() > 1) {
+        std::cerr << "ERROR: Could not identify a unique connection type for the shared domain."
+                  << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    return validConnections.empty() ? Connection::invalid() : validConnections.front();
+}
+

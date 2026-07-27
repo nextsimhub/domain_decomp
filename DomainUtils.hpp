@@ -9,6 +9,7 @@
 #define DOMAINUTILS_HPP
 
 #include <array>
+#include <stdexcept>
 
 enum Edge { LEFT, RIGHT, BOTTOM, TOP, N_EDGE };
 static constexpr std::array<Edge, N_EDGE> edges = { LEFT, RIGHT, BOTTOM, TOP };
@@ -169,5 +170,97 @@ Domain pointReflection(Point p, Domain d);
  *
  */
 Domain intersection(Domain d1, Domain d2);
+
+enum class ConnectionType {
+    EDGE,
+    CORNER,
+    INVALID,
+};
+
+/**
+ *  @brief Utility struct to return a type of a connection between two domains
+ *
+ * Since CORNERS and EDGES are represented by different enums we tie
+ * the together into a single return type.
+ *
+ */
+class Connection {
+    ConnectionType type;
+    Edge edge;
+    Corner corner;
+
+public:
+    static Connection viaEdge(Edge edge)
+    {
+        Connection c;
+        c.type = ConnectionType::EDGE;
+        c.edge = edge;
+        return c;
+    }
+    static Connection viaCorner(Corner corner)
+    {
+        Connection c;
+        c.type = ConnectionType::CORNER;
+        c.corner = corner;
+        return c;
+    }
+    static Connection invalid()
+    {
+        Connection c;
+        c.type = ConnectionType::INVALID;
+        return c;
+    }
+
+    ConnectionType getType() const { return type; }
+    Edge getEdge() const
+    {
+        if (type != ConnectionType::EDGE) {
+            throw std::runtime_error("Connection is not an EDGE type");
+        }
+        return edge;
+    }
+    Corner getCorner() const
+    {
+        if (type != ConnectionType::CORNER) {
+            throw std::runtime_error("Connection is not a CORNER type");
+        }
+        return corner;
+    }
+};
+
+/**
+ * @brief Identify the CORNER/EDGE relationship
+ *
+ *
+ * We determine the connection relative to `domain` (e.g. for a connectivity)
+ *   ┌───┬───┐
+ *   │ 1 │ 2 │
+ *   └───┴───┘
+ * If domain = 1, the result is RIGHT EDGE
+ * If domain = 1, the result is LEFT EDGE
+ *
+ *
+ * If a connection is through CANDIDATE, the following holds:
+ *  CANDIDATE ∩ SHARED == SHARED and CANDIDATE and SHARED have same dimension
+ *
+ * Where:
+ *   CANDIDATE ∈ {TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT, LEFT, RIGHT, BOTTOM, TOP}
+ *   SHARED beeing non-empty intersection of the two domains
+ *
+ * @param domain The domain for which we want to identify the connection. It must be an 'Area'.
+ * @param shared The shared domain between the two domains.
+ *
+ *  @result The connection descriptor. Allows to identify EDGE/CORNER.
+ *     Invalid connection for:
+ *      * Shared domain is empty
+ *      * Shared domain is a point on an edge (not a corner)
+ *      * Shared domain is an area (not a line or point)
+ *      * Shared domain is a line that extends outside the domain
+ *
+ * @throws If the `domain` is not an area.
+ *
+ */
+Connection identifyNeighbourConnectionType(const Domain domain, const Domain shared);
+
 
 #endif /* DOMAINUTILS_HPP */
