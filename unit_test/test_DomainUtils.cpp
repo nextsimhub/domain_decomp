@@ -115,6 +115,69 @@ TEST_CASE("Domain Getters")
     CHECK(d.getHeight() == 2);
 }
 
+TEST_CASE("Domain status")
+{
+    SUBCASE("Empty domain")
+    {
+        const Point p1 { 0, 0 };
+        const Point p2 { -1, -1 };
+        const Domain d { p1, p2 };
+
+        CHECK(d.isEmpty());
+        CHECK(!d.isPoint());
+        CHECK(!d.isLine());
+        CHECK(!d.isArea());
+    }
+
+    SUBCASE("Point domain")
+    {
+        const Point p1 { 0, 0 };
+        const Point p2 { 0, 0 };
+        const Domain d { p1, p2 };
+
+        CHECK(!d.isEmpty());
+        CHECK(d.isPoint());
+        CHECK(!d.isLine());
+        CHECK(!d.isArea());
+    }
+
+    SUBCASE("Line domain - vertical")
+    {
+        const Point p1 { 0, 0 };
+        const Point p2 { 0, 4 };
+        const Domain d { p1, p2 };
+
+        CHECK(!d.isEmpty());
+        CHECK(!d.isPoint());
+        CHECK(d.isLine());
+        CHECK(!d.isArea());
+    }
+
+    SUBCASE("Line domain - horizontal")
+    {
+        const Point p1 { 0, 0 };
+        const Point p2 { 4, 0 };
+        const Domain d { p1, p2 };
+
+        CHECK(!d.isEmpty());
+        CHECK(!d.isPoint());
+        CHECK(d.isLine());
+        CHECK(!d.isArea());
+    }
+
+    SUBCASE("Normal domain")
+    {
+        const Point p1 { 0, 0 };
+        const Point p2 { 4, 4 };
+        const Domain d { p1, p2 };
+
+        CHECK(!d.isEmpty());
+        CHECK(!d.isPoint());
+        CHECK(!d.isLine());
+        CHECK(d.isArea());
+    }
+}
+
 TEST_CASE("Domain - Point symmetry reflection")
 {
 
@@ -194,5 +257,104 @@ TEST_CASE("Domain - Point symmetry reflection")
 
         CHECK(reflected.p1 == Point { 2, 0 });
         CHECK(reflected.p2 == Point { 6, 0 });
+    }
+
+    SUBCASE("Empty domain")
+    {
+        const Point p1 { 0, 0 };
+        const Point p2 { -1, -1 };
+        const Domain d { p1, p2 };
+
+        const Point p { 3, 0 };
+        const Domain reflected = pointReflection(p, d);
+
+        CHECK(reflected.isEmpty());
+    }
+}
+
+namespace {
+bool equalDomains(const Domain& d1, const Domain& d2)
+{
+
+    // Empty domains are equal to each other
+    // and never equal to a non empty domain
+    if (d1.isEmpty() || d2.isEmpty()) {
+        return d1.isEmpty() && d2.isEmpty();
+    }
+
+    // Representation is unique so we can just compare the points
+    return d1.p1 == d2.p1 && d1.p2 == d2.p2;
+}
+}
+
+TEST_CASE("Domain intersection")
+{
+    SUBCASE("2D intersection")
+    {
+        const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
+        const Domain d2 { Point { 2, 2 }, Point { 6, 6 } };
+
+        const Domain expectedIntersection { Point { 2, 2 }, Point { 6, 4 } };
+        const Domain intersectionDomain = intersection(d1, d2);
+
+        CHECK(equalDomains(intersectionDomain, expectedIntersection));
+    }
+
+    SUBCASE("2D disjoint intersection")
+    {
+        const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
+        const Domain d2 { Point { 7, 2 }, Point { 9, 6 } };
+
+        const Domain intersectionDomain = intersection(d1, d2);
+
+        CHECK(intersectionDomain.isEmpty());
+    }
+
+    SUBCASE("Intersection with an empty set")
+    {
+        const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
+        const Domain d2 { Point { 7, 2 }, Point { 6, 6 } };
+
+        REQUIRE(d2.isEmpty());
+
+        const Domain intersectionDomain = intersection(d1, d2);
+
+        CHECK(intersectionDomain.isEmpty());
+    }
+
+    SUBCASE("Intersection with line overlap - vertical")
+    {
+        const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
+        const Domain d2 { Point { 6, 2 }, Point { 7, 6 } };
+
+        const Domain expectedIntersection { Point { 6, 2 }, Point { 6, 4 } };
+        const Domain intersectionDomain = intersection(d1, d2);
+
+        CHECK(intersectionDomain.isLine());
+        CHECK(equalDomains(intersectionDomain, expectedIntersection));
+    }
+
+    SUBCASE("Intersection with line overlap - horizontal")
+    {
+        const Domain d1 { Point { 0, 0 }, Point { 5, 2 } };
+        const Domain d2 { Point { 1, -2 }, Point { 3, 0 } };
+
+        const Domain expectedIntersection { Point { 1, 0 }, Point { 3, 0 } };
+        const Domain intersectionDomain = intersection(d1, d2);
+
+        CHECK(intersectionDomain.isLine());
+        CHECK(equalDomains(intersectionDomain, expectedIntersection));
+    }
+
+    SUBCASE("Intersection with point overlap")
+    {
+        const Domain d1 { Point { 0, 0 }, Point { 6, 4 } };
+        const Domain d2 { Point { -3, -2 }, Point { 0, 0 } };
+
+        const Domain expectedIntersection { Point { 0, 0 }, Point { 0, 0 } };
+        const Domain intersectionDomain = intersection(d1, d2);
+
+        CHECK(intersectionDomain.isPoint());
+        CHECK(equalDomains(intersectionDomain, expectedIntersection));
     }
 }
