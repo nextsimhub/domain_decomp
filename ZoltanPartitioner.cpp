@@ -98,6 +98,9 @@ void ZoltanPartitioner::partition(Grid& grid)
     grid.get_bounding_box(_global[0], _global[1], _localExt[0], _localExt[1]);
     _px = grid.get_px();
     _py = grid.get_py();
+    // TODO: I am not really sure reading properties from a Grid
+    //  should happen in child classes... feels dangerous (to be discussed)
+    _tripolar = grid.get_tripolar();
 
     if (_totalNumProcs == 1) {
         for (int idx = 0; idx < 2; idx++) {

@@ -1,0 +1,16 @@
+netcdf tripolar_grid {
+dimensions:
+	x = 6 ;
+	y = 4 ;
+variables:
+	int mask(y, x) ;
+
+	:title = "Tripolar grid example" ;
+data:
+
+mask =
+	1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1 ;
+}

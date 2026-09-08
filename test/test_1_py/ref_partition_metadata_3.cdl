@@ -5,20 +5,12 @@ dimensions:
 	P = 3 ;
 	L = 2 ;
 	R = 2 ;
-	B = 1 ;
-	T = 1 ;
-	TL = UNLIMITED ; // (0 currently)
-	TR = 1 ;
-	BR = 1 ;
-	BL = UNLIMITED ; // (0 currently)
-	L_periodic = UNLIMITED ; // (0 currently)
-	R_periodic = UNLIMITED ; // (0 currently)
-	B_periodic = 2 ;
-	T_periodic = 2 ;
-	TL_periodic = 1 ;
-	TR_periodic = 1 ;
-	BR_periodic = 1 ;
-	BL_periodic = 1 ;
+	B = 3 ;
+	T = 3 ;
+	TL = 1 ;
+	TR = 2 ;
+	BR = 2 ;
+	BL = 1 ;
 
 group: bounding_boxes {
   variables:
@@ -71,38 +63,6 @@ group: connectivity {
   	int bottom_left_neighbours(P) ;
   	int bottom_left_neighbour_ids(BL) ;
   	int bottom_left_neighbour_send(BL) ;
-  	int left_neighbours_periodic(P) ;
-  	int left_neighbour_ids_periodic(L_periodic) ;
-  	int left_neighbour_halos_periodic(L_periodic) ;
-  	int left_neighbour_halo_send_periodic(L_periodic) ;
-  	int left_neighbour_halo_recv_periodic(L_periodic) ;
-  	int right_neighbours_periodic(P) ;
-  	int right_neighbour_ids_periodic(R_periodic) ;
-  	int right_neighbour_halos_periodic(R_periodic) ;
-  	int right_neighbour_halo_send_periodic(R_periodic) ;
-  	int right_neighbour_halo_recv_periodic(R_periodic) ;
-  	int bottom_neighbours_periodic(P) ;
-  	int bottom_neighbour_ids_periodic(B_periodic) ;
-  	int bottom_neighbour_halos_periodic(B_periodic) ;
-  	int bottom_neighbour_halo_send_periodic(B_periodic) ;
-  	int bottom_neighbour_halo_recv_periodic(B_periodic) ;
-  	int top_neighbours_periodic(P) ;
-  	int top_neighbour_ids_periodic(T_periodic) ;
-  	int top_neighbour_halos_periodic(T_periodic) ;
-  	int top_neighbour_halo_send_periodic(T_periodic) ;
-  	int top_neighbour_halo_recv_periodic(T_periodic) ;
-  	int top_left_neighbours_periodic(P) ;
-  	int top_left_neighbour_ids_periodic(TL_periodic) ;
-  	int top_left_neighbour_send_periodic(TL_periodic) ;
-  	int top_right_neighbours_periodic(P) ;
-  	int top_right_neighbour_ids_periodic(TR_periodic) ;
-  	int top_right_neighbour_send_periodic(TR_periodic) ;
-  	int bottom_right_neighbours_periodic(P) ;
-  	int bottom_right_neighbour_ids_periodic(BR_periodic) ;
-  	int bottom_right_neighbour_send_periodic(BR_periodic) ;
-  	int bottom_left_neighbours_periodic(P) ;
-  	int bottom_left_neighbour_ids_periodic(BL_periodic) ;
-  	int bottom_left_neighbour_send_periodic(BL_periodic) ;
   data:
 
    left_neighbours = 0, 0, 2 ;
@@ -125,88 +85,48 @@ group: connectivity {
 
    right_neighbour_halo_recv = 4, 4 ;
 
-   bottom_neighbours = 0, 1, 0 ;
+   bottom_neighbours = 1, 1, 1 ;
 
-   bottom_neighbour_ids = 0 ;
+   bottom_neighbour_ids = 1, 0, 2 ;
 
-   bottom_neighbour_halos = 4 ;
+   bottom_neighbour_halos = 4, 4, 2 ;
 
-   bottom_neighbour_halo_send = 6 ;
+   bottom_neighbour_halo_send = 6, 6, 6 ;
 
-   bottom_neighbour_halo_recv = 0 ;
+   bottom_neighbour_halo_recv = 0, 0, 0 ;
 
-   top_neighbours = 1, 0, 0 ;
+   top_neighbours = 1, 1, 1 ;
 
-   top_neighbour_ids = 1 ;
+   top_neighbour_ids = 1, 0, 2 ;
 
-   top_neighbour_halos = 4 ;
+   top_neighbour_halos = 4, 4, 2 ;
 
-   top_neighbour_halo_send = 0 ;
+   top_neighbour_halo_send = 0, 0, 0 ;
 
-   top_neighbour_halo_recv = 6 ;
+   top_neighbour_halo_recv = 6, 6, 6 ;
 
-   top_left_neighbours = 0, 0, 0 ;
+   top_left_neighbours = 0, 0, 1 ;
 
-   top_right_neighbours = 1, 0, 0 ;
+   top_left_neighbour_ids = 0 ;
 
-   top_right_neighbour_ids = 2 ;
+   top_left_neighbour_send = 4 ;
 
-   top_right_neighbour_send = 10 ;
+   top_right_neighbours = 1, 1, 0 ;
 
-   bottom_right_neighbours = 0, 1, 0 ;
+   top_right_neighbour_ids = 2, 2 ;
 
-   bottom_right_neighbour_ids = 2 ;
+   top_right_neighbour_send = 10, 8 ;
 
-   bottom_right_neighbour_send = 9 ;
+   bottom_right_neighbours = 1, 1, 0 ;
 
-   bottom_left_neighbours = 0, 0, 0 ;
+   bottom_right_neighbour_ids = 2, 2 ;
 
-   left_neighbours_periodic = 0, 0, 0 ;
+   bottom_right_neighbour_send = 11, 9 ;
 
-   right_neighbours_periodic = 0, 0, 0 ;
+   bottom_left_neighbours = 0, 0, 1 ;
 
-   bottom_neighbours_periodic = 1, 0, 1 ;
+   bottom_left_neighbour_ids = 1 ;
 
-   bottom_neighbour_ids_periodic = 1, 2 ;
-
-   bottom_neighbour_halos_periodic = 4, 2 ;
-
-   bottom_neighbour_halo_send_periodic = 6, 6 ;
-
-   bottom_neighbour_halo_recv_periodic = 0, 0 ;
-
-   top_neighbours_periodic = 0, 1, 1 ;
-
-   top_neighbour_ids_periodic = 0, 2 ;
-
-   top_neighbour_halos_periodic = 4, 2 ;
-
-   top_neighbour_halo_send_periodic = 0, 0 ;
-
-   top_neighbour_halo_recv_periodic = 6, 6 ;
-
-   top_left_neighbours_periodic = 0, 0, 1 ;
-
-   top_left_neighbour_ids_periodic = 0 ;
-
-   top_left_neighbour_send_periodic = 4 ;
-
-   top_right_neighbours_periodic = 0, 1, 0 ;
-
-   top_right_neighbour_ids_periodic = 2 ;
-
-   top_right_neighbour_send_periodic = 8 ;
-
-   bottom_right_neighbours_periodic = 1, 0, 0 ;
-
-   bottom_right_neighbour_ids_periodic = 2 ;
-
-   bottom_right_neighbour_send_periodic = 11 ;
-
-   bottom_left_neighbours_periodic = 0, 0, 1 ;
-
-   bottom_left_neighbour_ids_periodic = 1 ;
-
-   bottom_left_neighbour_send_periodic = 5 ;
+   bottom_left_neighbour_send = 5 ;
   } // group connectivity
 }

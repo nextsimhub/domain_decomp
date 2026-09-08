@@ -75,23 +75,6 @@ public:
         std::array<std::vector<int>, N_CORNER>& cornerIds,
         std::array<std::vector<int>, N_CORNER>& cornerSend) const;
     /*!
-     * @brief Returns vectors containing the MPI ranks, halo sizes and halo starting indices of
-     * the neighbours of this process across periodic boundaries after partitioning. The
-     * neighbours are ordered left, right, bottom, top.
-     *
-     * @param ids MPI ranks of the periodic neighbours for each direction
-     * @param haloSizes Halo sizes of the periodic neighbours for each direction
-     * @param haloSend index in send buffer to get halo data
-     * @param haloRecv index in recv buffer to put halo data
-     */
-    void getNeighbourInfoPeriodic(std::array<std::vector<int>, N_EDGE>& ids,
-        std::array<std::vector<int>, N_EDGE>& haloSizes,
-        std::array<std::vector<int>, N_EDGE>& haloSend,
-        std::array<std::vector<int>, N_EDGE>& haloRecv,
-        std::array<std::vector<int>, N_CORNER>& cornerIds,
-        std::array<std::vector<int>, N_CORNER>& cornerSend) const;
-
-    /*!
      * @brief Saves the partition IDs of the latest 2D domain decomposition in a
      * NetCDF file.
      *
@@ -140,6 +123,7 @@ protected:
     static const int NNBRS = 2 * NDIMS; // Number of neighbours (two per dimension)
     bool _px = false; // Periodic boundary in the x-direction
     bool _py = false; // Periodic boundary in the y-direction
+    bool _tripolar = false; // True for tripolar grid topology
 
     // Letters used for each dimension
     std::vector<std::string> dim_chars = { "x", "y" };
@@ -198,23 +182,6 @@ protected:
 
     // Vector of maps of "corner" neighbours to their halo start indices after partitioning
     std::vector<std::map<int, int>> _cornerSendPos = std::vector<std::map<int, int>>(NNBRS);
-
-    // Vector of maps of periodic neighbours to their halo sizes after partitioning
-    std::vector<std::map<int, int>> _neighbours_p = std::vector<std::map<int, int>>(NNBRS);
-
-    // Vector of maps of periodic neighbours to their send buffer indices - index of data to fetch
-    // from send buffer
-    std::vector<std::map<int, int>> _sendPos_p = std::vector<std::map<int, int>>(NNBRS);
-
-    // Vector of maps of periodic neighbours to their recv (receive) buffer indices - index where
-    // data will be stored in the recv buffer
-    std::vector<std::map<int, int>> _recvPos_p = std::vector<std::map<int, int>>(NNBRS);
-
-    // Vector of maps of "corner" neighbours to their halo sizes after partitioning
-    std::vector<std::map<int, int>> _cornerNeighbours_p = std::vector<std::map<int, int>>(NNBRS);
-
-    // Vector of maps of "corner" neighbours to their halo start indices after partitioning
-    std::vector<std::map<int, int>> _cornerSendPos_p = std::vector<std::map<int, int>>(NNBRS);
 
 public:
     struct LIB_EXPORT Factory {
