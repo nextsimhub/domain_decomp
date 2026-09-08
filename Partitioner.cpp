@@ -377,6 +377,12 @@ void Partitioner::saveMetadata(const std::string& filename) const
         return nc_id;
     }();
 
+    // Mark tripolar topology by attribute presence (written only when set).
+    if (_tripolar) {
+        int one = 1;
+        NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "tripolar", NC_INT, 1, &one));
+    }
+
     // utility lambdas for netcdf operations
     // define a new dimension
     auto def_dim = [](int id, const std::string& name, int len) {

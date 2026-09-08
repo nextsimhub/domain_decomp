@@ -12,6 +12,9 @@ dimensions:
 	BR = UNLIMITED ; // (0 currently)
 	BL = UNLIMITED ; // (0 currently)
 
+// global attributes:
+		:tripolar = 1 ;
+
 group: bounding_boxes {
   variables:
   	int domain_x(P) ;
