@@ -350,6 +350,12 @@ void Partitioner::saveMetadata(const std::string& filename) const
     nc_mode = NC_MPIIO | NC_NETCDF4;
     NC_CHECK(nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
 
+    // Mark tripolar topology by attribute presence (written only when set).
+    if (_tripolar) {
+        int one = 1;
+        NC_CHECK(nc_put_att_int(nc_id, NC_GLOBAL, "tripolar", NC_INT, 1, &one));
+    }
+
     // utility lambdas for netcdf operations
     // define a new dimension
     auto def_dim = [&](const std::string& name, int len, int& dimid) {
