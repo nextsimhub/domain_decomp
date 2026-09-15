@@ -74,10 +74,17 @@ add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tripolar_grid.cdl
 )
 
+add_custom_command(
+    OUTPUT tripolar_grid_10_9.nc
+    COMMAND
+        ncgen -b -o tripolar_grid_10_9.nc ${CMAKE_CURRENT_SOURCE_DIR}/tripolar_grid_10_9.cdl
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tripolar_grid_10_9.cdl
+)
+
 add_custom_target(
     generate_input_files
     ALL
-    DEPENDS test_0.nc test_1.nc test_2.nc test_3.nc test_4.nc tripolar_grid.nc
+    DEPENDS test_0.nc test_1.nc test_2.nc test_3.nc test_4.nc tripolar_grid.nc tripolar_grid_10_9.nc
 )
 
 # integration test
