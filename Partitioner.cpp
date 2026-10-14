@@ -411,7 +411,7 @@ void Partitioner::saveMetadata(const std::string& filename) const
     std::vector<int> edge_dimids(N_EDGE);
     std::vector<int> corner_dimids(N_CORNER);
 
-    NC_CHECK(nc_def_dim(nc_id, "P", _totalNumProcs, &dimid));
+    dimid = def_dim("P", _totalNumProcs);
     for (auto edge : edges) {
         edge_dimids[edge] = def_dim(dir_chars[edge], edge_info.dims[edge]);
     }
