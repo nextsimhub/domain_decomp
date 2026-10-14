@@ -420,9 +420,9 @@ void Partitioner::saveMetadata(const std::string& filename) const
     }
 
     // ---- Define groups ----
-    int bbox_gid, c_grid;
+    int bbox_gid, connectivity_grid;
     NC_CHECK(nc_def_grp(nc_id, "bounding_boxes", &bbox_gid));
-    NC_CHECK(nc_def_grp(nc_id, "connectivity", &c_grid));
+    NC_CHECK(nc_def_grp(nc_id, "connectivity", &connectivity_grid));
 
     // ---- Define variables: bounding boxes ----
     int top_vid[Partitioner::NDIMS];
@@ -440,11 +440,11 @@ void Partitioner::saveMetadata(const std::string& filename) const
     int haloSend_vid[N_EDGE], haloRecv_vid[N_EDGE];
 
     // lambda to define netcdf variables (for edges)
-    auto def_edge_var = [&](const auto edge, const std::string& name, const int* dimArr,
-                            auto* vid) {
-        NC_CHECK(
-            nc_def_var(c_grid, (dir_names[edge] + name).c_str(), NC_INT, 1, dimArr, &vid[edge]));
-    };
+    auto def_edge_var
+        = [&](const auto edge, const std::string& name, const int* dimArr, auto* vid) {
+              NC_CHECK(nc_def_var(connectivity_grid, (dir_names[edge] + name).c_str(), NC_INT, 1,
+                  dimArr, &vid[edge]));
+          };
     for (auto edge : edges) {
         def_edge_var(edge, "_neighbours", &dimid, num_vid);
         const auto* edgeDimId = &edge_dimids[edge];
@@ -460,8 +460,8 @@ void Partitioner::saveMetadata(const std::string& filename) const
     // lambda to define netcdf variables (for corners)
     auto def_corner_var
         = [&](const auto corner, const std::string& name, const int* dimArr, int* vid) {
-              NC_CHECK(nc_def_var(c_grid, (corner_dir_names[corner] + name).c_str(), NC_INT, 1,
-                  dimArr, &vid[corner]));
+              NC_CHECK(nc_def_var(connectivity_grid, (corner_dir_names[corner] + name).c_str(),
+                  NC_INT, 1, dimArr, &vid[corner]));
           };
     for (auto corner : corners) {
         def_corner_var(corner, "_neighbours", &dimid, num_corner_vid);
@@ -484,22 +484,25 @@ void Partitioner::saveMetadata(const std::string& filename) const
     for (auto edge : edges) {
         size_t start = _rank;
         size_t count = edge_info.numNeighbours[edge];
-        write_scalar(c_grid, num_vid[edge], start, edge_info.numNeighbours[edge]);
+        write_scalar(connectivity_grid, num_vid[edge], start, edge_info.numNeighbours[edge]);
         start = edge_info.offsets[edge];
-        write_array(c_grid, ids_vid[edge], start, count, ids[edge].data());
-        write_array(c_grid, halos_vid[edge], start, count, halos[edge].data());
-        write_array(c_grid, haloSend_vid[edge], start, count, haloSend[edge].data());
-        write_array(c_grid, haloRecv_vid[edge], start, count, haloRecv[edge].data());
+        write_array(connectivity_grid, ids_vid[edge], start, count, ids[edge].data());
+        write_array(connectivity_grid, halos_vid[edge], start, count, halos[edge].data());
+        write_array(connectivity_grid, haloSend_vid[edge], start, count, haloSend[edge].data());
+        write_array(connectivity_grid, haloRecv_vid[edge], start, count, haloRecv[edge].data());
     }
 
     // Corner connectivity
     for (auto corner : corners) {
         size_t start = _rank;
         size_t count = corner_info.numNeighbours[corner];
-        write_scalar(c_grid, num_corner_vid[corner], start, corner_info.numNeighbours[corner]);
+        write_scalar(
+            connectivity_grid, num_corner_vid[corner], start, corner_info.numNeighbours[corner]);
         start = corner_info.offsets[corner];
-        write_array(c_grid, ids_corner_vid[corner], start, count, corner_ids[corner].data());
-        write_array(c_grid, cornerSend_vid[corner], start, count, cornerSend[corner].data());
+        write_array(
+            connectivity_grid, ids_corner_vid[corner], start, count, corner_ids[corner].data());
+        write_array(
+            connectivity_grid, cornerSend_vid[corner], start, count, cornerSend[corner].data());
     }
 
     NC_CHECK(nc_close(nc_id));
