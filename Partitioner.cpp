@@ -336,7 +336,7 @@ static DimInfo compute_dims(
     info.dims.resize(items.size(), 0);
     info.offsets.resize(items.size(), 0);
     for (std::size_t i = 0; i < items.size(); i++) {
-        info.numNeighbours[i] = (int)data[items[i]].size();
+        info.numNeighbours[i] = static_cast<int>(data[items[i]].size());
         CHECK_MPI(MPI_Allreduce(&info.numNeighbours[i], &info.dims[i], 1, MPI_INT, MPI_SUM, comm));
         CHECK_MPI(MPI_Exscan(&info.numNeighbours[i], &info.offsets[i], 1, MPI_INT, MPI_SUM, comm));
     }
