@@ -368,33 +368,36 @@ private:
 void Partitioner::saveMetadata(const std::string& filename) const
 {
     // Use C API for parallel I/O
-    int nc_id, nc_mode;
-    nc_mode = NC_MPIIO | NC_NETCDF4;
-    NC_CHECK(nc_create_par(filename.c_str(), nc_mode, _comm, MPI_INFO_NULL, &nc_id));
+    const int nc_id = [&]() {
+        int nc_id;
+        NC_CHECK(
+            nc_create_par(filename.c_str(), NC_MPIIO | NC_NETCDF4, _comm, MPI_INFO_NULL, &nc_id));
+        return nc_id;
+    }();
 
     // utility lambdas for netcdf operations
     // define a new dimension
-    auto def_dim = [&](const std::string& name, int len) {
+    auto def_dim = [](int id, const std::string& name, int len) {
         int dimid;
-        NC_CHECK(nc_def_dim(nc_id, name.c_str(), len, &dimid));
+        NC_CHECK(nc_def_dim(id, name.c_str(), len, &dimid));
         return dimid;
     };
 
     // write an array to netcdf file
-    auto write_array = [&](int gid, int vid, size_t start, size_t count, const int* data) {
+    auto write_array = [](int gid, int vid, size_t start, size_t count, const int* data) {
         NC_CHECK(nc_var_par_access(gid, vid, NC_COLLECTIVE));
         NC_CHECK(nc_put_vara_int(gid, vid, &start, &count, data));
     };
 
     // write a scalar to netcdf file
-    auto write_scalar = [&](int gid, int vid, size_t start, int val) {
+    auto write_scalar = [](int gid, int vid, size_t start, int val) {
         NC_CHECK(nc_var_par_access(gid, vid, NC_COLLECTIVE));
         NC_CHECK(nc_put_var1_int(gid, vid, &start, &val));
     };
 
     // ---- Global dimensions (NX, NY) ----
     for (int idx = 0; idx < Partitioner::NDIMS; idx++) {
-        def_dim(globalExtentNames[idx], _globalExt[idx]);
+        def_dim(nc_id, globalExtentNames[idx], _globalExt[idx]);
     }
 
     // ---- Prepare neighbour data ----
@@ -407,16 +410,15 @@ void Partitioner::saveMetadata(const std::string& filename) const
     const auto corner_info = DimInfo::compute_dims(corners, corner_ids, _comm);
 
     // ---- Define netCDF dimensions ----
-    int dimid;
     std::vector<int> edge_dimids(N_EDGE);
     std::vector<int> corner_dimids(N_CORNER);
 
-    dimid = def_dim("P", _totalNumProcs);
+    const int dimid = def_dim(nc_id, "P", _totalNumProcs);
     for (auto edge : edges) {
-        edge_dimids[edge] = def_dim(dir_chars[edge], edge_info.dims[edge]);
+        edge_dimids[edge] = def_dim(nc_id, dir_chars[edge], edge_info.dims[edge]);
     }
     for (auto corner : corners) {
-        corner_dimids[corner] = def_dim(corner_dir_chars[corner], corner_info.dims[corner]);
+        corner_dimids[corner] = def_dim(nc_id, corner_dir_chars[corner], corner_info.dims[corner]);
     }
 
     // ---- Define groups ----
