@@ -321,27 +321,49 @@ void Partitioner::saveMask(const std::string& filename) const
     NC_CHECK(nc_close(nc_id));
 }
 
+/*!
+ * @brief Layout metadata for writing per-direction neighbour data to netCDF
+ *
+ * Each vector is indexed by edge or corner enum value and describes how the
+ * neighbour lists of all ranks are concatenated into a single global netCDF
+ * array for that direction:
+ *  - numNeighbours: number of neighbours of the local rank along that direction
+ *  - dims: global (sum over all ranks) number of entries along that direction;
+ *    used as the length of the netCDF dimension (computed via MPI_Allreduce)
+ *  - offsets: start index of the local rank's entries within the global array
+ *    (computed via MPI_Exscan; rank 0 gets offset 0)
+ *
+ * This description needs to be computed by compute_dims function
+ */
 struct DimInfo {
     std::vector<int> numNeighbours;
     std::vector<int> dims;
     std::vector<int> offsets;
-};
 
-template <typename T, std::size_t N>
-static DimInfo compute_dims(
-    const std::array<T, N>& items, const std::array<std::vector<int>, N>& data, MPI_Comm comm)
-{
-    DimInfo info;
-    info.numNeighbours.resize(items.size());
-    info.dims.resize(items.size(), 0);
-    info.offsets.resize(items.size(), 0);
-    for (std::size_t i = 0; i < items.size(); i++) {
-        info.numNeighbours[i] = static_cast<int>(data[items[i]].size());
-        CHECK_MPI(MPI_Allreduce(&info.numNeighbours[i], &info.dims[i], 1, MPI_INT, MPI_SUM, comm));
-        CHECK_MPI(MPI_Exscan(&info.numNeighbours[i], &info.offsets[i], 1, MPI_INT, MPI_SUM, comm));
+    template <typename T, std::size_t N>
+    static DimInfo compute_dims(
+        const std::array<T, N>& items, const std::array<std::vector<int>, N>& data, MPI_Comm comm)
+    {
+        DimInfo info;
+        info.numNeighbours.resize(items.size());
+        info.dims.resize(items.size(), 0);
+        info.offsets.resize(items.size(), 0);
+        for (std::size_t i = 0; i < items.size(); i++) {
+            info.numNeighbours[i] = static_cast<int>(data[items[i]].size());
+            CHECK_MPI(
+                MPI_Allreduce(&info.numNeighbours[i], &info.dims[i], 1, MPI_INT, MPI_SUM, comm));
+            CHECK_MPI(
+                MPI_Exscan(&info.numNeighbours[i], &info.offsets[i], 1, MPI_INT, MPI_SUM, comm));
+        }
+        return info;
     }
-    return info;
-}
+
+private:
+    // We wish to be able to instantiate DimInfo only through `compute_dims`
+    // function. For convenience we do want to have access to the default
+    // constructor inside the class.
+    DimInfo() = default;
+};
 
 void Partitioner::saveMetadata(const std::string& filename) const
 {
@@ -381,8 +403,8 @@ void Partitioner::saveMetadata(const std::string& filename) const
     getNeighbourInfo(ids, halos, haloSend, haloRecv, corner_ids, cornerSend);
 
     // ---- Compute edge dimensions (MPI Allreduce/Exscan) ----
-    DimInfo edge_info = compute_dims(edges, ids, _comm);
-    DimInfo corner_info = compute_dims(corners, corner_ids, _comm);
+    const auto edge_info = DimInfo::compute_dims(edges, ids, _comm);
+    const auto corner_info = DimInfo::compute_dims(corners, corner_ids, _comm);
 
     // ---- Define netCDF dimensions ----
     int dimid;
