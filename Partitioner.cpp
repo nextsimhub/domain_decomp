@@ -352,8 +352,10 @@ void Partitioner::saveMetadata(const std::string& filename) const
 
     // utility lambdas for netcdf operations
     // define a new dimension
-    auto def_dim = [&](const std::string& name, int len, int& dimid) {
+    auto def_dim = [&](const std::string& name, int len) {
+        int dimid;
         NC_CHECK(nc_def_dim(nc_id, name.c_str(), len, &dimid));
+        return dimid;
     };
 
     // write an array to netcdf file
@@ -369,9 +371,8 @@ void Partitioner::saveMetadata(const std::string& filename) const
     };
 
     // ---- Global dimensions (NX, NY) ----
-    int dimid_global[Partitioner::NDIMS];
     for (int idx = 0; idx < Partitioner::NDIMS; idx++) {
-        def_dim(globalExtentNames[idx], _globalExt[idx], dimid_global[idx]);
+        def_dim(globalExtentNames[idx], _globalExt[idx]);
     }
 
     // ---- Prepare neighbour data ----
@@ -390,10 +391,10 @@ void Partitioner::saveMetadata(const std::string& filename) const
 
     NC_CHECK(nc_def_dim(nc_id, "P", _totalNumProcs, &dimid));
     for (auto edge : edges) {
-        def_dim(dir_chars[edge], edge_info.dims[edge], edge_dimids[edge]);
+        edge_dimids[edge] = def_dim(dir_chars[edge], edge_info.dims[edge]);
     }
     for (auto corner : corners) {
-        def_dim(corner_dir_chars[corner], corner_info.dims[corner], corner_dimids[corner]);
+        corner_dimids[corner] = def_dim(corner_dir_chars[corner], corner_info.dims[corner]);
     }
 
     // ---- Define groups ----
