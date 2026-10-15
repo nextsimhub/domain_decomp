@@ -715,8 +715,8 @@ void Partitioner::discover_neighbours()
 
         // Resolve Edge Neighbours
         for (int p = 0; p < _totalNumProcs; p++) {
-            const Domain image = pointReflection(symmetryPoint, domains[p]);
-            const Domain selfImage = pointReflection(symmetryPoint, thisDomain);
+            const Domain image = pointSymmetryReflection(symmetryPoint, domains[p]);
+            const Domain selfImage = pointSymmetryReflection(symmetryPoint, thisDomain);
 
             // Now we can check for the neighbourhood relation with the image
             if (isNeighbour(thisDomain, image, TOP)) {

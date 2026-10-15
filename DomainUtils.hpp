@@ -126,7 +126,7 @@ int domainOverlap(const Domain d1, const Domain d2, const Edge edge);
  * @param d Domain to be reflected
  * @return Domain reflected about point p
  */
-Domain pointReflection(Point p, Domain d);
+Domain pointSymmetryReflection(Point p, Domain d);
 
 /*!
  *

@@ -189,7 +189,7 @@ TEST_SUITE("Domain - Point symmetry reflection")
         const Domain d { p1, p2 };
 
         const Point p { 2, 2 };
-        const Domain reflected = pointReflection(p, d);
+        const Domain reflected = pointSymmetryReflection(p, d);
 
         CHECK(reflected.p1 == Point { 2, 3 });
         CHECK(reflected.p2 == Point { 4, 4 });
@@ -202,7 +202,7 @@ TEST_SUITE("Domain - Point symmetry reflection")
         const Domain d { p1, p2 };
 
         const Point p { 0, 0 };
-        const Domain reflected = pointReflection(p, d);
+        const Domain reflected = pointSymmetryReflection(p, d);
 
         CHECK(reflected.p1 == Point { -2, -1 });
         CHECK(reflected.p2 == Point { 0, 0 });
@@ -215,7 +215,7 @@ TEST_SUITE("Domain - Point symmetry reflection")
         const Domain d { p1, p2 };
 
         const Point p { 2, 1 };
-        const Domain reflected = pointReflection(p, d);
+        const Domain reflected = pointSymmetryReflection(p, d);
 
         CHECK(reflected.p1 == Point { 0, 0 });
         CHECK(reflected.p2 == Point { 4, 2 });
@@ -228,7 +228,7 @@ TEST_SUITE("Domain - Point symmetry reflection")
         const Domain d { p1, p2 };
 
         const Point p { 2, 1 };
-        const Domain reflected = pointReflection(p, d);
+        const Domain reflected = pointSymmetryReflection(p, d);
 
         CHECK(reflected.p1 == Point { 4, 2 });
         CHECK(reflected.p2 == Point { 4, 2 });
@@ -241,7 +241,7 @@ TEST_SUITE("Domain - Point symmetry reflection")
         const Domain d { p1, p2 };
 
         const Point p { 1, 1 };
-        const Domain reflected = pointReflection(p, d);
+        const Domain reflected = pointSymmetryReflection(p, d);
 
         CHECK(reflected.p1 == Point { 2, -2 });
         CHECK(reflected.p2 == Point { 2, 2 });
@@ -254,7 +254,7 @@ TEST_SUITE("Domain - Point symmetry reflection")
         const Domain d { p1, p2 };
 
         const Point p { 3, 0 };
-        const Domain reflected = pointReflection(p, d);
+        const Domain reflected = pointSymmetryReflection(p, d);
 
         CHECK(reflected.p1 == Point { 2, 0 });
         CHECK(reflected.p2 == Point { 6, 0 });
@@ -267,7 +267,7 @@ TEST_SUITE("Domain - Point symmetry reflection")
         const Domain d { p1, p2 };
 
         const Point p { 3, 0 };
-        const Domain reflected = pointReflection(p, d);
+        const Domain reflected = pointSymmetryReflection(p, d);
 
         CHECK(reflected.isEmpty());
     }

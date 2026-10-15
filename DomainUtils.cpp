@@ -40,7 +40,7 @@ Domain Domain::fromTwoPoints(const Point& p1, const Point& p2)
     return d;
 }
 
-Domain pointReflection(Point c, Domain d)
+Domain pointSymmetryReflection(Point c, Domain d)
 {
     if (d.isEmpty()) {
         return d;
