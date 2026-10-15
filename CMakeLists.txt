@@ -140,14 +140,8 @@ add_executable(${EXEC_NAME}
 # Create an alias to be used within the project and by other projects
 add_executable(${PROJECT_NAME}::${EXEC_NAME} ALIAS ${EXEC_NAME})
 # Set executable dependencies
-target_include_directories(${EXEC_NAME}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${netCDF_INCLUDE_DIR} ${Zoltan_INCLUDE_DIRS}
-  )
 target_link_libraries(${EXEC_NAME}
   PRIVATE ${INTERNAL_CORE_NAME} Boost::program_options
-  )
-target_link_directories(${EXEC_NAME}
-  PRIVATE ${netCDF_LIB_DIR}
   )
 install(TARGETS ${EXEC_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 
