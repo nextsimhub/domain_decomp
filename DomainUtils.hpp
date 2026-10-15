@@ -144,7 +144,7 @@ Domain pointSymmetryReflection(Point p, Domain d);
  * between the domains.
  *
  * The operation should be commutative and associative, but we don't test
- * this property at the moment (albeit we have a bug if it not holds).
+ * this property at the moment (though we have a bug if it not hold).
  *
  * @param d1 First domain
  * @param d2 Second domain
