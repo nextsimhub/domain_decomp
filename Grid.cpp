@@ -151,6 +151,12 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_n
 
     Grid::ReadGridExtents(filename);
 
+    // Tripolar grids require an even number of cells in the x direction
+    if (_tripolar && (_globalExt[0] % 2 != 0)) {
+        throw std::invalid_argument(
+            "Tripolar grids require an even number of cells in the x direction.");
+    }
+
     CHECK_MPI(MPI_Comm_size(comm, &_totalNumProcs));
 
     // Initially we partition assuming there is no land mask
