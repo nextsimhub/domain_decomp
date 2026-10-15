@@ -18,7 +18,7 @@ function(create_test)
     PRIVATE doctest::doctest ${PROJECT_NAME}::${LIB_NAME}
     )
   target_include_directories(${ARG_TARGET}
-    PRIVATE ${CMAKE_SOURCE_DIR} ${DOCTEST_INCLUDE_DIR}
+    PRIVATE ${CMAKE_SOURCE_DIR}
     )
 
   add_test(NAME ${ARG_TARGET} COMMAND ${MPIEXEC} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ./${ARG_TARGET})
