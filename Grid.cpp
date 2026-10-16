@@ -144,7 +144,7 @@ Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_n
     // Tripolar grid cannot be periodic
     if (_tripolar && (_px || _py)) {
         throw std::invalid_argument(
-            "Tripolar boundary conditions are incompatible with other boundary conditions.");
+            "Tripolar boundary conditions are incompatible with periodic boundary conditions.");
     }
 
     CHECK_MPI(MPI_Comm_rank(comm, &_rank));
