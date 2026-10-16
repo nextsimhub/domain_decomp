@@ -93,13 +93,16 @@ ZoltanPartitioner* ZoltanPartitioner::create(MPI_Comm comm, int argc, char** arg
 void ZoltanPartitioner::partition(Grid& grid)
 {
     // Load initial grid state
+    // NOTE: A lot of these inital operations loading data to members of
+    // the class would be shared by other implementations. They should be moved
+    // to a method of the base class probably. This is not a pressing issue as
+    // long ZoltanPartitioner is the only implementation of Partitioner interface
+    // though.
     _numProcs = grid.getNumProcs();
     _globalExt = grid.getGlobalExt();
     grid.get_bounding_box(_global[0], _global[1], _localExt[0], _localExt[1]);
     _px = grid.get_px();
     _py = grid.get_py();
-    // TODO: I am not really sure reading properties from a Grid
-    //  should happen in child classes... feels dangerous (to be discussed)
     _tripolar = grid.get_tripolar();
 
     if (_totalNumProcs == 1) {
