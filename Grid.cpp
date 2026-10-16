@@ -34,18 +34,19 @@ static std::vector<int> find_factors(const int n)
     }
 }
 
-Grid* Grid::create(MPI_Comm comm, const std::string& filename, bool ignore_mask, bool px, bool py)
+Grid* Grid::create(
+    MPI_Comm comm, const std::string& filename, bool ignore_mask, bool px, bool py, bool tripolar)
 {
-    return new Grid(
-        comm, filename, "x", "y", std::vector<int>({ 1, 0 }), "mask", ignore_mask, px, py);
+    return new Grid(comm, filename, "x", "y", std::vector<int>({ 1, 0 }), "mask", ignore_mask, px,
+        py, tripolar);
 }
 
 Grid* Grid::create(MPI_Comm comm, const std::string& filename, const std::string xdim_name,
     const std::string ydim_name, const std::vector<int> dim_order, const std::string mask_name,
-    bool ignore_mask, bool px, bool py)
+    bool ignore_mask, bool px, bool py, bool tripolar)
 {
     return new Grid(
-        comm, filename, xdim_name, ydim_name, dim_order, mask_name, ignore_mask, px, py);
+        comm, filename, xdim_name, ydim_name, dim_order, mask_name, ignore_mask, px, py, tripolar);
 }
 
 void Grid::ReadGridExtents(const std::string& filename)
@@ -131,17 +132,30 @@ void Grid::ReadGridMask(const std::string& filename, const std::string& mask_nam
 
 Grid::Grid(MPI_Comm comm, const std::string& filename, const std::string& xdim_name,
     const std::string& ydim_name, const std::vector<int>& dim_order, const std::string& mask_name,
-    bool ignore_mask, bool px, bool py)
+    bool ignore_mask, bool px, bool py, bool tripolar)
     : _comm(comm)
     , _dim_names({ xdim_name, ydim_name })
     , _dim_order(dim_order)
     , _px(px)
     , _py(py)
+    , _tripolar(tripolar)
 {
+
+    // Tripolar grid cannot be periodic
+    if (_tripolar && (_px || _py)) {
+        throw std::invalid_argument(
+            "Tripolar boundary conditions are incompatible with periodic boundary conditions.");
+    }
 
     CHECK_MPI(MPI_Comm_rank(comm, &_rank));
 
     Grid::ReadGridExtents(filename);
+
+    // Tripolar grids require an even number of cells in the x direction
+    if (_tripolar && (_globalExt[0] % 2 != 0)) {
+        throw std::invalid_argument(
+            "Tripolar grids require an even number of cells in the x direction.");
+    }
 
     CHECK_MPI(MPI_Comm_size(comm, &_totalNumProcs));
 
@@ -204,6 +218,8 @@ int Grid::get_num_nonzero_objects() const { return _num_nonzero_objects; }
 bool Grid::get_px() const { return _px; }
 
 bool Grid::get_py() const { return _py; }
+
+bool Grid::get_tripolar() const { return _tripolar; }
 
 std::vector<int> Grid::getNumProcs() const { return _numProcs; }
 
