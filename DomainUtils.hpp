@@ -128,4 +128,28 @@ int domainOverlap(const Domain d1, const Domain d2, const Edge edge);
  */
 Domain pointSymmetryReflection(Point p, Domain d);
 
+/*!
+ *
+ * @brief Domain intersection
+ *
+ * Takes two domains and returns the intersection of the two.
+ * The domains include their boundaries, so two domains that share
+ * a section of an edge or a point will return a degenerate "line"
+ * or "point" domain.
+ *
+ * The intersection of disjoint domains returns a degenerate domain that
+ * represents an empty set.
+ *
+ * The intention is to use this function to compute neighbourhood relation
+ * between the domains.
+ *
+ * The operation should be commutative and associative, but we don't test
+ * this property at the moment (though we have a bug if it not hold).
+ *
+ * @param d1 First domain
+ * @param d2 Second domain
+ *
+ */
+Domain intersection(Domain d1, Domain d2);
+
 #endif /* DOMAINUTILS_HPP */
