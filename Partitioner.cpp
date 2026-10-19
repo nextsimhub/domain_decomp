@@ -189,51 +189,76 @@ void Partitioner::haloCornerBufferPositions(
     int globalY = _globalExt[1];
     int xpos, ypos;
 
+    // The corner cell that d1 needs from d2 always lies in d2's extreme row or column adjacent
+    // to the shared corner point. Depending on the relative placement of the two domains, that
+    // cell is located either on the vertical edge or on the horizontal edge of d2's send buffer
+    // (unrolled in the order Bottom, Right, Top, Left). Halfspace checks on the cell coordinates
+    // identify which edge to read from.
+    auto error_unreachable = []() {
+        std::cerr << "ERROR: The code should never reach here\n";
+        exit(EXIT_FAILURE);
+    };
+
     sendPos = 0;
     if (corner == TOP_RIGHT) {
-        // for a TOP_RIGHT corner the corner neighbour can either be along the other domains bottom
-        // or left edge. We need to check so we know where to look in the send buffer.
+        // corner neighbour lies on d2's left or bottom edge
         xpos = mod(d1.p2.x, globalX);
         ypos = mod(d1.p2.y, globalY);
-        if (ypos >= d2.p1.y) {
-            // this first case is true if the corner neighbour lies on the left edge
+        if (xpos <= d2.p1.x) {
+            // corner cell in d2's leftmost column -> left edge
             int dy = ypos - d2.p1.y;
             sendPos = 2 * d2.getWidth() + d2.getHeight() + dy;
-        } else {
-            // this second case works if the corner neighbour lies on the bottom edge (or in the
-            // corner of both e.g., the bottom left corner)
+        } else if (ypos <= d2.p1.y) {
+            // corner cell in d2's bottommost row -> bottom edge
             int dx = xpos - d2.p1.x;
             sendPos = dx;
+        } else {
+            error_unreachable();
         }
     } else if (corner == TOP_LEFT) {
+        // corner neighbour lies on d2's right or bottom edge
         xpos = mod(d1.p1.x - 1, globalX);
         ypos = mod(d1.p2.y, globalY);
-        if (ypos >= d2.p1.y) {
+        if (xpos >= d2.p2.x - 1) {
+            // corner cell in d2's rightmost column -> right edge
             int dy = ypos - d2.p1.y;
             sendPos = d2.getWidth() + dy;
-        } else {
+        } else if (ypos <= d2.p1.y) {
+            // corner cell in d2's bottommost row -> bottom edge
             int dx = xpos - d2.p1.x;
             sendPos = dx;
+        } else {
+            error_unreachable();
         }
     } else if (corner == BOTTOM_LEFT) {
+        // corner neighbour lies on d2's right or top edge
         xpos = mod(d1.p1.x - 1, globalX);
         ypos = mod(d1.p1.y - 1, globalY);
-        if (d2.p2.y >= ypos) {
+        if (xpos >= d2.p2.x - 1) {
+            // corner cell in d2's rightmost column -> right edge
             int dy = ypos - d2.p1.y;
             sendPos = d2.getWidth() + dy;
-        } else {
+        } else if (ypos >= d2.p2.y - 1) {
+            // corner cell in d2's topmost row -> top edge
             int dx = xpos - d2.p1.x;
             sendPos = d2.getWidth() + d2.getHeight() + dx;
+        } else {
+            error_unreachable();
         }
     } else if (corner == BOTTOM_RIGHT) {
+        // corner neighbour lies on d2's left or top edge
         xpos = mod(d1.p2.x, globalX);
         ypos = mod(d1.p1.y - 1, globalY);
-        if (d2.p2.y >= ypos) {
+        if (xpos <= d2.p1.x) {
+            // corner cell in d2's leftmost column -> left edge
             int dy = ypos - d2.p1.y;
             sendPos = 2 * d2.getWidth() + d2.getHeight() + dy;
-        } else {
+        } else if (ypos >= d2.p2.y - 1) {
+            // corner cell in d2's topmost row -> top edge
             int dx = xpos - d2.p1.x;
             sendPos = d2.getWidth() + d2.getHeight() + dx;
+        } else {
+            error_unreachable();
         }
     } else {
         std::cerr << "ERROR: corner must be TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT."
