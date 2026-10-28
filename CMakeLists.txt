@@ -129,9 +129,16 @@ target_include_directories(${INTERNAL_CORE_NAME}
   PRIVATE ${netCDF_INCLUDE_DIR} ${Zoltan_INCLUDE_DIRS}
 )
 
+# An internal library needs to make its dependencies public
+# They then need to be included when linking any targets that 
+# depend on the ${INTERNAL_CORE_LIBRARY} to resolve all symbols
 target_link_libraries(${INTERNAL_CORE_NAME}
   PUBLIC MPI::MPI_CXX
-  PRIVATE netcdf ${Zoltan_LIBRARIES}
+  PUBLIC netcdf ${Zoltan_LIBRARIES}
+)
+
+target_link_directories(${INTERNAL_CORE_NAME}
+  PUBLIC ${netCDF_LIB_DIR}
 )
 
 # Executable
